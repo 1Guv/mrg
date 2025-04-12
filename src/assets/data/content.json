@@ -21,18 +21,6 @@
               "icon": "face",
               "url": "/account-dashboard",
               "toolTip": "Account Dashboard"
-            },
-            {
-              "name": "List your plate",
-              "icon": "calculate",
-              "url": "/list-your-plate",
-              "toolTip": "List your number plate"
-            },
-            {
-                "name": "About",
-                "icon": "info",
-                "url": "/about",
-                "toolTip": "About"
             }
         ]
     },

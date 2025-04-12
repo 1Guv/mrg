@@ -1,1 +1,11 @@
-<app-header-menu></app-header-menu>
+<mat-sidenav-container autosize class="sidenav-container">
+  <mat-sidenav #sidenav [ngStyle]='{ width : currentWidthPx}' position="end" mode="over" [(opened)]="opened">
+    <button mat-button (click)="sidenav.toggle()">Open/Close</button>
+    <br>
+    <p>Advanced Search Options</p>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <app-header-menu (toggleSidenav)="sidenav.toggle()"></app-header-menu>
+    <router-outlet></router-outlet> </mat-sidenav-content>
+</mat-sidenav-container>

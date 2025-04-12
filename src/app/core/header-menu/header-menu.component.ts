@@ -1,4 +1,4 @@
-import {Component, OnInit, signal, Signal} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output, signal, Signal} from '@angular/core';
 import { Observable, map, tap } from 'rxjs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import {Router, RouterModule} from '@angular/router';
@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import {ContentService} from "../../services/content.service";
 import {Header, HeaderMenuOptions} from "../../models/content";
 import {AuthService} from "../../services/auth.service";
+import {MatSidenavContainer} from "@angular/material/sidenav";
 
 @Component({
   selector: 'app-header-menu',
@@ -19,7 +20,7 @@ import {AuthService} from "../../services/auth.service";
     RouterModule,
     MatIconModule,
     MatTooltipModule,
-    MatButtonModule
+    MatButtonModule,
   ],
   templateUrl: './header-menu.component.html',
   styleUrl: './header-menu.component.scss'
@@ -29,6 +30,7 @@ export class HeaderMenuComponent {
   currentUser= signal<any>({});
   loggedIn = signal(false);
   headerMenu$: Observable<Header>;
+  @Output() toggleSidenav = new EventEmitter<unknown>();
 
   constructor(
     private contentService: ContentService,
@@ -60,4 +62,8 @@ export class HeaderMenuComponent {
       await this.router.navigateByUrl(option.url);
     }
    }
+
+  onMenuIconClick(): void {
+    this.toggleSidenav.emit();
+  }
 }
