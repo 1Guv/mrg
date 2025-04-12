@@ -9,7 +9,6 @@ import { MatButtonModule } from '@angular/material/button';
 import {ContentService} from "../../services/content.service";
 import {Header, HeaderMenuOptions} from "../../models/content";
 import {AuthService} from "../../services/auth.service";
-import {MatSidenavContainer} from "@angular/material/sidenav";
 
 @Component({
   selector: 'app-header-menu',
