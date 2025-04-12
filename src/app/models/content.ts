@@ -7,6 +7,7 @@ export interface Content {
 }
 
 export interface Header {
+    appName: string;
     leftLogoUrl: string;
     middleLogoUrl: string;
     headerMenuOptions: Array<HeaderMenuOptions>;

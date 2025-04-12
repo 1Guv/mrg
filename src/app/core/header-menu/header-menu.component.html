@@ -5,17 +5,8 @@
 
 
                 <h1 class="header-menu-logo me-auto">
-                    <div class="" [routerLink]="''">Mr G79</div>
+                    <div class="" [routerLink]="''">{{( headerMenu$ | async)?.appName }}</div>
                 </h1>
-
-<!--                <a [routerLink]="'/'">-->
-<!--                    <img src="{{ (headerMenu$ | async)?.leftLogoUrl }}" class="d-none d-sm-block">-->
-<!--                </a>-->
-
-<!--                <a [routerLink]="'/'" class="ml-sm-auto">-->
-<!--                    <img src="{{ (headerMenu$ | async)?.middleLogoUrl }}" class="n-logo-size">-->
-<!--                    <div class="d-inline-block d-sm-none">.io</div>-->
-<!--                </a>-->
 
                 <ng-container>
                     @for (option of (headerMenu$ | async)?.headerMenuOptions; track $index; let isFirst = $first) {

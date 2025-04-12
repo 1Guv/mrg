@@ -1,5 +1,6 @@
 {
     "header": {
+        "appName": "Mr G79",
         "leftLogoUrl": "",
         "middleLogoUrl": "./assets/images/credit-card-small-1.svg",
         "headerMenuOptions": [
