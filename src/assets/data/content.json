@@ -22,7 +22,27 @@
               "url": "/account-dashboard",
               "toolTip": "Account Dashboard"
             }
-        ]
+        ],
+      "menuOptions": [
+        {
+          "name": "Valuations",
+          "icon": "account_circle",
+          "url": "/valuations",
+          "toolTip": "Valuations"
+        },
+        {
+          "name": "Plates",
+          "icon": "account_circle",
+          "url": "/plates",
+          "toolTip": "Plates"
+        },
+        {
+          "name": "Cars",
+          "icon": "account_circle",
+          "url": "/cars",
+          "toolTip": "cars"
+        }
+      ]
     },
     "homeCTA": {
         "mainMessage": "Get a real time number plate valuation in 3mins!",

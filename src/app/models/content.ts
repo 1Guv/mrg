@@ -11,6 +11,7 @@ export interface Header {
     leftLogoUrl: string;
     middleLogoUrl: string;
     headerMenuOptions: Array<HeaderMenuOptions>;
+    menuOptions: Array<HeaderMenuOptions>;
 }
 
 export interface HeaderMenuOptions {
