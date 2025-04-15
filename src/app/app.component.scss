@@ -1,13 +1,14 @@
-/* app.component.scss or styles.scss */
+@import '../../src/styles/_variables.scss';
+
 .sidenav-container {
   height: 100vh; /* Ensure the container takes full viewport height */
 }
 
 .mat-sidenav {
   height: 100%; /* Ensure the sidenav takes full height of its container */
+  background-color: $side-menu-bg-color;
 }
 
-/* Optional: Style the backdrop for better visibility */
 .cdk-overlay-pane { /* Target the pane that contains the sidenav in over mode */
   max-height: 100vh !important;
   height: 100% !important;

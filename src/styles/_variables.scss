@@ -1,0 +1,13 @@
+$bg-color-yellow: rgb(255, 211, 0);
+$side-menu-bg-color: #f6f6f6;
+$base-font: 'base';
+$weight: 500;
+
+@mixin cabin-font {
+  font-family: "Cabin", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $weight;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+}

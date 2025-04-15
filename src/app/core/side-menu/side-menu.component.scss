@@ -1,0 +1,10 @@
+@import '../../../../src/styles/_variables.scss';
+hr {
+  margin: 3px 10px !important;
+}
+
+.base-font {
+  @include cabin-font;
+  color: black;
+  text-decoration: none;
+}

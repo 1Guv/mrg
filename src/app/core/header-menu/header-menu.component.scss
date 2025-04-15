@@ -1,3 +1,9 @@
+@import '../../../../src/styles/_variables.scss';
+
+.g-brand {
+  background-color: $bg-color-yellow;
+}
+
 .header-menu-logo {
     font-family: "Plus Jakarta Sans", sans-serif;
     font-optical-sizing: auto;

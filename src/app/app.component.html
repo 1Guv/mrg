@@ -1,5 +1,5 @@
 <mat-sidenav-container autosize class="sidenav-container">
-  <mat-sidenav #sidenav [ngStyle]='{ width : width80Percent}' position="end" mode="over" [(opened)]="opened">
+  <mat-sidenav #sidenav class="side-menu-bg" [ngStyle]='{ width : width80Percent }' position="end" mode="over" [(opened)]="opened">
     <div class="d-flex flex-row-reverse m-2">
       <button mat-icon-button (click)="sidenav.toggle()">
         <mat-icon>close</mat-icon>

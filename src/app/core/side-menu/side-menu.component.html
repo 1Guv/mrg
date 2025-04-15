@@ -1,7 +1,10 @@
 <div class="d-flex flex-column justify-content-around">
   @for (opt of (menuOptions$ | async); track $index;) {
     <hr>
-    <a class="m-1 ps-1">{{ opt.name }}</a>
+    <div class="d-flex align-content-center ms-2">
+      <mat-icon class="mt-1">{{ opt.icon }}</mat-icon>
+      <a class="m-1 ps-1 base-font">{{ opt.name }}</a>
+    </div>
   }
   <hr>
 </div>
