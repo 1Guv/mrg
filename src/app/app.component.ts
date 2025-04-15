@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {HeaderMenuComponent} from "./core/header-menu/header-menu.component";
 import {MatSidenavContainer, MatSidenavModule} from "@angular/material/sidenav";
@@ -16,6 +16,21 @@ import {SideMenuComponent} from "./core/side-menu/side-menu.component";
 })
 export class AppComponent {
   title = 'mrg-app-v1';
-  currentWidthPx: string = '';
+  width80Percent: string = ''
   opened: boolean = false;
+
+  constructor() {
+    this.setWidth();
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event: Event) {
+    this.setWidth();
+  }
+
+  setWidth() {
+    this.width80Percent = (window.innerWidth * 0.8).toString() + 'px';
+    console.log('80% width:', this.width80Percent);
+  }
+
 }
