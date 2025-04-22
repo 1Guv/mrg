@@ -1,0 +1,24 @@
+@import '../../../../src/styles/_variables.scss';
+
+.cabin-font-sketch {
+  @include cabin-font-sketch;
+  font-size: 75px;
+}
+
+.main-bg-c {
+  background-color: $bg-color-ice-blue;
+}
+
+.headingOne {
+  all: unset;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5rem;
+  font-weight: normal;
+  color: forestgreen;
+}
+
+.margin-override {
+  margin: -30px 0 .5em !important;
+}
+
