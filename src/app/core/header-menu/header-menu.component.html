@@ -5,7 +5,8 @@
 
 
                 <h1 class="header-menu-logo me-auto">
-                    <div class="" [routerLink]="''">{{( headerMenu$ | async)?.appName }}</div>
+                    <!-- <div class="" [routerLink]="''">{{( headerMenu$ | async)?.appName }}</div> -->
+                    <div class="" [routerLink]="''"><img src="{{( headerMenu$ | async)?.leftLogoUrl }}" alt=""></div>
                 </h1>
 
                 <ng-container>

@@ -1,7 +1,22 @@
 @import '../../../../src/styles/_variables.scss';
 
 .g-brand {
-  background-color: $bg-color-white;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: #1a237e;
+
+  .header-menu-logo {
+    color: #1a237e;
+  }
+
+  ::ng-deep {
+    .mat-icon {
+      color: #1a237e;
+    }
+    .mat-mdc-icon-button {
+      color: #1a237e;
+    }
+  }
 }
 
 .header-height {

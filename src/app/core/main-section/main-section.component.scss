@@ -2,11 +2,20 @@
 
 .cabin-font-sketch {
   @include cabin-font-sketch;
-  font-size: 3.5rem;
+}
+
+.responsive-heading {
+  font-size: 75px; // Default for medium and large screens
+  line-height: 1.2;
+  
+  @media (max-width: 991px) { // Bootstrap's medium breakpoint
+    font-size: clamp(20px, 6vw, 75px);
+    font-size: 45px;
+  }
 }
 
 .main-bg-c {
-  background-color: $bg-color-ice-blue;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4f1f9 100%);
 }
 
 .headingOne {
@@ -22,3 +31,62 @@
   margin: -30px 0 .5em !important;
 }
 
+.emphasis-text {
+  color: #1a237e;
+  font-weight: 500;
+  position: relative;
+  padding: 0 4px;
+  transition: all 0.3s ease;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: currentColor;
+    opacity: 0.08;
+    border-radius: 3px;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    
+    &::before {
+      opacity: 0.15;
+    }
+  }
+}
+
+.highlight-text {
+  color: #00b3b3; // Modern teal
+  position: relative;
+  display: inline-block;
+  padding: 0 0.2em;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: currentColor;
+    opacity: 0.1;
+    transform: skewX(-10deg);
+    z-index: -1;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: currentColor;
+    opacity: 0.3;
+  }
+}
