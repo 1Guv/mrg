@@ -31,7 +31,6 @@ export class AppComponent {
 
   setWidth() {
     this.width80Percent = (window.innerWidth * 0.8).toString() + 'px';
-    console.log('80% width:', this.width80Percent);
   }
 
 }

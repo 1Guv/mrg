@@ -1,0 +1,1 @@
+export const datelessPattern = /^([0-9]{1,3}[A-Za-z]{1,3}|[A-Za-z]{1,3}[0-9]{1,3})$/;

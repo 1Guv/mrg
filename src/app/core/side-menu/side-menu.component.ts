@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import {MatIcon} from "@angular/material/icon";
 import {MatButton} from "@angular/material/button";
 import {ContentService} from "../../services/content.service";
-import {HeaderMenuOptions} from "../../models/content";
+import {HeaderMenuOptions} from "../../models/content.model";
 import {map, Observable} from "rxjs";
 import {AsyncPipe} from "@angular/common";
 

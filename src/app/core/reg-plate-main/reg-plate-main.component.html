@@ -1,0 +1,43 @@
+<form [formGroup]="registrationForm" (ngSubmit)="onSubmit()" class="reg-form">
+
+    <mat-form-field class="w-100">
+        <mat-label>Number plate type</mat-label>
+        <mat-select formControlName="type">
+            @for (type of types; track type) {
+            <mat-option [value]="type">{{type.value | titlecase}} like <span class="regInSelect">{{type.example}}</span>
+            </mat-option>
+            }
+        </mat-select>
+    </mat-form-field>
+    <mat-error *ngIf="registrationForm.get('registration')?.hasError('error')">
+        {{ registrationForm.get('registration')?.errors?.['error']?.message }}
+    </mat-error>
+
+    <div class="number-plate" [class.invalid]="registrationForm.invalid && registrationForm.touched"
+        [ngStyle]="{ 'background-color': frontBack ? 'yellow' : '#F1F1F1' }">
+        <div class="badge" [ngStyle]="{ 'background-color': frontBack ? 'yellow' : '#F1F1F1' }">
+            <img [src]="selectedBadge.icon" [alt]="selectedBadge.label" class="badge-icon"
+                title="{{selectedBadge.label}}" />
+        </div>
+        <div class="reg-field">
+            <input [ngStyle]="{ 'background-color': frontBack ? 'yellow' : '#F1F1F1' }" class="registration"
+                formControlName="registration" maxlength="7"
+                placeholder="{{registrationForm.get('type')?.value?.example || 'YO 1'}}">
+        </div>
+    </div>
+    <div class="badge-selector">
+        <div *ngFor="let badge of badges" class="badge-option" [class.selected]="selectedBadge.code === badge.code"
+            (click)="selectBadge(badge)">
+            <img [src]="badge.icon" [alt]="badge.label" class="badge-icon" title="{{badge.label}}" />
+            <span class="badge-label"></span>
+        </div>
+    </div>
+
+    <div class="d-flex align-content-center align-items-center p-2 toggle-btn">
+        <span class="me-2 toggle-text">Front</span>
+        <mat-slide-toggle (change)="onFrontBackToggle($event)"></mat-slide-toggle>
+        <span class="ms-1 toggle-text">Back</span>
+    </div>
+
+    <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid">Valuate Now!</button>
+</form>

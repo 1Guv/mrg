@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import {ContentService} from "../../services/content.service";
-import {Header, HeaderMenuOptions} from "../../models/content";
+import {Header, HeaderMenuOptions} from "../../models/content.model";
 import {AuthService} from "../../services/auth.service";
 
 @Component({

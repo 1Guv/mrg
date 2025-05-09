@@ -1,10 +1,11 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
+import { RegPlateMainComponent } from "../reg-plate-main/reg-plate-main.component";
 
 @Component({
   selector: 'app-main-section',
   standalone: true,
-  imports: [],
+  imports: [RegPlateMainComponent],
   templateUrl: './main-section.component.html',
   styleUrl: './main-section.component.scss'
 })
