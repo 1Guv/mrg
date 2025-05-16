@@ -1,0 +1,75 @@
+<div class="container-fluid d-flex flex-column p-4">
+    @if(currentPlateData) {
+        <p>Current Plate Data: {{ currentPlateData | json}}</p>
+        <p>Current Plate: {{ currentPlate }}</p>
+        <p>Current Plate Type: {{ currentPlateType }}</p>
+
+        <hr>
+
+        <p>{{ currentPlateType }}: {{ plateTypePoints }} points</p>
+        <p>{{ currentPlate.length }} Characters: {{ plateLengthPoints }} points</p>
+        <p>{{ currentPlate.charAt(0) }} First Character: {{ plateFirstCharacterPoints }} points</p>
+        <p>{{ currentPlate }} Characters: {{ plateCharacterPoints }} points</p>
+        
+        @for (charPoint of charPoints; track $index) {
+            <p class="ms-3">{{ charPoint.character }}: {{ charPoint.points }} points</p>
+        }
+
+        <hr>
+
+        <label class="d-flex align-items-start">Does your plate need to have spaces to be displayed appropriately</label>
+        <mat-radio-group aria-label="Select an option" [(ngModel)]="spacesSelected" (ngModelChange)="calcSpacesPoints($event)">
+            @for (space of spaces; track $index ) {
+                <mat-radio-button [value]="space">{{ space }}</mat-radio-button>
+            }
+        </mat-radio-group>
+
+        <p>Spaces: {{ spacesSelected }} = {{ spacesPoints }} points</p>
+
+        <hr>
+
+        <p>
+            <label>Are you using any letter in the combination has a number?</label>
+            <mat-slide-toggle 
+                [(ngModel)]="isAnyLetterUsedAsNumber"
+                (ngModelChange)="calcIsAnyLetterUsedAsNumberPoints($event)">
+            </mat-slide-toggle>
+        </p>
+        Points: {{ isAnyLetterUsedAsNumberPoints }}
+
+        <hr>
+
+        <p>
+            <label>Are you using any number in the combination has a letter?</label>
+            <mat-slide-toggle 
+                [(ngModel)]="isAnyNumberUsedAsLetter"
+                (ngModelChange)="calcIsAnyNumberUsedAsLetterPoints($event)">
+            </mat-slide-toggle>
+        </p>
+        Points: {{ isAnyNumberUsedAsLetterPoints }}
+
+        <hr>
+
+        <div>Total: {{ totalPoints }} points</div>
+
+        <hr>
+
+        <div class="pt-2 pb-2">Multiplier: {{ multiplier }}</div>
+
+        <hr>
+        <div class="pt-2 pb-2 fw-bold">Current: £ {{ totalPoints * multiplier | number: '1.2-2' }}</div>
+        <hr>
+        <div class="pt-2 pb-2">Min: £ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min }})</div>
+        <div class="pt-2 pb-2">Max: £ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max }})</div>
+        <hr>
+        <div class="pt-2 pb-2">
+            <p>Benchmark your plate against similar registrations?</p>
+            <p><mat-slide-toggle>Check against DVLA sold plates</mat-slide-toggle></p>
+            <p><mat-slide-toggle>Check against private sellers</mat-slide-toggle></p>
+            <p><mat-slide-toggle>Check against all SOLD auction plates</mat-slide-toggle></p>
+            <div class="d-flex justify-content-center">
+                <button mat-button type="button">Get More Insights for £100</button>
+            </div>
+        </div>
+    }
+</div>

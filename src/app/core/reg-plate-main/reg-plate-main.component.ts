@@ -13,6 +13,7 @@ import { datelessPattern } from '../../regex-plate-patterns/dateless';
 import { suffixPattern } from '../../regex-plate-patterns/suffix';
 import { prefixPattern } from '../../regex-plate-patterns/prefix';
 import { currentPattern } from '../../regex-plate-patterns/current';
+import { SharedPlateDataService } from '../../services/shared-plate-data.service';
 
 @Component({
   selector: 'reg-plate-main',
@@ -58,18 +59,30 @@ export class RegPlateMainComponent implements OnInit {
     ]]
   });
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private sharedPlateDataService: SharedPlateDataService
+  ) { }
 
   ngOnInit() {
     this.registrationForm.get('type')?.valueChanges.subscribe((value) => {
       const regField = this.registrationForm.get('registration');
       this.toggleRegValidators(regField);
     });
+
+    this.registrationForm.get('registration')?.valueChanges.subscribe((value) => {
+      if (this.registrationForm.invalid || this.registrationForm.get('registration')?.hasError('error')) {
+        this.sharedPlateDataService.setCurrentPlateData(null);
+      }
+    });
   }
 
   onSubmit() {
     if (this.registrationForm.valid) {
       console.log(this.registrationForm.value);
+      this.sharedPlateDataService.setCurrentPlateData(this.registrationForm.value);
+    } else {
+      this.sharedPlateDataService.setCurrentPlateData(null);
     }
   }
 
