@@ -14,6 +14,8 @@ import { suffixPattern } from '../../regex-plate-patterns/suffix';
 import { prefixPattern } from '../../regex-plate-patterns/prefix';
 import { currentPattern } from '../../regex-plate-patterns/current';
 import { SharedPlateDataService } from '../../services/shared-plate-data.service';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'reg-plate-main',
@@ -26,7 +28,9 @@ import { SharedPlateDataService } from '../../services/shared-plate-data.service
     MatButtonModule,
     MatRadioModule,
     MatSelectModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    MatIconModule,
+    MatTooltipModule
   ],
   templateUrl: './reg-plate-main.component.html',
   styleUrls: ['./reg-plate-main.component.scss']
@@ -47,7 +51,7 @@ export class RegPlateMainComponent implements OnInit {
     { code: 'INDIA', label: 'INDIA', icon: 'assets/icons/011-world-1.png' },
     { code: 'WALES', label: 'WALES', icon: 'assets/icons/002-wales.png' }
   ];
-  selectedBadge: Badge = this.badges[0];
+  selectedBadge: Badge = this.badges[1];
   frontBack: boolean = false;
   registrationForm: FormGroup = this.fb.group({
     type: ['', [Validators.required]],

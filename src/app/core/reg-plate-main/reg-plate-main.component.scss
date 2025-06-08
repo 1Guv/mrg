@@ -1,3 +1,24 @@
+.select-with-icon {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  position: relative;
+  
+  .mat-mdc-form-field {
+    flex: 1;
+  }
+  
+  .info-icon {
+    margin-left: 8px;
+    margin-top: 8px; // Align with the input field
+    color: rgba(0, 0, 0, 0.6);
+    
+    &:hover {
+      color: #000;
+    }
+  }
+}
+
 .reg-form {
   display: flex;
   flex-direction: column;
@@ -107,7 +128,7 @@
       display: flex;
       align-items: center;
       height: 100%;
-      background-color: #F1F1F1;
+      // background-color: #F1F1F1;
       position: relative;
 
       input.registration {
@@ -139,6 +160,7 @@
           box-shadow: none !important;
           border: none !important;
         }
+
       }
 
       input.registration::placeholder {
@@ -157,6 +179,11 @@
         width: 100%;
         box-sizing: border-box;
         text-indent: -16px;
+      }
+
+      mat-icon {
+        overflow: visible !important;
+        margin-right: 2px;
       }
     }
 

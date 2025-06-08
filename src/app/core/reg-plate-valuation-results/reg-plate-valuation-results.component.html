@@ -1,75 +1,130 @@
 <div class="container-fluid d-flex flex-column p-4">
     @if(currentPlateData) {
-        <p>Current Plate Data: {{ currentPlateData | json}}</p>
-        <p>Current Plate: {{ currentPlate }}</p>
-        <p>Current Plate Type: {{ currentPlateType }}</p>
+    <hr>
+    <!-- <p>Current Plate Data: {{ currentPlateData | json}}</p> -->
 
-        <hr>
+    <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+        <p class="cabin-font-heading">Valuation for:</p>
+        <span class="bevel-plate">{{ currentPlate | uppercase }}</span>
+        <p class="cabin-font-heading mt-4">Type:</p>
+        <span class="cabin-font-text">{{ currentPlateType | uppercase }}</span>
+    </div>
 
-        <p>{{ currentPlateType }}: {{ plateTypePoints }} points</p>
-        <p>{{ currentPlate.length }} Characters: {{ plateLengthPoints }} points</p>
-        <p>{{ currentPlate.charAt(0) }} First Character: {{ plateFirstCharacterPoints }} points</p>
-        <p>{{ currentPlate }} Characters: {{ plateCharacterPoints }} points</p>
-        
+    <hr>
+
+    <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+
+        <mat-card class="p-2 w-100">
+            <span class="cabin-font-heading mt-2">{{ currentPlateType | titlecase }}:</span>
+            <span class="cabin-font-text mb-2">{{ plateTypePoints }} points</span>
+        </mat-card>
+
+        <span class="cabin-font-heading mt-2">{{ currentPlate.length }} Characters:</span>
+        <span class="cabin-font-text mb-2">{{ plateLengthPoints }} points</span>
+
+        <span class="cabin-font-heading mt-2">{{ currentPlate.charAt(0) }} As The First Character:</span>
+        <span class="cabin-font-text mb-2">{{ plateFirstCharacterPoints }} points</span>
+
+        <span class="cabin-font-heading mt-2">{{ currentPlate | uppercase }} Characters:</span>
+        <span class="cabin-font-text mb-2">{{ plateCharacterPoints }} points</span>
+
         @for (charPoint of charPoints; track $index) {
-            <p class="ms-3">{{ charPoint.character }}: {{ charPoint.points }} points</p>
+        <span class="cabin-font-heading mt-2">{{ charPoint.character | uppercase }}:</span>
+        <span class="cabin-font-text mb-2">{{ charPoint.points }} points</span>
         }
+    </div>
 
-        <hr>
+    <hr>
 
-        <label class="d-flex align-items-start">Does your plate need to have spaces to be displayed appropriately</label>
-        <mat-radio-group aria-label="Select an option" [(ngModel)]="spacesSelected" (ngModelChange)="calcSpacesPoints($event)">
-            @for (space of spaces; track $index ) {
-                <mat-radio-button [value]="space">{{ space }}</mat-radio-button>
-            }
-        </mat-radio-group>
+    <label class="d-flex align-items-start">Does your plate need to have any illegal spaces to be displayed
+        appropriately</label>
+    <mat-radio-group aria-label="Select an option" [(ngModel)]="spacesSelected"
+        (ngModelChange)="calcSpacesPoints($event)">
+        @for (space of spaces; track $index ) {
+        <mat-radio-button [value]="space">{{ space }}</mat-radio-button>
+        }
+    </mat-radio-group>
 
-        <p>Spaces: {{ spacesSelected }} = {{ spacesPoints }} points</p>
+    <p>Spaces: {{ spacesSelected }} = {{ spacesPoints }} points</p>
 
-        <hr>
+    <hr>
 
-        <p>
-            <label>Are you using any letter in the combination has a number?</label>
-            <mat-slide-toggle 
-                [(ngModel)]="isAnyLetterUsedAsNumber"
-                (ngModelChange)="calcIsAnyLetterUsedAsNumberPoints($event)">
-            </mat-slide-toggle>
-        </p>
-        Points: {{ isAnyLetterUsedAsNumberPoints }}
+    <p>
+        <label>Are you using any letter in the combination has a number?</label>
+        <mat-slide-toggle [(ngModel)]="isAnyLetterUsedAsNumber"
+            (ngModelChange)="calcIsAnyLetterUsedAsNumberPoints($event)">
+        </mat-slide-toggle>
+    </p>
+    Points: {{ isAnyLetterUsedAsNumberPoints }}
 
-        <hr>
+    <hr>
 
-        <p>
-            <label>Are you using any number in the combination has a letter?</label>
-            <mat-slide-toggle 
-                [(ngModel)]="isAnyNumberUsedAsLetter"
-                (ngModelChange)="calcIsAnyNumberUsedAsLetterPoints($event)">
-            </mat-slide-toggle>
-        </p>
-        Points: {{ isAnyNumberUsedAsLetterPoints }}
+    <p>
+        <label>Are you using any number in the combination has a letter?</label>
+        <mat-slide-toggle [(ngModel)]="isAnyNumberUsedAsLetter"
+            (ngModelChange)="calcIsAnyNumberUsedAsLetterPoints($event)">
+        </mat-slide-toggle>
+    </p>
+    Points: {{ isAnyNumberUsedAsLetterPoints }}
 
-        <hr>
+    <hr>
 
-        <div>Total: {{ totalPoints }} points</div>
+    <p>
+        <label>Do you know the date of purchase?</label>
+        <br>
+        <mat-slide-toggle [(ngModel)]="isDateOfPurchaseKnown">
+        </mat-slide-toggle>
+    </p>
 
-        <hr>
+    <p>
+        <ng-container *ngIf="isDateOfPurchaseKnown">
+            <mat-form-field class="w-100">
+                <input matInput [matDatepicker]="dp" placeholder="Year">
+                <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+                <mat-datepicker #dp
+                                startView="multi-year"
+                                (yearSelected)="calcDateOfPurchaseKnownPoints($event, dp)"
+                                panelClass="month-picker">
+                </mat-datepicker>
+              </mat-form-field>
+        </ng-container>
+    </p>
+    Points: {{ dateOfPurchaseKnownPoints }}
 
-        <div class="pt-2 pb-2">Multiplier: {{ multiplier }}</div>
+    <hr>
 
-        <hr>
-        <div class="pt-2 pb-2 fw-bold">Current: £ {{ totalPoints * multiplier | number: '1.2-2' }}</div>
-        <hr>
-        <div class="pt-2 pb-2">Min: £ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min }})</div>
-        <div class="pt-2 pb-2">Max: £ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max }})</div>
-        <hr>
-        <div class="pt-2 pb-2">
-            <p>Benchmark your plate against similar registrations?</p>
-            <p><mat-slide-toggle>Check against DVLA sold plates</mat-slide-toggle></p>
-            <p><mat-slide-toggle>Check against private sellers</mat-slide-toggle></p>
-            <p><mat-slide-toggle>Check against all SOLD auction plates</mat-slide-toggle></p>
-            <div class="d-flex justify-content-center">
-                <button mat-button type="button">Get More Insights for £100</button>
-            </div>
+    <div>Total: {{ totalPoints }} points</div>
+
+    <hr>
+
+    <div class="pt-2 pb-2">Multiplier: {{ multiplier }}</div>
+
+    <hr>
+
+
+    <mat-card class="p-2 w-100">
+        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+            <span class="cabin-font-heading">Current:</span>
+            <span class="cabin-font-text">£ {{ totalPoints * multiplier | number: '1.2-2' }}</span>
         </div>
+        <hr>
+            <div class="pt-2 pb-2">Min:
+                <span class="cabin-font-text">£ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min }})</span>
+            </div>
+            <div class="pt-2 pb-2">Max:
+                <span class="cabin-font-text">£ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max }})</span>
+            </div>
+    </mat-card>
+
+
+    <div class="pt-2 pb-5">
+        <p>Benchmark your plate against similar registrations?</p>
+        <p><mat-slide-toggle>Check against DVLA sold plates</mat-slide-toggle></p>
+        <p><mat-slide-toggle>Check against private sellers</mat-slide-toggle></p>
+        <p><mat-slide-toggle>Check against all SOLD auction plates</mat-slide-toggle></p>
+        <div class="d-flex justify-content-center">
+            <button mat-button type="button">Get More Insights for £100</button>
+        </div>
+    </div>
     }
 </div>

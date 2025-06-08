@@ -9,7 +9,33 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatDatepicker, MatDatepickerModule } from '@angular/material/datepicker';
+import { MAT_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
+import { Moment } from 'moment';
+import {
+  MomentDateAdapter,
+  MAT_MOMENT_DATE_ADAPTER_OPTIONS,
+} from '@angular/material-moment-adapter';
+import { DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 
+import * as _moment from 'moment';
+// tslint:disable-next-line:no-duplicate-imports
+import { default as _rollupMoment } from 'moment';
+
+const moment = _rollupMoment || _moment;
+export const MY_FORMATS = {
+  parse: {
+    dateInput: 'YYYY',
+  },
+  display: {
+    dateInput: 'YYYY',
+    monthYearLabel: 'YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'YYYY',
+  },
+};
 @Component({
   selector: 'reg-plate-valuation-results',
   standalone: true,
@@ -22,10 +48,23 @@ import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/sl
     FormsModule,
     MatRadioModule,
     MatSlideToggleModule,
-    CommonModule
+    CommonModule,
+    MatIconModule,
+    MatCardModule,
+    MatDatepickerModule,
+    MatNativeDateModule
 ],
   templateUrl: './reg-plate-valuation-results.component.html',
-  styleUrl: './reg-plate-valuation-results.component.scss'
+  styleUrl: './reg-plate-valuation-results.component.scss',
+  providers: [
+    {
+      provide: DateAdapter,
+      useClass: MomentDateAdapter,
+      deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS],
+    },
+
+    { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
+  ],
 })
 export class RegPlateValuationResultsComponent {
   currentPlateData: any;
@@ -41,11 +80,13 @@ export class RegPlateValuationResultsComponent {
   DatelessReg = DatelessReg;
   spaces = [0, 1, 2, 3];
   spacesSelected: number = 0;
-  spacesPoints: number = 0;
+  spacesPoints: number = Spaces[`_${this.spacesSelected}` as keyof typeof Spaces];
   isAnyLetterUsedAsNumber: boolean = false;
   isAnyNumberUsedAsLetter: boolean = false;
   isAnyLetterUsedAsNumberPoints: number = 0;
   isAnyNumberUsedAsLetterPoints: number = 0;
+  isDateOfPurchaseKnown: boolean = false;
+  dateOfPurchaseKnownPoints: number = 0;
   multiplier: number = 0;
   DatelessRegMultiplier = DatelessRegMultiplier;
   multiplierPoints: number = 0;
@@ -162,6 +203,15 @@ export class RegPlateValuationResultsComponent {
 
   calcIsAnyNumberUsedAsLetterPoints(event: MatSlideToggleChange) {
     this.isAnyNumberUsedAsLetterPoints = IsAnyNumberUsedAsLetter[`_${event}` as keyof typeof IsAnyNumberUsedAsLetter];
+    this.calcTotalPoints(); 
+    this.calcMinPrice();
+    this.calcMaxPrice();
+  }
+
+  calcDateOfPurchaseKnownPoints(event: Moment, dp: MatDatepicker<Moment>) {
+    console.log("event:", event);
+    console.log("event:", event.year());
+    // this.dateOfPurchaseKnownPoints = DateOfPurchaseKnown[`_${event}` as keyof typeof DateOfPurchaseKnown];
     this.calcTotalPoints(); 
     this.calcMinPrice();
     this.calcMaxPrice();

@@ -24,3 +24,13 @@ $weight: 700;
   font-variation-settings:
     "wdth" 100;
 }
+
+@mixin inter-font {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $weight;
+  font-style: normal;
+  font-variation-settings:
+    "wdth" 100;
+}
+
