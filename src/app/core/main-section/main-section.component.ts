@@ -4,14 +4,13 @@ import { RegPlateMainComponent } from "../reg-plate-main/reg-plate-main.componen
 import { RegPlateValuationResultsComponent } from "../reg-plate-valuation-results/reg-plate-valuation-results.component";
 
 @Component({
-  selector: 'app-main-section',
-  standalone: true,
-  imports: [
-    RegPlateMainComponent,
-    RegPlateValuationResultsComponent
-  ],
-  templateUrl: './main-section.component.html',
-  styleUrl: './main-section.component.scss'
+    selector: 'app-main-section',
+    imports: [
+        RegPlateMainComponent,
+        RegPlateValuationResultsComponent
+    ],
+    templateUrl: './main-section.component.html',
+    styleUrl: './main-section.component.scss'
 })
 export class MainSectionComponent implements OnInit, OnDestroy {
 

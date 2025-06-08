@@ -11,18 +11,17 @@ import {Header, HeaderMenuOptions} from "../../models/content.model";
 import {AuthService} from "../../services/auth.service";
 
 @Component({
-  selector: 'app-header-menu',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatToolbarModule,
-    RouterModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatButtonModule,
-  ],
-  templateUrl: './header-menu.component.html',
-  styleUrl: './header-menu.component.scss'
+    selector: 'app-header-menu',
+    imports: [
+        CommonModule,
+        MatToolbarModule,
+        RouterModule,
+        MatIconModule,
+        MatTooltipModule,
+        MatButtonModule,
+    ],
+    templateUrl: './header-menu.component.html',
+    styleUrl: './header-menu.component.scss'
 })
 export class HeaderMenuComponent {
 

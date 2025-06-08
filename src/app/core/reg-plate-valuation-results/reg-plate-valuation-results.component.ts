@@ -37,34 +37,32 @@ export const MY_FORMATS = {
   },
 };
 @Component({
-  selector: 'reg-plate-valuation-results',
-  standalone: true,
-  imports: [
-    JsonPipe,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    FormsModule,
-    MatRadioModule,
-    MatSlideToggleModule,
-    CommonModule,
-    MatIconModule,
-    MatCardModule,
-    MatDatepickerModule,
-    MatNativeDateModule
-],
-  templateUrl: './reg-plate-valuation-results.component.html',
-  styleUrl: './reg-plate-valuation-results.component.scss',
-  providers: [
-    {
-      provide: DateAdapter,
-      useClass: MomentDateAdapter,
-      deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS],
-    },
-
-    { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
-  ],
+    selector: 'reg-plate-valuation-results',
+    imports: [
+        JsonPipe,
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        FormsModule,
+        MatRadioModule,
+        MatSlideToggleModule,
+        CommonModule,
+        MatIconModule,
+        MatCardModule,
+        MatDatepickerModule,
+        MatNativeDateModule
+    ],
+    templateUrl: './reg-plate-valuation-results.component.html',
+    styleUrl: './reg-plate-valuation-results.component.scss',
+    providers: [
+        {
+            provide: DateAdapter,
+            useClass: MomentDateAdapter,
+            deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS],
+        },
+        { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
+    ]
 })
 export class RegPlateValuationResultsComponent {
   currentPlateData: any;

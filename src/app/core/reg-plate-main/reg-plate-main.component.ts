@@ -18,22 +18,21 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'reg-plate-main',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    CommonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatRadioModule,
-    MatSelectModule,
-    MatSlideToggleModule,
-    MatIconModule,
-    MatTooltipModule
-  ],
-  templateUrl: './reg-plate-main.component.html',
-  styleUrls: ['./reg-plate-main.component.scss']
+    selector: 'reg-plate-main',
+    imports: [
+        ReactiveFormsModule,
+        CommonModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatRadioModule,
+        MatSelectModule,
+        MatSlideToggleModule,
+        MatIconModule,
+        MatTooltipModule
+    ],
+    templateUrl: './reg-plate-main.component.html',
+    styleUrls: ['./reg-plate-main.component.scss']
 })
 
 export class RegPlateMainComponent implements OnInit {
