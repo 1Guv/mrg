@@ -2,6 +2,7 @@
   "name": "mrg-app-v1",
   "version": "0.0.0",
   "scripts": {
+    "build:gh-pages": "rm -rf docs && ng build --configuration production --output-path docs --base-href \"/mrg/\" --no-ssr && cp -a docs/browser/. docs/ && rm -rf docs/browser",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",

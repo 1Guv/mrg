@@ -17,9 +17,13 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
+            "ssr": false,
             "outputPath": "docs",
+            "baseHref": "/mrg/",
             "index": "src/index.html",
             "browser": "src/main.ts",
+            "server": false,
+            "prerender": false,
             "polyfills": [
               "zone.js"
             ],
