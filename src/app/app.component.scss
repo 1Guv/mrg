@@ -1,4 +1,4 @@
-@import '../../src/styles/_variables.scss';
+@use '../styles/variables' as *;
 
 .sidenav-container {
   height: 100vh; /* Ensure the container takes full viewport height */

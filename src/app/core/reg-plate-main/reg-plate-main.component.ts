@@ -18,8 +18,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
-    selector: 'reg-plate-main',
-    imports: [
+  selector: 'reg-plate-main',
+  standalone: true,
+  imports: [
         ReactiveFormsModule,
         CommonModule,
         MatFormFieldModule,

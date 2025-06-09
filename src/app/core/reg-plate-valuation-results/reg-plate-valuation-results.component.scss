@@ -1,4 +1,4 @@
-@import '../../../../src/styles/_variables.scss';
+@use '../../../styles/variables' as *;
 
 .cabin-font-heading {
     @include cabin-font;
@@ -43,13 +43,12 @@ $bevel-color: hsla(  0,  0%, 100%, 1);
   background-color: hsla(0, 0%, 80%, 1);
 }
 
-.month-picker .mat-calendar-period-button {
+::ng-deep .mat-calendar-period-button {
     pointer-events: none;
-  }
-  
-  .month-picker .mat-calendar-arrow {
+}
+::ng-deep .mat-calendar-arrow {
     display: none;
-  }
+}
 
 /* Center */
 html,body{height:100%;}html{display:table;width:100%;}body{display:table-cell;vertical-align:middle;text-align:center;overflow: hidden;}

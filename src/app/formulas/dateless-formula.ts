@@ -23,6 +23,14 @@ export enum DatelessRegMultiplier {
     _2 = 100
 }
 
+export enum DatelessYearMultiplier {
+    _6 = 100,
+    _5 = 300,
+    _4 = 600,
+    _3 = 800,
+    _2 = 1000
+}
+
 export enum LetterValues {
     A = 70,
     B = 70,

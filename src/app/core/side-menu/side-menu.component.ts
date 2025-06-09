@@ -8,9 +8,9 @@ import {AsyncPipe} from "@angular/common";
 
 @Component({
     selector: 'app-side-menu',
+    standalone: true,
     imports: [
         MatIcon,
-        MatButton,
         AsyncPipe
     ],
     templateUrl: './side-menu.component.html',

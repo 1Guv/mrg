@@ -1,4 +1,4 @@
-@import '../../../../src/styles/_variables.scss';
+@use '../../../styles/variables' as *;
 
 .cabin-font-sketch {
   @include cabin-font-sketch;

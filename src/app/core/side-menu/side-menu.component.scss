@@ -1,4 +1,6 @@
-@import '../../../../src/styles/_variables.scss';
+// @use '../../src/styles/_variables.scss';
+@use '../../../styles/variables' as *;
+
 hr {
   margin: 3px 10px !important;
 }

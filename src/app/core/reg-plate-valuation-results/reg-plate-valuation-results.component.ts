@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { SharedPlateDataService } from '../../services/shared-plate-data.service';
-import { CommonModule, DecimalPipe, JsonPipe } from '@angular/common';
-import { DatelessReg, DatelessRegLength, DatelessRegMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
+import { CommonModule } from '@angular/common';
+import { DatelessReg, DatelessRegLength, DatelessRegMultiplier, DatelessYearMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
 import { NumberPlateType } from '../../models/reg.model';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -11,20 +11,11 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatDatepicker, MatDatepickerModule } from '@angular/material/datepicker';
-import { MAT_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
-import { Moment } from 'moment';
-import {
-  MomentDateAdapter,
-  MAT_MOMENT_DATE_ADAPTER_OPTIONS,
-} from '@angular/material-moment-adapter';
-import { DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
+import { MomentDateAdapter } from '@angular/material-moment-adapter';
+import moment from 'moment';
 
-import * as _moment from 'moment';
-// tslint:disable-next-line:no-duplicate-imports
-import { default as _rollupMoment } from 'moment';
-
-const moment = _rollupMoment || _moment;
 export const MY_FORMATS = {
   parse: {
     dateInput: 'YYYY',
@@ -32,14 +23,15 @@ export const MY_FORMATS = {
   display: {
     dateInput: 'YYYY',
     monthYearLabel: 'YYYY',
-    dateA11yLabel: 'LL',
+    dateA11yLabel: 'YYYY',
     monthYearA11yLabel: 'YYYY',
   },
 };
+
 @Component({
     selector: 'reg-plate-valuation-results',
+    standalone: true,
     imports: [
-        JsonPipe,
         ReactiveFormsModule,
         MatFormFieldModule,
         MatInputModule,
@@ -56,12 +48,8 @@ export const MY_FORMATS = {
     templateUrl: './reg-plate-valuation-results.component.html',
     styleUrl: './reg-plate-valuation-results.component.scss',
     providers: [
-        {
-            provide: DateAdapter,
-            useClass: MomentDateAdapter,
-            deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS],
-        },
-        { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
+      { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS },
+      { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
     ]
 })
 export class RegPlateValuationResultsComponent {
@@ -87,6 +75,7 @@ export class RegPlateValuationResultsComponent {
   dateOfPurchaseKnownPoints: number = 0;
   multiplier: number = 0;
   DatelessRegMultiplier = DatelessRegMultiplier;
+  DatelessYearMultiplier = DatelessYearMultiplier;
   multiplierPoints: number = 0;
   MinMaxTotals = MinMaxTotals;
 
@@ -95,13 +84,13 @@ export class RegPlateValuationResultsComponent {
   minPrice: number = 0;
   maxPrice: number = 0;
 
+  maxDate = moment();
+  minDate = moment([1904, 0, 1]);
+  startDate = moment();
+  yearOfPurchase: FormControl<moment.Moment | null> = new FormControl<moment.Moment | null>(null);
+
   constructor(private sharedPlateDataService: SharedPlateDataService) {
     this.sharedPlateDataService.getCurrentPlateData().subscribe((data) => {
-
-      // Need to reset toggle values to zero when plate changes
-      // this.spacesPoints = 0;
-      // this.isAnyLetterUsedAsNumberPoints = 0;
-      // this.isAnyNumberUsedAsLetterPoints = 0;
 
       this.currentPlateData = data;
       this.currentPlate = data?.registration;
@@ -110,9 +99,6 @@ export class RegPlateValuationResultsComponent {
       this.plateLengthPoints = this.calcPlateLengthPoints();
       this.plateFirstCharacterPoints = this.calcPlateFirstCharacterPoints();
       this.plateCharacterPoints = this.calcPlateCharacterPoints();
-      // this.spacesPoints = this.calcSpacesPoints(null);
-      // this.isAnyLetterUsedAsNumberPoints = this.calcIsAnyLetterUsedAsNumberPoints();
-      // this.isAnyNumberUsedAsLetterPoints = this.calcIsAnyNumberUsedAsLetterPoints();
       this.multiplier = this.calcMultiplierPoints();
       this.calcTotalPoints();
       this.calcMinPrice();
@@ -206,13 +192,35 @@ export class RegPlateValuationResultsComponent {
     this.calcMaxPrice();
   }
 
-  calcDateOfPurchaseKnownPoints(event: Moment, dp: MatDatepicker<Moment>) {
-    console.log("event:", event);
-    console.log("event:", event.year());
-    // this.dateOfPurchaseKnownPoints = DateOfPurchaseKnown[`_${event}` as keyof typeof DateOfPurchaseKnown];
-    this.calcTotalPoints(); 
+  isDateOfPurchaseKnownToggle(event: MatSlideToggleChange) {
+    this.isDateOfPurchaseKnown = event.checked;
+    if (!event.checked) {
+      this.yearOfPurchase.setValue(null);
+      this.dateOfPurchaseKnownPoints = 0;
+    }
+    this.calcTotalPoints();
     this.calcMinPrice();
     this.calcMaxPrice();
+  }
+
+  calcDateOfPurchaseKnownPoints(event: moment.Moment, dp: any) {
+    if (event) {
+      this.yearOfPurchase.setValue(event); // This shows the year in the input
+      console.log(this.yearOfPurchase.value?.get('year'));
+      let years = moment().diff(event, 'years');
+      console.log("years:", years + ' x ' + this.calcDateOfPurchaseMultiplierPoints());
+      this.dateOfPurchaseKnownPoints = years * this.calcDateOfPurchaseMultiplierPoints();
+      console.log("dateOfPurchaseKnownPoints:", this.dateOfPurchaseKnownPoints)
+
+      dp.close();
+      this.calcTotalPoints();
+      this.calcMinPrice();
+      this.calcMaxPrice();
+    }
+  }
+  
+  calcDateOfPurchaseMultiplierPoints() {
+    return this.DatelessYearMultiplier[`_${this.currentPlate?.length}` as keyof typeof this.DatelessYearMultiplier];
   }
 
   calcMultiplierPoints() {
@@ -226,7 +234,8 @@ export class RegPlateValuationResultsComponent {
     this.plateCharacterPoints + 
     this.spacesPoints +
     this.isAnyLetterUsedAsNumberPoints +
-    this.isAnyNumberUsedAsLetterPoints;
+    this.isAnyNumberUsedAsLetterPoints +
+    this.dateOfPurchaseKnownPoints;
   }
 
   calcMinPrice() {
@@ -235,5 +244,5 @@ export class RegPlateValuationResultsComponent {
 
   calcMaxPrice() {
     this.maxPrice = this.totalPoints * this.multiplier + ((this.totalPoints * this.multiplier) * MinMaxTotals.max);
-  } 
+  }
 }

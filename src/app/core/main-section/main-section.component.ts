@@ -5,6 +5,7 @@ import { RegPlateValuationResultsComponent } from "../reg-plate-valuation-result
 
 @Component({
     selector: 'app-main-section',
+    standalone: true,
     imports: [
         RegPlateMainComponent,
         RegPlateValuationResultsComponent
