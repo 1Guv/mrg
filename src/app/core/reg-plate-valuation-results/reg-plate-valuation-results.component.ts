@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { SharedPlateDataService } from '../../services/shared-plate-data.service';
 import { CommonModule } from '@angular/common';
-import { DatelessReg, DatelessRegLength, DatelessRegMultiplier, DatelessYearMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
+import { DatelessHowManyLettersMultiplier, DatelessHowManyNumbersMultiplier, DatelessReg, DatelessRegLength, DatelessRegMultiplier, DatelessYearMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
 import { NumberPlateType } from '../../models/reg.model';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,6 +15,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import moment from 'moment';
+import { NumberPlateFormService } from '../../services/number-plate-form.service';
+import { MatSliderModule } from '@angular/material/slider';
 
 export const MY_FORMATS = {
   parse: {
@@ -43,7 +45,8 @@ export const MY_FORMATS = {
         MatIconModule,
         MatCardModule,
         MatDatepickerModule,
-        MatNativeDateModule
+        MatNativeDateModule,
+        MatSliderModule
     ],
     templateUrl: './reg-plate-valuation-results.component.html',
     styleUrl: './reg-plate-valuation-results.component.scss',
@@ -67,6 +70,7 @@ export class RegPlateValuationResultsComponent {
   spaces = [0, 1, 2, 3];
   spacesSelected: number = 0;
   spacesPoints: number = Spaces[`_${this.spacesSelected}` as keyof typeof Spaces];
+
   isAnyLetterUsedAsNumber: boolean = false;
   isAnyNumberUsedAsLetter: boolean = false;
   isAnyLetterUsedAsNumberPoints: number = 0;
@@ -88,13 +92,28 @@ export class RegPlateValuationResultsComponent {
   minDate = moment([1904, 0, 1]);
   startDate = moment();
   yearOfPurchase: FormControl<moment.Moment | null> = new FormControl<moment.Moment | null>(null);
+  yearsOld: number = 0;
 
-  constructor(private sharedPlateDataService: SharedPlateDataService) {
+  howManyNumbers: number = 0;
+  howManyNumbersPoints: number = DatelessHowManyNumbersMultiplier[`_${this.howManyNumbers}` as keyof typeof DatelessHowManyNumbersMultiplier];
+
+  howManyLetters: number = 0;
+  howManyLettersPoints: number = DatelessHowManyLettersMultiplier[`_${this.howManyLetters}` as keyof typeof DatelessHowManyLettersMultiplier];
+
+  popularityMultiplier: FormControl<number | null> = new FormControl<number | null>(0);
+  totalPointsWithPopularityMultiplier: number = 0;
+
+  constructor(
+    private sharedPlateDataService: SharedPlateDataService,
+    private numberPlateFormService: NumberPlateFormService,
+    private cdr: ChangeDetectorRef
+  ) {
     this.sharedPlateDataService.getCurrentPlateData().subscribe((data) => {
-
       this.currentPlateData = data;
       this.currentPlate = data?.registration;
       this.currentPlateType = data?.type?.value;
+      this.howManyNumbersPoints = this.calcHowManyNumbersPoints();
+      this.howManyLettersPoints = this.calcHowManyLettersPoints();
       this.plateTypePoints = this.calcPlateTypePoints();
       this.plateLengthPoints = this.calcPlateLengthPoints();
       this.plateFirstCharacterPoints = this.calcPlateFirstCharacterPoints();
@@ -104,6 +123,32 @@ export class RegPlateValuationResultsComponent {
       this.calcMinPrice();
       this.calcMaxPrice();
     });
+  }
+
+  calcHowManyNumbersPoints():number {
+    let count = 0;
+    for (let i = 0; i < this.currentPlate?.length; i++) {
+      const char = this.currentPlate[i];
+      const isNumber = "0123456789".includes(char);
+      if (isNumber) {
+        count++;
+      }
+    }
+    this.howManyNumbers = count;
+    return DatelessHowManyNumbersMultiplier[`_${count}` as keyof typeof DatelessHowManyNumbersMultiplier];
+  }
+
+  calcHowManyLettersPoints():number {
+    let count = 0;
+    for (let i = 0; i < this.currentPlate?.length; i++) {
+      const char = this.currentPlate[i].toUpperCase();
+      const isLetter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(char);
+      if (isLetter) {
+        count++;
+      }
+    } 
+    this.howManyLetters = count;
+    return DatelessHowManyLettersMultiplier[`_${count}` as keyof typeof DatelessHowManyLettersMultiplier];
   }
 
   calcPlateTypePoints():number {
@@ -197,6 +242,7 @@ export class RegPlateValuationResultsComponent {
     if (!event.checked) {
       this.yearOfPurchase.setValue(null);
       this.dateOfPurchaseKnownPoints = 0;
+      this.yearsOld = 0;
     }
     this.calcTotalPoints();
     this.calcMinPrice();
@@ -207,9 +253,9 @@ export class RegPlateValuationResultsComponent {
     if (event) {
       this.yearOfPurchase.setValue(event); // This shows the year in the input
       console.log(this.yearOfPurchase.value?.get('year'));
-      let years = moment().diff(event, 'years');
-      console.log("years:", years + ' x ' + this.calcDateOfPurchaseMultiplierPoints());
-      this.dateOfPurchaseKnownPoints = years * this.calcDateOfPurchaseMultiplierPoints();
+      this.yearsOld = moment().diff(event, 'years');
+      console.log("years:", this.yearsOld + ' x ' + this.calcDateOfPurchaseMultiplierPoints());
+      this.dateOfPurchaseKnownPoints = this.yearsOld * this.calcDateOfPurchaseMultiplierPoints();
       console.log("dateOfPurchaseKnownPoints:", this.dateOfPurchaseKnownPoints)
 
       dp.close();
@@ -235,7 +281,9 @@ export class RegPlateValuationResultsComponent {
     this.spacesPoints +
     this.isAnyLetterUsedAsNumberPoints +
     this.isAnyNumberUsedAsLetterPoints +
-    this.dateOfPurchaseKnownPoints;
+    this.dateOfPurchaseKnownPoints +
+    this.howManyNumbersPoints +
+    this.howManyLettersPoints;
   }
 
   calcMinPrice() {
@@ -244,5 +292,46 @@ export class RegPlateValuationResultsComponent {
 
   calcMaxPrice() {
     this.maxPrice = this.totalPoints * this.multiplier + ((this.totalPoints * this.multiplier) * MinMaxTotals.max);
+  }
+
+  onResetPlateForm() {
+    this.resetValuation();
+    this.numberPlateFormService.triggerReset();
+  }
+
+  resetValuation() {
+    this.spacesSelected = 0;
+    this.spacesPoints = 0;
+    this.isAnyLetterUsedAsNumber = false;
+    this.isAnyLetterUsedAsNumberPoints = 0;
+    this.isAnyNumberUsedAsLetter = false;
+    this.isAnyNumberUsedAsLetterPoints = 0;
+    this.isDateOfPurchaseKnown = false;
+    this.yearOfPurchase.setValue(null);
+    this.dateOfPurchaseKnownPoints = 0;
+    this.yearsOld = 0;
+    this.popularityMultiplier.setValue(0);
+    this.totalPointsWithPopularityMultiplier = 0;
+    this.totalPointsWithMultiplier = 0;
+    this.calcTotalPoints();
+    this.calcMinPrice();
+    this.calcMaxPrice();
+  }
+
+  onPopularityMultiplierChange(event: any) {
+    this.popularityMultiplier.setValue(Math.round(event?.srcElement?.value));
+
+    this.calculateTotalWithPopularityMultiplier();
+    // Manually trigger change detection      
+    this.cdr.detectChanges();
+  }
+  
+  calculateTotalWithPopularityMultiplier() {
+    console.log("totalPoints:", this.totalPoints);
+    this.totalPointsWithPopularityMultiplier = this.totalPoints * (this.popularityMultiplier.value || 0);
+  }
+
+  formatLabel(value: number): string {
+    return `${value}x`;
   }
 }

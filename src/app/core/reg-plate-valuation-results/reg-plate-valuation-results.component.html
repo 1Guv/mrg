@@ -19,6 +19,12 @@
             <span class="cabin-font-text mb-2">{{ plateTypePoints }} points</span>
         </mat-card>
 
+        <span class="cabin-font-heading mt-2">{{ howManyNumbers }} Numbers in plate:</span>
+        <span class="cabin-font-text mb-2">{{ howManyNumbersPoints }} points</span>
+
+        <span class="cabin-font-heading mt-2">{{ howManyLetters }} Letters in plate:</span>
+        <span class="cabin-font-text mb-2">{{ howManyLettersPoints }} points</span>
+
         <span class="cabin-font-heading mt-2">{{ currentPlate.length }} Characters:</span>
         <span class="cabin-font-text mb-2">{{ plateLengthPoints }} points</span>
 
@@ -51,6 +57,7 @@
 
     <p>
         <label>Are you using any letter in the combination has a number?</label>
+        <br>
         <mat-slide-toggle [(ngModel)]="isAnyLetterUsedAsNumber"
             (ngModelChange)="calcIsAnyLetterUsedAsNumberPoints($event)">
         </mat-slide-toggle>
@@ -61,6 +68,7 @@
 
     <p>
         <label>Are you using any number in the combination has a letter?</label>
+        <br>
         <mat-slide-toggle [(ngModel)]="isAnyNumberUsedAsLetter"
             (ngModelChange)="calcIsAnyNumberUsedAsLetterPoints($event)">
         </mat-slide-toggle>
@@ -72,9 +80,7 @@
     <p>
         <label>Do you know the date of purchase?</label>
         <br>
-        <mat-slide-toggle  
-        [checked]="isDateOfPurchaseKnown"
-        (change)="isDateOfPurchaseKnownToggle($event)">
+        <mat-slide-toggle [checked]="isDateOfPurchaseKnown" (change)="isDateOfPurchaseKnownToggle($event)">
         </mat-slide-toggle>
     </p>
 
@@ -82,10 +88,7 @@
         <ng-container *ngIf="isDateOfPurchaseKnown">
             <mat-form-field class="w-100">
                 <input matInput [matDatepicker]="dp" placeholder="Year" [formControl]="yearOfPurchase"
-                    (click)="dp.open()"
-                    [min]="minDate"
-                    [max]="maxDate"
-                    readonly="true">
+                    (click)="dp.open()" [min]="minDate" [max]="maxDate" readonly="true">
                 <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
                 <mat-datepicker #dp [startView]="'multi-year'" [startAt]="startDate"
                     (yearSelected)="calcDateOfPurchaseKnownPoints($event, dp)" panelClass="month-picker">
@@ -93,7 +96,8 @@
             </mat-form-field>
         </ng-container>
     </p>
-    Points: {{ dateOfPurchaseKnownPoints }}
+    Points: Years {{ yearsOld }} x DOP Multiplier {{ calcDateOfPurchaseMultiplierPoints() }} =
+    {{ dateOfPurchaseKnownPoints }}
 
     <hr>
 
@@ -105,12 +109,45 @@
 
     <hr>
 
-
     <mat-card class="p-2 w-100">
         <div class="d-flex flex-column align-items-center justify-content-center gap-2">
             <span class="cabin-font-heading">Current:</span>
             <span class="cabin-font-text">£ {{ totalPoints * multiplier | number: '1.2-2' }}</span>
         </div>
+        <hr>
+        <div class="d-flex flex-column align-items-center justify-content-center gap-2 bg-warning rounded-4">
+            <hr>
+            <div class="d-flex flex-row align-items-center">
+                <label for="popularity-slider" class="form-label cabin-font-heading mb-0">Number Plate Popularity Multiplier</label>
+                <div class="ms-auto d-flex align-items-center">
+                    <span class="slider-value-circle">{{slider.value}}x</span>
+                </div>
+            </div>
+            <br>
+            <div>
+                <mat-slider 
+                    id="popularity-slider"
+                    ngDefaultControl
+                    name="popularityMultiplier"
+                    class="w-100" 
+                    min="1" 
+                    max="10" 
+                    step="1" 
+                    showTickMarks 
+                    discrete 
+                    [formControl]="popularityMultiplier"
+                    (input)="onPopularityMultiplierChange($event)"
+                    [displayWith]="formatLabel"
+                    aria-label="Adjust popularity multiplier">
+                    <input label="Popularity Multiplier" title="Popularity Multiplier" placeholder="Popularity Multiplier" matSliderThumb #slider>
+                </mat-slider>
+            </div>  
+            <hr>
+            <span class="cabin-font-heading">With Popularity Multiplier:</span>
+            <span class="cabin-font-heading">Total: {{ totalPointsWithPopularityMultiplier }}</span>
+            <span class="cabin-font-text">£ {{ (totalPoints * multiplier) * (popularityMultiplier.value || 0) | number: '1.2-2' }}</span>
+        </div>
+       
         <hr>
         <div class="pt-2 pb-2">Min:
             <span class="cabin-font-text">£ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min }})</span>
@@ -119,6 +156,10 @@
             <span class="cabin-font-text">£ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max }})</span>
         </div>
     </mat-card>
+
+    <p class="d-flex justify-content-center pt-3">
+        <button mat-raised-button type="button" class="valuate-now" (click)="onResetPlateForm()">Start Over</button>
+    </p>
 
 
     <div class="pt-2 pb-5">

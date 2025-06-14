@@ -18,17 +18,29 @@ export enum DatelessRegLength {
 export enum DatelessRegMultiplier {
     _6 = 3,
     _5 = 6,
-    _4 = 10,
-    _3 = 25,
-    _2 = 100
+    _4 = 8,
+    _3 = 10,
+    _2 = 25
 }
 
 export enum DatelessYearMultiplier {
-    _6 = 100,
-    _5 = 300,
-    _4 = 600,
-    _3 = 800,
+    _6 = 50,
+    _5 = 200,
+    _4 = 300,
+    _3 = 500,
     _2 = 1000
+}
+
+export enum DatelessHowManyNumbersMultiplier {
+    _1 = 10000,
+    _2 = 1000,
+    _3 = 300
+}
+
+export enum DatelessHowManyLettersMultiplier {
+    _1 = 10000,
+    _2 = 1000,
+    _3 = 300
 }
 
 export enum LetterValues {

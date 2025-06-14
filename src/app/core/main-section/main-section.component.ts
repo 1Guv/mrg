@@ -15,7 +15,7 @@ import { RegPlateValuationResultsComponent } from "../reg-plate-valuation-result
 })
 export class MainSectionComponent implements OnInit, OnDestroy {
 
-  form: FormGroup = new FormGroup({})  ;
+  form: FormGroup = new FormGroup({});
 
   constructor(private formBuilder: FormBuilder,) {}
 

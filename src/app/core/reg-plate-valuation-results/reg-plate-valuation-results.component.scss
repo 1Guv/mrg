@@ -50,5 +50,45 @@ $bevel-color: hsla(  0,  0%, 100%, 1);
     display: none;
 }
 
+::ng-deep {
+  .mat-mdc-slider {
+    min-width: 330px !important;
+    margin: 0 0 !important;
+    
+    // .mdc-slider__thumb {
+    //   &::before {
+    //     content: attr(aria-valuenow);
+    //     position: absolute;
+    //     top: -40px;
+    //     left: 50%;
+    //     transform: translateX(-50%);
+    //     background: #1976d2;
+    //     color: white;
+    //     width: 30px;
+    //     height: 30px;
+    //     border-radius: 50%;
+    //     display: flex;
+    //     align-items: center;
+    //     justify-content: center;
+    //     font-size: 12px;
+    //     font-weight: bold;
+    //   }
+    // }
+  }
+  
+  .slider-value-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #1976d2;
+    color: white;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+}
+
 /* Center */
 html,body{height:100%;}html{display:table;width:100%;}body{display:table-cell;vertical-align:middle;text-align:center;overflow: hidden;}

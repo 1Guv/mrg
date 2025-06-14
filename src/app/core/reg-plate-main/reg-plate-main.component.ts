@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, effect, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,6 +16,7 @@ import { currentPattern } from '../../regex-plate-patterns/current';
 import { SharedPlateDataService } from '../../services/shared-plate-data.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { NumberPlateFormService } from '../../services/number-plate-form.service';
 
 @Component({
   selector: 'reg-plate-main',
@@ -65,8 +66,18 @@ export class RegPlateMainComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private sharedPlateDataService: SharedPlateDataService
-  ) { }
+    private sharedPlateDataService: SharedPlateDataService,
+    private numberPlateFormService: NumberPlateFormService
+  ) {
+    effect(() => {
+      console.log(this.numberPlateFormService.resetSignal());
+      if (this.numberPlateFormService.resetSignal()) {
+        this.registrationForm.reset();
+        this.sharedPlateDataService.setCurrentPlateData(null);
+        this.numberPlateFormService.reset();
+      }
+    });
+   }
 
   ngOnInit() {
     this.registrationForm.get('type')?.valueChanges.subscribe((value) => {
@@ -104,7 +115,7 @@ export class RegPlateMainComponent implements OnInit {
   }
 
   toggleRegValidators(regField: any) {
-    switch (this.registrationForm.get('type')?.value.value) {
+    switch (this.registrationForm.get('type')?.value?.value) {
       case NumberPlateType.Current:
         regField?.setValidators([
           Validators.required,
