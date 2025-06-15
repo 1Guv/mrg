@@ -3,8 +3,11 @@
     <mat-form-field class="w-100">
         <mat-label>Number plate type</mat-label>
         <mat-select formControlName="type">
-            @for (type of types; track type) {
-            <mat-option [value]="type">{{type.value | titlecase}} like <span class="regInSelect">{{type.example}}</span>
+            @for (type of types; track type; let last = $last) {
+            <mat-option [value]="type" [disabled]="!last">
+                {{type.value | titlecase}} like 
+                <span class="regInSelect">{{type.example}}</span>
+                <span *ngIf="!last" class="coming-soon">Coming Soon</span>
             </mat-option>
             }
         </mat-select>

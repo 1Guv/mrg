@@ -14,146 +14,194 @@
 
     <div class="d-flex flex-column align-items-center justify-content-center gap-2">
 
-        <mat-card class="p-2 w-100">
-            <span class="cabin-font-heading mt-2">{{ currentPlateType | titlecase }}:</span>
-            <span class="cabin-font-text mb-2">{{ plateTypePoints }} points</span>
-        </mat-card>
+        <mat-accordion class="w-100">
+            <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                    <mat-panel-title> Points </mat-panel-title>
+                    <!-- <mat-panel-description> Summary </mat-panel-description> -->
+                </mat-expansion-panel-header>
+                
+                <mat-card class="p-2 w-100 my-3">
+                    <span class="cabin-font-heading mt-2">{{ currentPlateType | titlecase }}:</span>
+                    <span class="cabin-font-text mb-2">{{ plateTypePoints }} points</span>
+                </mat-card>
+        
+                <mat-card class="p-2 w-100 my-3">
+                    <span class="cabin-font-heading mt-2">{{ howManyNumbers }} Numbers in plate:</span>
+                    <span class="cabin-font-text mb-2">{{ howManyNumbersPoints }} points</span>
+                </mat-card>
+        
+                <mat-card class="p-2 w-100 my-3">
+                    <span class="cabin-font-heading mt-2">{{ howManyLetters }} Letters in plate:</span>
+                    <span class="cabin-font-text mb-2">{{ howManyLettersPoints }} points</span>
+                </mat-card>
+        
+                <mat-card class="p-2 w-100 my-3">
+                    <span class="cabin-font-heading mt-2">{{ currentPlate.length }} Characters:</span>
+                    <span class="cabin-font-text mb-2">{{ plateLengthPoints }} points</span>
+                </mat-card>
+        
+                <mat-card class="p-2 w-100 my-3">
+                    <span class="cabin-font-heading mt-2">{{ currentPlate.charAt(0) }} As The First Character:</span>
+                    <span class="cabin-font-text mb-2">{{ plateFirstCharacterPoints }} points</span>
+                </mat-card>
+        
+                <mat-card class="p-2 w-100 my-3">
+                    <span class="cabin-font-heading mt-2">{{ currentPlate | uppercase }} Characters:</span>
+                    <span class="cabin-font-text mb-2">{{ plateCharacterPoints }} points</span>
+                </mat-card>
+        
+                @for (charPoint of charPoints; track $index) {
+                <mat-card class="p-2 w-100 my-3">
+                    <span class="cabin-font-heading mt-2">{{ charPoint.character | uppercase }}:</span>
+                    <span class="cabin-font-text mb-2">{{ charPoint.points }} points</span>
+                </mat-card>
+                }
 
-        <span class="cabin-font-heading mt-2">{{ howManyNumbers }} Numbers in plate:</span>
-        <span class="cabin-font-text mb-2">{{ howManyNumbersPoints }} points</span>
+            </mat-expansion-panel>
+            <mat-expansion-panel (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
+                <mat-expansion-panel-header>
+                    <mat-panel-title> Questions </mat-panel-title>
+                    <!-- <mat-panel-description> Summary </mat-panel-description> -->
+                </mat-expansion-panel-header>
+                <label class="d-flex align-items-start">Does your plate need to have any illegal spaces to be displayed
+                    the way you want</label>
+                <mat-radio-group aria-label="Select an option" [(ngModel)]="spacesSelected"
+                    (ngModelChange)="calcSpacesPoints($event)">
+                    @for (space of spaces; track $index ) {
+                    <mat-radio-button [value]="space">{{ space }}</mat-radio-button>
+                    }
+                </mat-radio-group>
+            
+                <p>Spaces: {{ spacesSelected }} = {{ spacesPoints }} points</p>
+                <hr>
+                <p>
+                    <label class="mb-3">Are you using any letter in the combination has a number?</label>
+                    <br>
+                    <mat-slide-toggle [(ngModel)]="isAnyLetterUsedAsNumber"
+                        (ngModelChange)="calcIsAnyLetterUsedAsNumberPoints($event)">
+                    </mat-slide-toggle>
+                </p>
+                Points: {{ isAnyLetterUsedAsNumberPoints }}
+            
+                <hr>
 
-        <span class="cabin-font-heading mt-2">{{ howManyLetters }} Letters in plate:</span>
-        <span class="cabin-font-text mb-2">{{ howManyLettersPoints }} points</span>
+                <p>
+                    <label class="mb-3">Are you using any number in the combination has a letter?</label>
+                    <br>
+                    <mat-slide-toggle [(ngModel)]="isAnyNumberUsedAsLetter"
+                        (ngModelChange)="calcIsAnyNumberUsedAsLetterPoints($event)">
+                    </mat-slide-toggle>
+                </p>
+                Points: {{ isAnyNumberUsedAsLetterPoints }}
+            
+                <hr>
 
-        <span class="cabin-font-heading mt-2">{{ currentPlate.length }} Characters:</span>
-        <span class="cabin-font-text mb-2">{{ plateLengthPoints }} points</span>
+                <p>
+                    <label class="mb-3">Do you need separate plates with the correct spacing to pass an MOT?</label>
+                    <br>
+                    <mat-slide-toggle [(ngModel)]="isPlateSpacingGoodForMot"
+                        (ngModelChange)="calcIsPlateSpacingGoodForMotPoints($event)">
+                    </mat-slide-toggle>
+                </p>
+                Points: {{ isPlateSpacingGoodForMotPoints }}
+            
+                <hr>
+            
+                <p>
+                    <label class="mb-3">Do you know the date of purchase?</label>
+                    <br>
+                    <mat-slide-toggle [checked]="isDateOfPurchaseKnown" (change)="isDateOfPurchaseKnownToggle($event)">
+                    </mat-slide-toggle>
+                </p>
 
-        <span class="cabin-font-heading mt-2">{{ currentPlate.charAt(0) }} As The First Character:</span>
-        <span class="cabin-font-text mb-2">{{ plateFirstCharacterPoints }} points</span>
 
-        <span class="cabin-font-heading mt-2">{{ currentPlate | uppercase }} Characters:</span>
-        <span class="cabin-font-text mb-2">{{ plateCharacterPoints }} points</span>
+                <p>
+                    <ng-container *ngIf="isDateOfPurchaseKnown">
+                        <mat-form-field class="w-100">
+                            <input matInput [matDatepicker]="dp" placeholder="Year" [formControl]="yearOfPurchase"
+                                (click)="dp.open()" [min]="minDate" [max]="maxDate" readonly="true">
+                            <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+                            <mat-datepicker #dp [startView]="'multi-year'" [startAt]="startDate"
+                                (yearSelected)="calcDateOfPurchaseKnownPoints($event, dp)" panelClass="month-picker">
+                            </mat-datepicker>
+                        </mat-form-field>
+                    </ng-container>
+                </p>
+                Points: {{ dateOfPurchaseKnownPoints }}
+                <br>
+                (Years {{ yearsOld }} x DOP Multiplier {{ calcDateOfPurchaseMultiplierPoints() }})
+                <hr>
 
-        @for (charPoint of charPoints; track $index) {
-        <span class="cabin-font-heading mt-2">{{ charPoint.character | uppercase }}:</span>
-        <span class="cabin-font-text mb-2">{{ charPoint.points }} points</span>
-        }
+
+            </mat-expansion-panel>
+        </mat-accordion>
+
     </div>
 
-    <hr>
+    <br>
 
-    <label class="d-flex align-items-start">Does your plate need to have any illegal spaces to be displayed
-        appropriately</label>
-    <mat-radio-group aria-label="Select an option" [(ngModel)]="spacesSelected"
-        (ngModelChange)="calcSpacesPoints($event)">
-        @for (space of spaces; track $index ) {
-        <mat-radio-button [value]="space">{{ space }}</mat-radio-button>
-        }
-    </mat-radio-group>
+    <mat-card>
+        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+            <span class="cabin-font-heading">Total:</span>
+            <span class="cabin-font-text">{{ totalPoints }} points</span>
+        </div>
+    </mat-card>
 
-    <p>Spaces: {{ spacesSelected }} = {{ spacesPoints }} points</p>
+    <br>
 
-    <hr>
+    <mat-card>
+        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+            <span class="cabin-font-heading">Multiplier:</span>
+            <span class="cabin-font-text">{{ multiplier }}</span>
+        </div>
+    </mat-card>
 
-    <p>
-        <label>Are you using any letter in the combination has a number?</label>
-        <br>
-        <mat-slide-toggle [(ngModel)]="isAnyLetterUsedAsNumber"
-            (ngModelChange)="calcIsAnyLetterUsedAsNumberPoints($event)">
-        </mat-slide-toggle>
-    </p>
-    Points: {{ isAnyLetterUsedAsNumberPoints }}
+    <br>
 
-    <hr>
-
-    <p>
-        <label>Are you using any number in the combination has a letter?</label>
-        <br>
-        <mat-slide-toggle [(ngModel)]="isAnyNumberUsedAsLetter"
-            (ngModelChange)="calcIsAnyNumberUsedAsLetterPoints($event)">
-        </mat-slide-toggle>
-    </p>
-    Points: {{ isAnyNumberUsedAsLetterPoints }}
-
-    <hr>
-
-    <p>
-        <label>Do you know the date of purchase?</label>
-        <br>
-        <mat-slide-toggle [checked]="isDateOfPurchaseKnown" (change)="isDateOfPurchaseKnownToggle($event)">
-        </mat-slide-toggle>
-    </p>
-
-    <p>
-        <ng-container *ngIf="isDateOfPurchaseKnown">
-            <mat-form-field class="w-100">
-                <input matInput [matDatepicker]="dp" placeholder="Year" [formControl]="yearOfPurchase"
-                    (click)="dp.open()" [min]="minDate" [max]="maxDate" readonly="true">
-                <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
-                <mat-datepicker #dp [startView]="'multi-year'" [startAt]="startDate"
-                    (yearSelected)="calcDateOfPurchaseKnownPoints($event, dp)" panelClass="month-picker">
-                </mat-datepicker>
-            </mat-form-field>
-        </ng-container>
-    </p>
-    Points: Years {{ yearsOld }} x DOP Multiplier {{ calcDateOfPurchaseMultiplierPoints() }} =
-    {{ dateOfPurchaseKnownPoints }}
-
-    <hr>
-
-    <div>Total: {{ totalPoints }} points</div>
-
-    <hr>
-
-    <div class="pt-2 pb-2">Multiplier: {{ multiplier }}</div>
-
-    <hr>
-
-    <mat-card class="p-2 w-100">
+    <mat-card class="p-2 w-100 bg-warning">
         <div class="d-flex flex-column align-items-center justify-content-center gap-2">
             <span class="cabin-font-heading">Current:</span>
             <span class="cabin-font-text">£ {{ totalPoints * multiplier | number: '1.2-2' }}</span>
         </div>
         <hr>
-        <div class="d-flex flex-column align-items-center justify-content-center gap-2 bg-warning rounded-4">
+        <div class="pt-2 pb-2">
+            <span class="cabin-font-heading">Min:</span>
+            <span class="cabin-font-text-two">£ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min * 100 }}%)</span>
+        </div>
+        <div class="pt-2 pb-2">
+            <span class="cabin-font-heading">Max:</span>
+            <span class="cabin-font-text-two">£ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max * 100 }}%)</span>
+        </div>
+    </mat-card>
+
+    <br>
+
+    <mat-card>
+        <div class="d-flex flex-column align-items-center justify-content-center gap-2 bg-aquamarine rounded-4">
             <hr>
             <div class="d-flex flex-row align-items-center">
-                <label for="popularity-slider" class="form-label cabin-font-heading mb-0">Number Plate Popularity Multiplier</label>
+                <label for="popularity-slider" class="form-label cabin-font-heading mb-0">Number Plate Popularity
+                    Multiplier</label>
                 <div class="ms-auto d-flex align-items-center">
                     <span class="slider-value-circle">{{slider.value}}x</span>
                 </div>
             </div>
             <br>
             <div>
-                <mat-slider 
-                    id="popularity-slider"
-                    ngDefaultControl
-                    name="popularityMultiplier"
-                    class="w-100" 
-                    min="1" 
-                    max="10" 
-                    step="1" 
-                    showTickMarks 
-                    discrete 
-                    [formControl]="popularityMultiplier"
-                    (input)="onPopularityMultiplierChange($event)"
-                    [displayWith]="formatLabel"
+                <mat-slider id="popularity-slider" ngDefaultControl name="popularityMultiplier" class="w-100" min="1"
+                    max="10" step="1" showTickMarks discrete [formControl]="popularityMultiplier"
+                    (input)="onPopularityMultiplierChange($event)" [displayWith]="formatLabel"
                     aria-label="Adjust popularity multiplier">
-                    <input label="Popularity Multiplier" title="Popularity Multiplier" placeholder="Popularity Multiplier" matSliderThumb #slider>
+                    <input label="Popularity Multiplier" title="Popularity Multiplier"
+                        placeholder="Popularity Multiplier" matSliderThumb #slider>
                 </mat-slider>
-            </div>  
+            </div>
             <hr>
             <span class="cabin-font-heading">With Popularity Multiplier:</span>
             <span class="cabin-font-heading">Total: {{ totalPointsWithPopularityMultiplier }}</span>
-            <span class="cabin-font-text">£ {{ (totalPoints * multiplier) * (popularityMultiplier.value || 0) | number: '1.2-2' }}</span>
-        </div>
-       
-        <hr>
-        <div class="pt-2 pb-2">Min:
-            <span class="cabin-font-text">£ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min }})</span>
-        </div>
-        <div class="pt-2 pb-2">Max:
-            <span class="cabin-font-text">£ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max }})</span>
+            <span class="cabin-font-text">£
+                {{ (totalPoints * multiplier) * (popularityMultiplier.value || 0) | number: '1.2-2' }}</span>
         </div>
     </mat-card>
 

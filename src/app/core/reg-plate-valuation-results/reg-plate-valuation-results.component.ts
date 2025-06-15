@@ -1,7 +1,7 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, signal } from '@angular/core';
 import { SharedPlateDataService } from '../../services/shared-plate-data.service';
 import { CommonModule } from '@angular/common';
-import { DatelessHowManyLettersMultiplier, DatelessHowManyNumbersMultiplier, DatelessReg, DatelessRegLength, DatelessRegMultiplier, DatelessYearMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
+import { DatelessHowManyLettersMultiplier, DatelessHowManyNumbersMultiplier, DatelessReg, DatelessRegLength, DatelessRegMultiplier, DatelessYearMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, IsPlateSpacingGoodForMot, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
 import { NumberPlateType } from '../../models/reg.model';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,6 +17,7 @@ import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import moment from 'moment';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { MatSliderModule } from '@angular/material/slider';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 export const MY_FORMATS = {
   parse: {
@@ -46,7 +47,8 @@ export const MY_FORMATS = {
         MatCardModule,
         MatDatepickerModule,
         MatNativeDateModule,
-        MatSliderModule
+      MatSliderModule,
+      MatExpansionModule
     ],
     templateUrl: './reg-plate-valuation-results.component.html',
     styleUrl: './reg-plate-valuation-results.component.scss',
@@ -73,6 +75,8 @@ export class RegPlateValuationResultsComponent {
 
   isAnyLetterUsedAsNumber: boolean = false;
   isAnyNumberUsedAsLetter: boolean = false;
+  isPlateSpacingGoodForMot: boolean = false;
+  isPlateSpacingGoodForMotPoints: number = 0;
   isAnyLetterUsedAsNumberPoints: number = 0;
   isAnyNumberUsedAsLetterPoints: number = 0;
   isDateOfPurchaseKnown: boolean = false;
@@ -102,6 +106,7 @@ export class RegPlateValuationResultsComponent {
 
   popularityMultiplier: FormControl<number | null> = new FormControl<number | null>(0);
   totalPointsWithPopularityMultiplier: number = 0;
+  readonly panelOpenState = signal(false);
 
   constructor(
     private sharedPlateDataService: SharedPlateDataService,
@@ -237,6 +242,13 @@ export class RegPlateValuationResultsComponent {
     this.calcMaxPrice();
   }
 
+  calcIsPlateSpacingGoodForMotPoints(event: MatSlideToggleChange) {
+    this.isPlateSpacingGoodForMotPoints = IsPlateSpacingGoodForMot[`_${event}` as keyof typeof IsPlateSpacingGoodForMot];
+    this.calcTotalPoints(); 
+    this.calcMinPrice();
+    this.calcMaxPrice();
+  }
+
   isDateOfPurchaseKnownToggle(event: MatSlideToggleChange) {
     this.isDateOfPurchaseKnown = event.checked;
     if (!event.checked) {
@@ -281,6 +293,7 @@ export class RegPlateValuationResultsComponent {
     this.spacesPoints +
     this.isAnyLetterUsedAsNumberPoints +
     this.isAnyNumberUsedAsLetterPoints +
+    this.isPlateSpacingGoodForMotPoints +
     this.dateOfPurchaseKnownPoints +
     this.howManyNumbersPoints +
     this.howManyLettersPoints;
@@ -306,6 +319,8 @@ export class RegPlateValuationResultsComponent {
     this.isAnyLetterUsedAsNumberPoints = 0;
     this.isAnyNumberUsedAsLetter = false;
     this.isAnyNumberUsedAsLetterPoints = 0;
+    this.isPlateSpacingGoodForMot = false;
+    this.isPlateSpacingGoodForMotPoints = 0;
     this.isDateOfPurchaseKnown = false;
     this.yearOfPurchase.setValue(null);
     this.dateOfPurchaseKnownPoints = 0;

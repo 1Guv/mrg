@@ -96,12 +96,17 @@ export enum Total {
 }
 
 export enum IsAnyLetterUsedAsNumber {
-    _true = -500,
+    _true = -1000,
     _false = 0
 }
 
 export enum IsAnyNumberUsedAsLetter {
-    _true = -500,
+    _true = -1000,
+    _false = 0
+}
+
+export enum IsPlateSpacingGoodForMot {
+    _true = -2000,
     _false = 0
 }
 

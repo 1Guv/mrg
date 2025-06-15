@@ -12,6 +12,12 @@
     font-size: 1.7rem;
 }
 
+.cabin-font-text-two {
+  @include cabin-font;
+  color: #000;
+  font-size: 1rem;
+}
+
 .reg-plate-val-result {
     background-color: yellow;
     font-weight: bold;
@@ -88,6 +94,10 @@ $bevel-color: hsla(  0,  0%, 100%, 1);
     font-weight: bold;
     margin-right: 10px;
   }
+}
+
+.bg-aquamarine {
+  background-color: aquamarine;
 }
 
 /* Center */
