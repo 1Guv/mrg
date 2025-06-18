@@ -17,8 +17,11 @@
         <mat-accordion class="w-100">
             <mat-expansion-panel>
                 <mat-expansion-panel-header>
-                    <mat-panel-title> Points </mat-panel-title>
-                    <!-- <mat-panel-description> Summary </mat-panel-description> -->
+                    <mat-panel-title> Plate </mat-panel-title>
+                    <mat-panel-description>
+                        <span class="badge bg-danger text-white me-2"> {{ calcTotalPlatePointsExpansionPanel() }}</span>
+                        <span class="text-uppercase cabin-font-text-three">points</span>
+                    </mat-panel-description>
                 </mat-expansion-panel-header>
                 
                 <mat-card class="p-2 w-100 my-3">
@@ -52,7 +55,7 @@
                 </mat-card>
         
                 @for (charPoint of charPoints; track $index) {
-                <mat-card class="p-2 w-100 my-3">
+                <mat-card class="p-2 w-100 my-3 bg-info">
                     <span class="cabin-font-heading mt-2">{{ charPoint.character | uppercase }}:</span>
                     <span class="cabin-font-text mb-2">{{ charPoint.points }} points</span>
                 </mat-card>
@@ -62,7 +65,10 @@
             <mat-expansion-panel (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
                 <mat-expansion-panel-header>
                     <mat-panel-title> Questions </mat-panel-title>
-                    <!-- <mat-panel-description> Summary </mat-panel-description> -->
+                    <mat-panel-description>
+                        <span class="badge bg-danger text-white me-2"> {{ calcTotalPointsQuestionsExpansionPanel() }}</span>
+                        <span class="text-uppercase cabin-font-text-three">points</span>
+                    </mat-panel-description>
                 </mat-expansion-panel-header>
                 <label class="d-flex align-items-start">Does your plate need to have any illegal spaces to be displayed
                     the way you want</label>
@@ -131,8 +137,6 @@
                 Points: {{ dateOfPurchaseKnownPoints }}
                 <br>
                 (Years {{ yearsOld }} x DOP Multiplier {{ calcDateOfPurchaseMultiplierPoints() }})
-                <hr>
-
 
             </mat-expansion-panel>
         </mat-accordion>
@@ -199,7 +203,7 @@
             </div>
             <hr>
             <span class="cabin-font-heading">With Popularity Multiplier:</span>
-            <span class="cabin-font-heading">Total: {{ totalPointsWithPopularityMultiplier }}</span>
+            <span class="cabin-font-heading">Total: {{ totalPointsWithPopularityMultiplier }} points</span>
             <span class="cabin-font-text">£
                 {{ (totalPoints * multiplier) * (popularityMultiplier.value || 0) | number: '1.2-2' }}</span>
         </div>

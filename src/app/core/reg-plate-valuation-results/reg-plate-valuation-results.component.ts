@@ -264,11 +264,8 @@ export class RegPlateValuationResultsComponent {
   calcDateOfPurchaseKnownPoints(event: moment.Moment, dp: any) {
     if (event) {
       this.yearOfPurchase.setValue(event); // This shows the year in the input
-      console.log(this.yearOfPurchase.value?.get('year'));
       this.yearsOld = moment().diff(event, 'years');
-      console.log("years:", this.yearsOld + ' x ' + this.calcDateOfPurchaseMultiplierPoints());
       this.dateOfPurchaseKnownPoints = this.yearsOld * this.calcDateOfPurchaseMultiplierPoints();
-      console.log("dateOfPurchaseKnownPoints:", this.dateOfPurchaseKnownPoints)
 
       dp.close();
       this.calcTotalPoints();
@@ -342,11 +339,27 @@ export class RegPlateValuationResultsComponent {
   }
   
   calculateTotalWithPopularityMultiplier() {
-    console.log("totalPoints:", this.totalPoints);
     this.totalPointsWithPopularityMultiplier = this.totalPoints * (this.popularityMultiplier.value || 0);
   }
 
   formatLabel(value: number): string {
     return `${value}x`;
+  }
+
+  calcTotalPlatePointsExpansionPanel() {
+    return this.plateTypePoints +
+      this.howManyNumbersPoints +
+      this.howManyLettersPoints +
+      this.plateLengthPoints +
+      this.plateFirstCharacterPoints +
+      this.plateCharacterPoints
+  }
+
+  calcTotalPointsQuestionsExpansionPanel() {
+    return this.spacesPoints +
+    this.isAnyLetterUsedAsNumberPoints +
+    this.isAnyNumberUsedAsLetterPoints +
+    this.isPlateSpacingGoodForMotPoints +
+    this.dateOfPurchaseKnownPoints
   }
 }
