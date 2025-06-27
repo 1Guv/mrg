@@ -362,4 +362,8 @@ export class RegPlateValuationResultsComponent {
     this.isPlateSpacingGoodForMotPoints +
     this.dateOfPurchaseKnownPoints
   }
+
+  onSaveValuation() {
+    
+  }
 }
