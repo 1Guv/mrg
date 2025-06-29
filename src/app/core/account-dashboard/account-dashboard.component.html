@@ -1,0 +1,14 @@
+
+@if( currentUser$() ){
+    <div class="container-fluid container-color">
+        <div class="py-5">
+            <h1 class="h1-admin-title text-center">Account Dashboard</h1>
+
+            <!-- <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details> -->
+
+
+            <button type="button" class="my-3 mx-auto d-block" color="accent" mat-raised-button [disabled]="!currentUser$()" (click)="signOut()">Sign Out</button>
+
+        </div>
+    </div>
+}

@@ -70,7 +70,6 @@ export class RegPlateMainComponent implements OnInit {
     private numberPlateFormService: NumberPlateFormService
   ) {
     effect(() => {
-      console.log(this.numberPlateFormService.resetSignal());
       if (this.numberPlateFormService.resetSignal()) {
         this.registrationForm.reset();
         this.sharedPlateDataService.setCurrentPlateData(null);

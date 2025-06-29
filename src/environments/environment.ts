@@ -5,13 +5,13 @@
 export const environment = {
   production: false,
   firebaseConfig: {
-    apiKey: "AIzaSyDw-BcCYPJuvZW7FfTOoGSBzzilKPaeNmY",
-    authDomain: "card-shark-1.firebaseapp.com",
-    projectId: "card-shark-1",
-    storageBucket: "card-shark-1.firebasestorage.app",
-    messagingSenderId: "78889961943",
-    appId: "1:78889961943:web:2e4625050f982a66b16392",
-    measurementId: "G-60RF163VQ8"
+    apiKey: "AIzaSyBpJJ6q-RB9n7BrWREkUmU9DINBL0UjnOY",
+    authDomain: "code-g-b8b6f.firebaseapp.com",
+    projectId: "code-g-b8b6f",
+    storageBucket: "code-g-b8b6f.firebasestorage.app",
+    messagingSenderId: "73520017367",
+    appId: "1:73520017367:web:97787f294b3fef677e6592",
+    measurementId: "G-XRSRVZ3GTC"
   },
   stripe: {
     publishableKey: 'pk_test_51OuG6TEi1sf3ZM0t4Razx6wnAKZ6Y2qDMBdJUby9SDmgZdQ3sZZMLYKea0e4tGZqc2ayYuvRx2h2rPdTHXC3907g00T9jfx6fN',

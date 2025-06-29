@@ -62,7 +62,7 @@
                 }
 
             </mat-expansion-panel>
-            <mat-expansion-panel (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
+            <mat-expansion-panel [expanded]="true" (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
                 <mat-expansion-panel-header>
                     <mat-panel-title> Questions </mat-panel-title>
                     <mat-panel-description>

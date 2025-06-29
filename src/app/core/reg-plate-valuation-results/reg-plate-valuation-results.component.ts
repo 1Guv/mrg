@@ -18,6 +18,7 @@ import moment from 'moment';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { map, pipe } from 'rxjs';
 
 export const MY_FORMATS = {
   parse: {
@@ -364,6 +365,13 @@ export class RegPlateValuationResultsComponent {
   }
 
   onSaveValuation() {
-    
+    this.sharedPlateDataService
+      .getCurrentPlateData()
+      .pipe(
+        map((data) => {
+          console.log(data);
+        })
+      )
+      .subscribe();
   }
 }
