@@ -25,6 +25,7 @@
   align-items: center;
   gap: 1rem;
   max-width: 250px;
+  max-height: 250px;
   margin: 0 auto;
 
   .badge-selector {
@@ -238,6 +239,11 @@ button[type="submit"] {
     font-size: 12px;
 }
 
+.spinner-sm {
+    width: 45px !important;
+    height: 45px !important;
+}
+
 .mat-mdc-slide-toggle {
     --mdc-switch-track-height: 20px;
     --mdc-switch-track-width: 40px;
@@ -289,6 +295,14 @@ mat-error {
     margin: 0 5px;
     font-weight: bold;
     background-color: limegreen;
+}
+
+.loading-valuation-card {
+  background-color: limegreen;
+  text-align: center;
+  font-size: 12px;
+  color: #000;
+  font-weight: 400;
 }
 
 

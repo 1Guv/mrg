@@ -1,8 +1,8 @@
-import { ChangeDetectorRef, Component, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { SharedPlateDataService } from '../../services/shared-plate-data.service';
 import { CommonModule } from '@angular/common';
 import { DatelessHowManyLettersMultiplier, DatelessHowManyNumbersMultiplier, DatelessReg, DatelessRegLength, DatelessRegMultiplier, DatelessYearMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, IsPlateSpacingGoodForMot, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
-import { NumberPlateType } from '../../models/reg.model';
+import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,7 +18,11 @@ import moment from 'moment';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { map, pipe } from 'rxjs';
+import { map, pipe, Subscription } from 'rxjs';
+import { ValuationService } from '../../services/valuation.service';
+import { AuthService } from '../../services/auth.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 
 export const MY_FORMATS = {
   parse: {
@@ -58,10 +62,10 @@ export const MY_FORMATS = {
       { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
     ]
 })
-export class RegPlateValuationResultsComponent {
+export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   currentPlateData: any;
   currentPlate: string = '';
-  currentPlateType: string = '';
+  currentPlateType: NumberPlateType = NumberPlateType.Dateless || NumberPlateType.Current || NumberPlateType.Prefix || NumberPlateType.Suffix;
   plateTypePoints: number = 0;
   plateLengthPoints: number = 0;
   plateFirstCharacterPoints: number = 0;
@@ -105,30 +109,44 @@ export class RegPlateValuationResultsComponent {
   howManyLetters: number = 0;
   howManyLettersPoints: number = DatelessHowManyLettersMultiplier[`_${this.howManyLetters}` as keyof typeof DatelessHowManyLettersMultiplier];
 
-  popularityMultiplier: FormControl<number | null> = new FormControl<number | null>(0);
+  popularityMultiplier: FormControl<number> = new FormControl<number>(0, { nonNullable: true });
   totalPointsWithPopularityMultiplier: number = 0;
   readonly panelOpenState = signal(false);
+  subscriptions: Subscription[] = [];
+
+  private valuationService = inject(ValuationService);
+  private authService = inject(AuthService);
+  private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
   constructor(
     private sharedPlateDataService: SharedPlateDataService,
     private numberPlateFormService: NumberPlateFormService,
     private cdr: ChangeDetectorRef
   ) {
-    this.sharedPlateDataService.getCurrentPlateData().subscribe((data) => {
-      this.currentPlateData = data;
-      this.currentPlate = data?.registration;
-      this.currentPlateType = data?.type?.value;
-      this.howManyNumbersPoints = this.calcHowManyNumbersPoints();
-      this.howManyLettersPoints = this.calcHowManyLettersPoints();
-      this.plateTypePoints = this.calcPlateTypePoints();
-      this.plateLengthPoints = this.calcPlateLengthPoints();
-      this.plateFirstCharacterPoints = this.calcPlateFirstCharacterPoints();
-      this.plateCharacterPoints = this.calcPlateCharacterPoints();
-      this.multiplier = this.calcMultiplierPoints();
-      this.calcTotalPoints();
-      this.calcMinPrice();
-      this.calcMaxPrice();
-    });
+    this.subscriptions.push(
+      this.sharedPlateDataService.getCurrentPlateData().subscribe((data) => {
+        this.currentPlateData = data;
+        this.currentPlate = data?.registration;
+        this.currentPlateType = data?.type?.value;
+        this.howManyNumbersPoints = this.calcHowManyNumbersPoints();
+        this.howManyLettersPoints = this.calcHowManyLettersPoints();
+        this.plateTypePoints = this.calcPlateTypePoints();
+        this.plateLengthPoints = this.calcPlateLengthPoints();
+        this.plateFirstCharacterPoints = this.calcPlateFirstCharacterPoints();
+        this.plateCharacterPoints = this.calcPlateCharacterPoints();
+        this.multiplier = this.calcMultiplierPoints();
+        this.calcTotalPoints();
+        this.calcMinPrice();
+        this.calcMaxPrice();
+        this.popularityMultiplier.setValue(Math.round(1));
+        this.calculateTotalWithPopularityMultiplier();
+      })
+    );
+  }
+
+  ngOnInit(): void {
+   
   }
 
   calcHowManyNumbersPoints():number {
@@ -201,9 +219,7 @@ export class RegPlateValuationResultsComponent {
     let points = 0;
     for (let i = 0; i < this.currentPlate?.length; i++) {
       const char = this.currentPlate[i];
-      console.log(char);
       const isNumber = "0123456789".includes(char);
-      console.log(isNumber);
       if (isNumber) {
         points += DigitValues[`_${char}` as keyof typeof DigitValues];
         this.charPoints.push({
@@ -340,7 +356,7 @@ export class RegPlateValuationResultsComponent {
   }
   
   calculateTotalWithPopularityMultiplier() {
-    this.totalPointsWithPopularityMultiplier = this.totalPoints * (this.popularityMultiplier.value || 0);
+    this.totalPointsWithPopularityMultiplier = this.totalPoints * (this.popularityMultiplier.value);
   }
 
   formatLabel(value: number): string {
@@ -365,13 +381,58 @@ export class RegPlateValuationResultsComponent {
   }
 
   onSaveValuation() {
-    this.sharedPlateDataService
-      .getCurrentPlateData()
-      .pipe(
-        map((data) => {
-          console.log(data);
-        })
-      )
-      .subscribe();
+    const valuation = this.createValuationObj();
+    console.log("valuation:", valuation);
+    this.valuationService.setValuation(valuation);
+
+    this.authService.currentUser$.subscribe((user) => {
+      if (user) {
+        valuation.userId = user.uid;
+        this.valuationService
+          .addValuation(valuation)
+          .pipe(
+            map(() => {
+              this.snackBar.open("Valuation saved successfully and can be viewed in your account", "OK");
+            })
+          )
+          .subscribe();
+      } else {
+        this.router.navigate(['/login']);
+        this.snackBar.open("Please login or register to save your valuation", "OK");
+      }
+    });
+  }
+
+  createValuationObj(): RegValuation {
+    return {
+      type: this.currentPlateType,
+      registration: this.currentPlate?.toUpperCase(),
+      plateTypePoints: this.plateTypePoints,
+      howManyNumbersPoints: this.howManyNumbersPoints,
+      howManyLettersPoints: this.howManyLettersPoints,
+      plateLengthPoints: this.plateLengthPoints,
+      plateFirstCharacterPoints: this.plateFirstCharacterPoints,
+      plateCharacterPoints: this.plateCharacterPoints,
+      charPoints: this.charPoints,
+      spacesSelected: this.spacesSelected,
+      spacesPoints: this.spacesPoints,
+      isAnyLetterUsedAsNumberPoints: this.isAnyLetterUsedAsNumberPoints,
+      isAnyNumberUsedAsLetterPoints: this.isAnyNumberUsedAsLetterPoints,
+      isDateOfPurchaseKnownPoints: this.dateOfPurchaseKnownPoints,
+      yearsOld: this.yearsOld,
+      popularityMultiplier: this.popularityMultiplier.value,
+      totalPointsWithPopularityMultiplier: this.totalPointsWithPopularityMultiplier,
+      totalPointsWithMultiplier: (this.totalPoints * this.multiplier),
+      totalPoints: this.totalPoints,
+      minPrice: this.minPrice,
+      maxPrice: this.maxPrice,
+      multiplier: this.multiplier,
+      minMultiplier: MinMaxTotals.min,
+      maxMultiplier: MinMaxTotals.max,
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach((subscription) => subscription.unsubscribe());
   }
 }

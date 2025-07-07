@@ -17,24 +17,27 @@ import { SharedPlateDataService } from '../../services/shared-plate-data.service
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
-
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCardModule } from '@angular/material/card';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
   imports: [
-        ReactiveFormsModule,
-        CommonModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatButtonModule,
-        MatRadioModule,
-        MatSelectModule,
-        MatSlideToggleModule,
-        MatIconModule,
-        MatTooltipModule
-    ],
-    templateUrl: './reg-plate-main.component.html',
-    styleUrls: ['./reg-plate-main.component.scss']
+    ReactiveFormsModule,
+    CommonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatRadioModule,
+    MatSelectModule,
+    MatSlideToggleModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatProgressSpinnerModule,
+    MatCardModule
+  ],
+  templateUrl: './reg-plate-main.component.html',
+  styleUrls: ['./reg-plate-main.component.scss']
 })
 
 export class RegPlateMainComponent implements OnInit {
@@ -64,6 +67,10 @@ export class RegPlateMainComponent implements OnInit {
     ]]
   });
 
+  loadingValuation = false;
+  valuationMessages: string[] = [];
+  currentMessageIndex = 0;
+
   constructor(
     private fb: FormBuilder,
     private sharedPlateDataService: SharedPlateDataService,
@@ -76,7 +83,7 @@ export class RegPlateMainComponent implements OnInit {
         this.numberPlateFormService.reset();
       }
     });
-   }
+  }
 
   ngOnInit() {
     this.registrationForm.get('type')?.valueChanges.subscribe((value) => {
@@ -92,12 +99,59 @@ export class RegPlateMainComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.registrationForm.valid) {
-      console.log(this.registrationForm.value);
-      this.sharedPlateDataService.setCurrentPlateData(this.registrationForm.value);
-    } else {
-      this.sharedPlateDataService.setCurrentPlateData(null);
-    }
+    // this.valuationMessages = [
+    //   'Putting your plate through our algorithm...',
+    //   'Remember if its not a good plate the algorithm will reject it!',
+    //   'Real valuations. Real experience. Backed by a proprietary algorithm 30 years in the making.'
+    // ];
+
+    this.valuationMessages = [
+      "Powered by 30+ years of number plate expertise. Valuations driven by my personal algorithm – precision you won’t find anywhere else.",
+      "Using a one-of-a-kind valuation algorithm built from decades of market insight. No guesswork – just real value.",
+      "Not just AI – this is experience, logic, and 30+ years of number plate savvy packed into one powerful valuation engine.",
+      "Built on 30+ years of insider knowledge. Our valuation algorithm doesn’t just follow the market – it defines it.",
+      "You’re looking at the smartest plate valuation tool online – handcrafted by a number plate veteran with 30+ years in the game.",
+      "Real valuations. Real experience. Backed by a proprietary algorithm 30 years in the making.",
+      "More than data – this valuation uses decades of intuition, trends, and industry expertise, coded into one clean result.",
+      "No generic pricing here – just intelligent, experience-backed plate valuations that reflect the real market.",
+      "Your plate’s value isn’t random. It’s calculated with care, history, and 30+ years of industry insight.",
+      "Trust the algorithm built from a lifetime in the trade – because not all valuations are created equal."
+    ];
+    
+
+    this.loadingValuation = true;
+    this.currentMessageIndex = 0;
+    this.startMessageCycle();
+
+    setTimeout(() => {
+      this.loadingValuation = false;
+      if (this.registrationForm.valid) {
+        this.sharedPlateDataService.setCurrentPlateData(this.registrationForm.value);
+      } else {
+        this.sharedPlateDataService.setCurrentPlateData(null);
+      }
+    }, 9000);
+  }
+
+  startMessageCycle() {
+    const shownIndexes: number[] = [];
+    const maxMessages = 3;
+  
+    const interval = setInterval(() => {
+      if (shownIndexes.length >= maxMessages) {
+        clearInterval(interval); // Stop after 3 messages
+        return;
+      }
+  
+      let randomIndex: number;
+  
+      do {
+        randomIndex = Math.floor(Math.random() * this.valuationMessages.length);
+      } while (shownIndexes.includes(randomIndex)); // Avoid repeats
+  
+      shownIndexes.push(randomIndex);
+      this.currentMessageIndex = randomIndex;
+    }, 3000);
   }
 
   selectBadge(badge: Badge) {
@@ -155,7 +209,7 @@ export class RegPlateMainComponent implements OnInit {
           )
         ])
         break;
-     }
+    }
     regField?.updateValueAndValidity();
   }
 }

@@ -4,6 +4,13 @@ import { MatButtonModule } from '@angular/material/button';
 import {Router, RouterModule} from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import {map, Subscription} from "rxjs";
+import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
+import { ValuationService } from '../../services/valuation.service';
+import { inject } from '@angular/core';
+import { RegValuation } from '../../models/reg.model';
+import { MatCardModule } from '@angular/material/card';
+import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
+import { NumberPlateFormService } from '../../services/number-plate-form.service';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -11,7 +18,9 @@ import {map, Subscription} from "rxjs";
   imports: [
     JsonPipe,
     MatButtonModule,
-    RouterModule
+    RouterModule,
+    UserAccountDetailsComponent,
+    AccountDashboardValuationComponent
   ],
   templateUrl: './account-dashboard.component.html',
   styleUrl: './account-dashboard.component.scss'
@@ -19,7 +28,11 @@ import {map, Subscription} from "rxjs";
 export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   currentUser$ = signal({});
-  subs= new Subscription();
+  subs = new Subscription();
+  
+  private valuationService = inject(ValuationService);
+  valuations$ = signal<RegValuation[]>([]);
+  private numberPlateFormService = inject(NumberPlateFormService);
 
   constructor(
     private router: Router,
@@ -28,11 +41,25 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.numberPlateFormService.triggerReset();
+
     this.subs.add(
       this.authService.currentUser$
         .pipe(
           map((user: any) => {
             this.currentUser$.set(user);
+          })
+        )
+        .subscribe()
+    );
+
+    this.subs.add(
+      this.valuationService
+        .getValuations()
+        .pipe(
+          map((valuations: RegValuation[]) => {
+            console.log("🚀 ~ AccountDashboardComponent ~ map ~ valuations:", valuations)
+            this.valuations$.set(valuations);
           })
         )
         .subscribe()

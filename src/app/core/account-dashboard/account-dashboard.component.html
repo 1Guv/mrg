@@ -4,8 +4,11 @@
         <div class="py-5">
             <h1 class="h1-admin-title text-center">Account Dashboard</h1>
 
-            <!-- <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details> -->
+            <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details>
 
+            @for( valuation of valuations$(); track valuation.id ){
+                <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
+            }
 
             <button type="button" class="my-3 mx-auto d-block" color="accent" mat-raised-button [disabled]="!currentUser$()" (click)="signOut()">Sign Out</button>
 
