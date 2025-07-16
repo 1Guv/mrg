@@ -205,7 +205,8 @@ export class RegPlateMainComponent implements OnInit {
           regPatternValidator(
             datelessPattern,
             'error',
-            'The format should be XXX YYY or YYY XXX.'
+            // 'The format should be XXX YYY or YYY XXX.'
+            'This is not a valid dateless number plate format.'
           )
         ])
         break;

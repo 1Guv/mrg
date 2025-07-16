@@ -18,7 +18,7 @@ import moment from 'moment';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { map, pipe, Subscription } from 'rxjs';
+import { catchError, map, of, pipe, Subscription } from 'rxjs';
 import { ValuationService } from '../../services/valuation.service';
 import { AuthService } from '../../services/auth.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -382,25 +382,41 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
 
   onSaveValuation() {
     const valuation = this.createValuationObj();
-    console.log("valuation:", valuation);
     this.valuationService.setValuation(valuation);
 
-    this.authService.currentUser$.subscribe((user) => {
-      if (user) {
-        valuation.userId = user.uid;
-        this.valuationService
-          .addValuation(valuation)
-          .pipe(
-            map(() => {
-              this.snackBar.open("Valuation saved successfully and can be viewed in your account", "OK");
-            })
-          )
-          .subscribe();
-      } else {
-        this.router.navigate(['/login']);
-        this.snackBar.open("Please login or register to save your valuation", "OK");
-      }
-    });
+    this.subscriptions.push(
+      this.valuationService
+        .addValuation(valuation)
+        .pipe(
+          map(() => {
+            this.snackBar.open("Valuation saved successfully and can be viewed in your account", "OK");
+          }),
+          catchError((error) => {
+            this.snackBar.open("Valuation failed to save", "OK");
+            this.router.navigate(['/login']);
+            this.snackBar.open("Please login or register to save your valuation", "OK");
+            return of(null);
+          })
+        )
+        .subscribe()
+    );
+
+    // this.authService.currentUser$.subscribe((user) => {
+    //   if (user) {
+    //     valuation.userId = user.uid;
+    //     this.valuationService
+    //       .addValuation(valuation)
+    //       .pipe(
+    //         map(() => {
+    //           this.snackBar.open("Valuation saved successfully and can be viewed in your account", "OK");
+    //         })
+    //       )
+    //       .subscribe();
+    //   } else {
+    //     this.router.navigate(['/login']);
+    //     this.snackBar.open("Please login or register to save your valuation", "OK");
+    //   }
+    // });
   }
 
   createValuationObj(): RegValuation {

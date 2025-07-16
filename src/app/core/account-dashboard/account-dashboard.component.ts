@@ -58,7 +58,6 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         .getValuations()
         .pipe(
           map((valuations: RegValuation[]) => {
-            console.log("🚀 ~ AccountDashboardComponent ~ map ~ valuations:", valuations)
             this.valuations$.set(valuations);
           })
         )
