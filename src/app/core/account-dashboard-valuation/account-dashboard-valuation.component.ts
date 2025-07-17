@@ -1,14 +1,14 @@
 import { Component, inject, Input } from '@angular/core';
 import { RegValuation } from '../../models/reg.model';
 import { MatCardModule, MatCardHeader, MatCardTitle, MatCardSubtitle } from '@angular/material/card';
-import { CommonModule, JsonPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { DecimalPipe } from "@angular/common";
 import { MatButtonModule } from '@angular/material/button';
 import { ValuationService } from '../../services/valuation.service';
 
 @Component({
   selector: 'app-account-dashboard-valuation',
-  imports: [CommonModule, MatCardModule, JsonPipe, MatCardHeader, MatCardTitle, MatCardSubtitle, DecimalPipe, MatButtonModule],
+  imports: [CommonModule, MatCardModule, MatCardHeader, MatCardTitle, MatCardSubtitle, DecimalPipe, MatButtonModule],
   template: `
     <mat-card class="my-2 bg-warning">
       <mat-card-header>

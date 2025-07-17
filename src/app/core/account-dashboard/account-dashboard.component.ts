@@ -1,5 +1,4 @@
-import { JsonPipe } from '@angular/common';
-import {Component, OnDestroy, OnInit, Signal, signal} from '@angular/core';
+import {Component, OnDestroy, OnInit, signal} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {Router, RouterModule} from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -8,7 +7,6 @@ import { UserAccountDetailsComponent } from '../user-account-details/user-accoun
 import { ValuationService } from '../../services/valuation.service';
 import { inject } from '@angular/core';
 import { RegValuation } from '../../models/reg.model';
-import { MatCardModule } from '@angular/material/card';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 
@@ -16,7 +14,6 @@ import { NumberPlateFormService } from '../../services/number-plate-form.service
   selector: 'app-account-dashboard',
   standalone: true,
   imports: [
-    JsonPipe,
     MatButtonModule,
     RouterModule,
     UserAccountDetailsComponent,
