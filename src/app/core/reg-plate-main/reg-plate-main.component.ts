@@ -1,11 +1,11 @@
-import { Component, effect, OnInit } from '@angular/core';
+import { Component, effect, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatRadioModule } from '@angular/material/radio';
-import {Badge, NumberPlateType, NumberPlateTypeExamples, NumberPlateTypeObj} from "../../models/reg.model";
+import { Badge, NumberPlateType, NumberPlateTypeExamples, NumberPlateTypeObj } from "../../models/reg.model";
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { regPatternValidator } from '../../form-validators/reg-type-validators';
@@ -19,6 +19,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
+import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
+import { MatDialog } from '@angular/material/dialog';
+import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
@@ -41,6 +44,9 @@ import { MatCardModule } from '@angular/material/card';
 })
 
 export class RegPlateMainComponent implements OnInit {
+
+  dialog: MatDialog = inject(MatDialog);
+
   types: Array<NumberPlateTypeObj> = [
     { value: NumberPlateType.Current, example: NumberPlateTypeExamples.currentEg },
     { value: NumberPlateType.Prefix, example: NumberPlateTypeExamples.prefixEg },
@@ -99,59 +105,21 @@ export class RegPlateMainComponent implements OnInit {
   }
 
   onSubmit() {
-    // this.valuationMessages = [
-    //   'Putting your plate through our algorithm...',
-    //   'Remember if its not a good plate the algorithm will reject it!',
-    //   'Real valuations. Real experience. Backed by a proprietary algorithm 30 years in the making.'
-    // ];
 
-    this.valuationMessages = [
-      "Powered by 30+ years of number plate expertise. Valuations driven by my personal algorithm – precision you won’t find anywhere else.",
-      "Using a one-of-a-kind valuation algorithm built from decades of market insight. No guesswork – just real value.",
-      "Not just AI – this is experience, logic, and 30+ years of number plate savvy packed into one powerful valuation engine.",
-      "Built on 30+ years of insider knowledge. Our valuation algorithm doesn’t just follow the market – it defines it.",
-      "You’re looking at the smartest plate valuation tool online – handcrafted by a number plate veteran with 30+ years in the game.",
-      "Real valuations. Real experience. Backed by a proprietary algorithm 30 years in the making.",
-      "More than data – this valuation uses decades of intuition, trends, and industry expertise, coded into one clean result.",
-      "No generic pricing here – just intelligent, experience-backed plate valuations that reflect the real market.",
-      "Your plate’s value isn’t random. It’s calculated with care, history, and 30+ years of industry insight.",
-      "Trust the algorithm built from a lifetime in the trade – because not all valuations are created equal."
-    ];
-    
+    const dialogRef = this.dialog.open(LoadingValuationMessagesComponent, {
+      data: {
+        messages: VALUATION_LOADING_MESSAGES
+      }
+    });
 
-    this.loadingValuation = true;
-    this.currentMessageIndex = 0;
-    this.startMessageCycle();
-
-    setTimeout(() => {
-      this.loadingValuation = false;
+    dialogRef.afterClosed().subscribe(result => {
+      console.log(`Dialog result: ${result}`);
       if (this.registrationForm.valid) {
         this.sharedPlateDataService.setCurrentPlateData(this.registrationForm.value);
       } else {
         this.sharedPlateDataService.setCurrentPlateData(null);
       }
-    }, 9000);
-  }
-
-  startMessageCycle() {
-    const shownIndexes: number[] = [];
-    const maxMessages = 3;
-  
-    const interval = setInterval(() => {
-      if (shownIndexes.length >= maxMessages) {
-        clearInterval(interval); // Stop after 3 messages
-        return;
-      }
-  
-      let randomIndex: number;
-  
-      do {
-        randomIndex = Math.floor(Math.random() * this.valuationMessages.length);
-      } while (shownIndexes.includes(randomIndex)); // Avoid repeats
-  
-      shownIndexes.push(randomIndex);
-      this.currentMessageIndex = randomIndex;
-    }, 3000);
+    });
   }
 
   selectBadge(badge: Badge) {

@@ -43,15 +43,5 @@
         <span class="ms-1 toggle-text">Back</span>
     </div>
 
-    <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid">Valuate Now!</button>
-
-    <div class="container-fluid d-flex flex-column align-items-center justify-content-center my-2">
-        @if(loadingValuation) {
-            <mat-spinner class="my-2 spinner-sm"></mat-spinner>
-            <mat-card class="loading-valuation-card">
-                <span class="p-2 m-2 cabin-font-text">{{ valuationMessages[currentMessageIndex] }}</span>
-            </mat-card>
-        }
-    </div>
-    
+    <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid">Valuate Now!</button>    
 </form>

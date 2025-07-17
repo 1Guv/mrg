@@ -20,6 +20,11 @@ import { ValuationService } from '../../services/valuation.service';
       <mat-card-content>
         <!-- <pre>{{ valuation | json }}</pre> -->
          <h1 class="my-4">£{{ ( (valuation.totalPoints ?? 0) * (valuation.multiplier ?? 0)) | number: '1.2-2' }}</h1>
+
+         @if(valuation.popularityMultiplier ?? 0 > 1) {
+            <h6 class="py-2 px-2 popularity-multiplier">£{{ (valuation.totalPointsWithMultiplier ?? 0) * (valuation.popularityMultiplier ?? 0) | number: '1.2-2' }} with Popularity Multiplier of {{ valuation.popularityMultiplier }}x</h6>
+         }
+
          <h6>Min: £{{ (valuation.minPrice ?? 0) | number: '1.2-2' }}</h6>
          <h6>Max: £{{ (valuation.maxPrice ?? 0) | number: '1.2-2' }}</h6>
       </mat-card-content>
