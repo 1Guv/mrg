@@ -9,6 +9,7 @@ import { inject } from '@angular/core';
 import { RegValuation } from '../../models/reg.model';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
+import { AdminComponent } from "../admin/admin.component";
 
 @Component({
   selector: 'app-account-dashboard',
@@ -17,8 +18,9 @@ import { NumberPlateFormService } from '../../services/number-plate-form.service
     MatButtonModule,
     RouterModule,
     UserAccountDetailsComponent,
-    AccountDashboardValuationComponent
-  ],
+    AccountDashboardValuationComponent,
+    AdminComponent
+],
   templateUrl: './account-dashboard.component.html',
   styleUrl: './account-dashboard.component.scss'
 })

@@ -4,6 +4,8 @@
         <div class="py-5">
             <h1 class="h1-admin-title text-center">Account Dashboard</h1>
 
+            <app-admin [currentUser]="currentUser$()"></app-admin>
+
             <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details>
 
             @for( valuation of valuations$(); track valuation.id ){

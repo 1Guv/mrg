@@ -15,7 +15,7 @@ export enum NumberPlateTypeExamples {
     currentEg = 'FA57 CAR' ,
     prefixEg = 'F457 CAR' ,
     suffixEg = 'FAS 73R' ,
-    datelessEg = 'FAS 7' 
+    datelessEg = 'FAS7' 
 }
 
 export interface NumberPlateTypeObj {
