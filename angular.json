@@ -19,7 +19,7 @@
           "options": {
             "ssr": false,
             "outputPath": "docs",
-            "baseHref": "/mrg/",
+            "baseHref": "/",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "server": false,
