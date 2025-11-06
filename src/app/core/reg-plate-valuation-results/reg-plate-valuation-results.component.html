@@ -179,6 +179,7 @@
     <mat-card class="p-2 w-100 bg-warning">
         <div class="d-flex flex-column align-items-center justify-content-center gap-2">
             <span class="cabin-font-heading">Current:</span>
+            <span class="bevel-plate">{{ currentPlate | uppercase }}</span>
             <span class="cabin-font-text">£ {{ totalPoints * multiplier | number: '1.2-2' }}</span>
         </div>
         <hr>
@@ -219,6 +220,8 @@
             <span class="cabin-font-heading">Total: {{ totalPointsWithPopularityMultiplier }} points</span>
             <span class="cabin-font-text">£
                 {{ (totalPoints * multiplier) * (popularityMultiplier.value) | number: '1.2-2' }}</span>
+
+            <span class="bevel-plate pb-3">{{ currentPlate | uppercase }}</span>
         </div>
     </mat-card>
 
