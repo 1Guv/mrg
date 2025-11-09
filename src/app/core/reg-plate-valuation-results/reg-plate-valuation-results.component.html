@@ -117,11 +117,17 @@
                 </p>
                 Points: {{ isPlateSpacingGoodForMotPoints }}
             
-                <hr>
-            
-                <p>
-                    <label class="mb-3">Do you know the date of purchase?</label>
+            </mat-expansion-panel>
+        </mat-accordion>
+
+    </div>
+
+    <br>
+
+    <mat-card>
+        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
                     <br>
+                    <label class="mb-3 date-of-purchase-font-text">Do you know the date of purchase?</label>
                     <a 
                         rel="noopener"
                         class="my-2"
@@ -129,10 +135,17 @@
                         href="https://dvlaregistrations.dvla.gov.uk/search/previous-auction-registrations.html">
                         Click here to check
                     </a>
-                    <br><br>
+                    <!-- <a 
+                        rel="noopener"
+                        class="my-2"
+                        target="_blank" 
+                        href="https://dvlaregistrations.dvla.gov.uk/search/previous-auction-registrations.html?searched=true&plate=10+deb">
+                        Click here to check
+                    </a> -->
+                    <br>
                     <mat-slide-toggle [checked]="isDateOfPurchaseKnown" (change)="isDateOfPurchaseKnownToggle($event)">
                     </mat-slide-toggle>
-                </p>
+                
 
 
                 <p>
@@ -147,14 +160,11 @@
                         </mat-form-field>
                     </ng-container>
                 </p>
-                Points: {{ dateOfPurchaseKnownPoints }}
+                <span class="cabin-font-heading">Points: {{ dateOfPurchaseKnownPoints }}</span>
+                <span class="cabin-font-heading">Years {{ yearsOld }} x DOP Multiplier {{ calcDateOfPurchaseMultiplierPoints() }}</span>
                 <br>
-                (Years {{ yearsOld }} x DOP Multiplier {{ calcDateOfPurchaseMultiplierPoints() }})
-
-            </mat-expansion-panel>
-        </mat-accordion>
-
-    </div>
+        </div>
+    </mat-card>
 
     <br>
 

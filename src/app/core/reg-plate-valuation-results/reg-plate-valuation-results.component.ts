@@ -151,8 +151,9 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
 
   calcHowManyNumbersPoints():number {
     let count = 0;
-    for (let i = 0; i < this.currentPlate?.length; i++) {
-      const char = this.currentPlate[i];
+    let plateWithNoSpacing = this.removePlateSpacing(this.currentPlate);
+    for (let i = 0; i < plateWithNoSpacing?.length; i++) {
+      const char = plateWithNoSpacing[i];
       const isNumber = "0123456789".includes(char);
       if (isNumber) {
         count++;
@@ -164,8 +165,9 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
 
   calcHowManyLettersPoints():number {
     let count = 0;
-    for (let i = 0; i < this.currentPlate?.length; i++) {
-      const char = this.currentPlate[i].toUpperCase();
+    let plateWithNoSpacing = this.removePlateSpacing(this.currentPlate);
+    for (let i = 0; i < plateWithNoSpacing?.length; i++) {
+      const char = plateWithNoSpacing[i].toUpperCase();
       const isLetter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(char);
       if (isLetter) {
         count++;
@@ -190,7 +192,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   }
 
   calcPlateLengthPoints():number {
-    switch (this.currentPlate?.length) {
+    switch (this.removePlateSpacing(this.currentPlate)?.length) {
       case 6:
         return DatelessRegLength._6;
       case 5:
@@ -206,7 +208,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   }
 
   calcPlateFirstCharacterPoints(): number {
-    const isFirstCharNumber = "0123456789".includes(this.currentPlate?.[0]);
+    const isFirstCharNumber = "0123456789".includes(this.removePlateSpacing(this.currentPlate)?.[0]);
     if (isFirstCharNumber) {
       return DatelessReg.numberFirst;
     } else {
@@ -217,8 +219,9 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   calcPlateCharacterPoints() {
     this.charPoints = [];
     let points = 0;
-    for (let i = 0; i < this.currentPlate?.length; i++) {
-      const char = this.currentPlate[i];
+    let plateWithNoSpacing = this.removePlateSpacing(this.currentPlate);
+    for (let i = 0; i < plateWithNoSpacing?.length; i++) {
+      const char = plateWithNoSpacing[i];
       const isNumber = "0123456789".includes(char);
       if (isNumber) {
         points += DigitValues[`_${char}` as keyof typeof DigitValues];
@@ -292,11 +295,11 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   }
   
   calcDateOfPurchaseMultiplierPoints() {
-    return this.DatelessYearMultiplier[`_${this.currentPlate?.length}` as keyof typeof this.DatelessYearMultiplier];
+    return this.DatelessYearMultiplier[`_${this.removePlateSpacing(this.currentPlate)?.length}` as keyof typeof this.DatelessYearMultiplier];
   }
 
   calcMultiplierPoints() {
-    return this.DatelessRegMultiplier[`_${this.currentPlate?.length}` as keyof typeof this.DatelessRegMultiplier];
+    return this.DatelessRegMultiplier[`_${this.removePlateSpacing(this.currentPlate)?.length}` as keyof typeof this.DatelessRegMultiplier];
   }
 
   calcTotalPoints() {
@@ -446,6 +449,10 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
       minMultiplier: MinMaxTotals.min,
       maxMultiplier: MinMaxTotals.max,
     }
+  }
+
+  removePlateSpacing(plate: string): string {
+    return plate?.replace(/\s/g, '');
   }
 
   ngOnDestroy(): void {

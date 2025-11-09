@@ -34,7 +34,8 @@ export enum DatelessYearMultiplier {
 export enum DatelessHowManyNumbersMultiplier {
     _1 = 10000,
     _2 = 1000,
-    _3 = 300
+    _3 = 300,
+    _4 = 250
 }
 
 export enum DatelessHowManyLettersMultiplier {
