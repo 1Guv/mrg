@@ -102,6 +102,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   startDate = moment();
   yearOfPurchase: FormControl<moment.Moment | null> = new FormControl<moment.Moment | null>(null);
   yearsOld: number = 0;
+  yearOfPurchasePrice: FormControl<number | null> = new FormControl<number | null>(null);
 
   howManyNumbers: number = 0;
   howManyNumbersPoints: number = DatelessHowManyNumbersMultiplier[`_${this.howManyNumbers}` as keyof typeof DatelessHowManyNumbersMultiplier];
@@ -273,6 +274,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
     this.isDateOfPurchaseKnown = event.checked;
     if (!event.checked) {
       this.yearOfPurchase.setValue(null);
+      this.yearOfPurchasePrice.setValue(null);
       this.dateOfPurchaseKnownPoints = 0;
       this.yearsOld = 0;
     }
@@ -340,6 +342,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
     this.isPlateSpacingGoodForMotPoints = 0;
     this.isDateOfPurchaseKnown = false;
     this.yearOfPurchase.setValue(null);
+    this.yearOfPurchasePrice.setValue(null);
     this.dateOfPurchaseKnownPoints = 0;
     this.yearsOld = 0;
     this.popularityMultiplier.setValue(0);

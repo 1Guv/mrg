@@ -67,7 +67,7 @@
                 }
 
             </mat-expansion-panel>
-            <mat-expansion-panel [expanded]="true" (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
+            <mat-expansion-panel (opened)="panelOpenState.set(true)" (closed)="panelOpenState.set(false)">
                 <mat-expansion-panel-header>
                     <mat-panel-title> Questions </mat-panel-title>
                     <mat-panel-description>
@@ -145,8 +145,6 @@
                     <br>
                     <mat-slide-toggle [checked]="isDateOfPurchaseKnown" (change)="isDateOfPurchaseKnownToggle($event)">
                     </mat-slide-toggle>
-                
-
 
                 <p>
                     <ng-container *ngIf="isDateOfPurchaseKnown">
@@ -157,6 +155,12 @@
                             <mat-datepicker #dp [startView]="'multi-year'" [startAt]="startDate"
                                 (yearSelected)="calcDateOfPurchaseKnownPoints($event, dp)" panelClass="month-picker">
                             </mat-datepicker>
+                        </mat-form-field>
+
+                        <mat-form-field class="w-100">
+                            <mat-label>Purchase Price</mat-label>
+                            <span matPrefix>&nbsp;£&nbsp;</span>
+                            <input matInput type="number" [formControl]="yearOfPurchasePrice" placeholder="Purchase Price">
                         </mat-form-field>
                     </ng-container>
                 </p>
@@ -204,6 +208,21 @@
     </mat-card>
 
     <br>
+
+    @if (isDateOfPurchaseKnown && yearOfPurchasePrice.value !== null && yearOfPurchasePrice.value > 0) {
+        <br>
+        <mat-card class="p-2 w-100 text-bg-success">
+            <span>Percentage increase is <b>{{ (((totalPoints * multiplier) - yearOfPurchasePrice.value) / yearOfPurchasePrice.value) * 100 | number: '1.2-2' }}%</b> over {{ yearsOld }} years</span>
+        </mat-card>
+        <br>
+    }
+
+    @if (isDateOfPurchaseKnown && yearOfPurchasePrice.value !== null && yearOfPurchasePrice.value > 0) {
+        <mat-card class="p-2 w-100 text-bg-success">
+            <span>Possible potential profit is <b>£{{ (totalPoints * multiplier) - yearOfPurchasePrice.value | number: '1.2-2' }}</b></span>
+        </mat-card>
+        <br>
+    }
 
     <mat-card>
         <div class="d-flex flex-column align-items-center justify-content-center gap-2 bg-aquamarine rounded-4">
