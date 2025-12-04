@@ -148,7 +148,7 @@
 
                 <p>
                     <ng-container *ngIf="isDateOfPurchaseKnown">
-                        <mat-form-field class="w-100">
+                        <mat-form-field class="w-100 px-3">
                             <input matInput [matDatepicker]="dp" placeholder="Year" [formControl]="yearOfPurchase"
                                 (click)="dp.open()" [min]="minDate" [max]="maxDate" readonly="true">
                             <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
@@ -157,7 +157,7 @@
                             </mat-datepicker>
                         </mat-form-field>
 
-                        <mat-form-field class="w-100">
+                        <mat-form-field class="w-100 px-3">
                             <mat-label>Purchase Price</mat-label>
                             <span matPrefix>&nbsp;£&nbsp;</span>
                             <input matInput type="number" [formControl]="yearOfPurchasePrice" placeholder="Purchase Price">
@@ -263,7 +263,7 @@
     </p>
 
 
-    <div class="pt-2 pb-5">
+    <!-- <div class="pt-2 pb-5">
         <p>Benchmark your plate against similar registrations?</p>
         <p><mat-slide-toggle>Check against DVLA sold plates</mat-slide-toggle></p>
         <p><mat-slide-toggle>Check against private sellers</mat-slide-toggle></p>
@@ -271,6 +271,6 @@
         <div class="d-flex justify-content-center">
             <button mat-button type="button">Get More Insights for £100</button>
         </div>
-    </div>
+    </div> -->
     }
 </div>
