@@ -12,7 +12,7 @@ import {
   deleteDoc,
   updateDoc
 } from '@angular/fire/firestore';
-import { Observable, of, switchMap } from 'rxjs';
+import { Observable, of, switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -86,5 +86,24 @@ export class ValuationService {
         })
       )
       .subscribe();
+  }
+
+  savePlateSearch(registration: string, type: string, badge: string, frontBack: boolean) {
+    const searchesRef = collection(this.firestore, 'plate_searches');
+    const payload: any = {
+      registration,
+      type,
+      badge,
+      frontBack,
+      searchedAt: new Date()
+    };
+
+    return this.authService.currentUser$.pipe(
+      take(1),
+      switchMap((user) => {
+        if (user) payload['userId'] = user.uid;
+        return addDoc(searchesRef, payload);
+      })
+    );
   }
 }

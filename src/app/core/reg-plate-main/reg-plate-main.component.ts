@@ -17,6 +17,7 @@ import { SharedPlateDataService } from '../../services/shared-plate-data.service
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
+import { ValuationService } from '../../services/valuation.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
@@ -80,7 +81,8 @@ export class RegPlateMainComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private sharedPlateDataService: SharedPlateDataService,
-    private numberPlateFormService: NumberPlateFormService
+    private numberPlateFormService: NumberPlateFormService,
+    private valuationService: ValuationService
   ) {
     effect(() => {
       if (this.numberPlateFormService.resetSignal()) {
@@ -105,6 +107,18 @@ export class RegPlateMainComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.registrationForm.valid) {
+      const { registration, type } = this.registrationForm.value;
+      this.valuationService.savePlateSearch(
+        registration?.toUpperCase(),
+        type?.value ?? '',
+        this.selectedBadge.code,
+        this.frontBack
+      ).subscribe({
+        next: (ref) => console.log('Plate search saved:', ref.id),
+        error: (err) => console.error('Failed to save plate search:', err)
+      });
+    }
 
     const dialogRef = this.dialog.open(LoadingValuationMessagesComponent, {
       data: {
