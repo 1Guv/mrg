@@ -90,6 +90,7 @@ export class ValuationService {
 
   savePlateSearch(registration: string, type: string, badge: string, frontBack: boolean) {
     const searchesRef = collection(this.firestore, 'plate_searches');
+    const mailRef = collection(this.firestore, 'mail');
     const payload: any = {
       registration,
       type,
@@ -102,6 +103,20 @@ export class ValuationService {
       take(1),
       switchMap((user) => {
         if (user) payload['userId'] = user.uid;
+        addDoc(mailRef, {
+          to: ['guv.mr.valuations@gmail.com'],
+          message: {
+            subject: `New Plate Search: ${registration}`,
+            html: `
+              <h2>New plate search on MRG</h2>
+              <p><strong>Plate:</strong> ${registration}</p>
+              <p><strong>Type:</strong> ${type}</p>
+              <p><strong>Badge:</strong> ${badge}</p>
+              <p><strong>User:</strong> ${user ? user.email ?? user.uid : 'Guest'}</p>
+              <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
+            `
+          }
+        });
         return addDoc(searchesRef, payload);
       })
     );

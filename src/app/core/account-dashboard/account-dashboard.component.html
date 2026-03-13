@@ -1,16 +1,33 @@
-
 @if( currentUser$() ){
     <div class="container-fluid container-color">
         <div class="py-5">
             <h1 class="h1-admin-title text-center">Account Dashboard</h1>
 
-            <app-admin [currentUser]="currentUser$()"></app-admin>
+            <mat-tab-group animationDuration="200ms" class="dashboard-tabs">
 
-            <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details>
+                <mat-tab [label]="'Plate Searches (' + plateSearches$().length + ')'">
+                    <div class="tab-content">
+                        <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()"></app-admin>
+                    </div>
+                </mat-tab>
 
-            @for( valuation of valuations$(); track valuation.id ){
-                <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
-            }
+                <mat-tab label="User Details">
+                    <div class="tab-content">
+                        <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details>
+                    </div>
+                </mat-tab>
+
+                <mat-tab [label]="'Saved Valuations (' + valuations$().length + ')'">
+                    <div class="tab-content">
+                        @for( valuation of valuations$(); track valuation.id ){
+                            <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
+                        } @empty {
+                            <p class="text-muted mt-3 text-center">No saved valuations yet.</p>
+                        }
+                    </div>
+                </mat-tab>
+
+            </mat-tab-group>
 
             <button type="button" class="my-3 mx-auto d-block" color="accent" mat-raised-button [disabled]="!currentUser$()" (click)="signOut()">Sign Out</button>
 

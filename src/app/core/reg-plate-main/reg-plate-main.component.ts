@@ -114,10 +114,7 @@ export class RegPlateMainComponent implements OnInit {
         type?.value ?? '',
         this.selectedBadge.code,
         this.frontBack
-      ).subscribe({
-        next: (ref) => console.log('Plate search saved:', ref.id),
-        error: (err) => console.error('Failed to save plate search:', err)
-      });
+      ).subscribe();
     }
 
     const dialogRef = this.dialog.open(LoadingValuationMessagesComponent, {
@@ -127,7 +124,6 @@ export class RegPlateMainComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log(`Dialog result: ${result}`);
       if (this.registrationForm.valid) {
         this.sharedPlateDataService.setCurrentPlateData(this.registrationForm.value);
       } else {
