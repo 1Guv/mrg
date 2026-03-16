@@ -88,6 +88,11 @@ export class ValuationService {
       .subscribe();
   }
 
+  saveFeatureRequest(type: string, registration: string) {
+    const ref = collection(this.firestore, 'feature_requests');
+    return addDoc(ref, { type, registration, requestedAt: new Date() });
+  }
+
   savePlateSearch(registration: string, type: string, badge: string, frontBack: boolean) {
     const searchesRef = collection(this.firestore, 'plate_searches');
     const mailRef = collection(this.firestore, 'mail');

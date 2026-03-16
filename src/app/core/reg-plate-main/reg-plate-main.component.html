@@ -3,15 +3,15 @@
     <mat-form-field class="w-100">
         <mat-label>Number plate type</mat-label>
         <mat-select formControlName="type">
-            @for (type of types; track type; let last = $last) {
-            <mat-option [value]="type" [disabled]="!last">
-                {{type.value | titlecase}} like 
+            @for (type of types; track type) {
+            <mat-option [value]="type">
+                {{type.value | titlecase}} like
                 <span class="regInSelect">{{type.example}}</span>
-                <span *ngIf="!last" class="coming-soon">Coming Soon</span>
             </mat-option>
             }
         </mat-select>
     </mat-form-field>
+
     <mat-error *ngIf="registrationForm.get('registration')?.hasError('error')">
         {{ registrationForm.get('registration')?.errors?.['error']?.message }}
     </mat-error>
@@ -43,5 +43,12 @@
         <span class="ms-1 toggle-text">Back</span>
     </div>
 
-    <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid">Valuate Now!</button>
+    @if (thumbsUpGiven) {
+        <div class="unsupported-type">
+            <p class="unsupported-msg">🚀 Dateless plates only for now — but we're working hard to bring {{ selectedTypeName }} valuations to you very soon. Watch this space!</p>
+            <button mat-raised-button type="button" class="valuate-now" (click)="startOver()">Start Over</button>
+        </div>
+    } @else {
+        <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid && !isUnsupportedType">Valuate Now!</button>
+    }
 </form>

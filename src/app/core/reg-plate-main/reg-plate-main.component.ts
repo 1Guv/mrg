@@ -77,6 +77,17 @@ export class RegPlateMainComponent implements OnInit {
   loadingValuation = false;
   valuationMessages: string[] = [];
   currentMessageIndex = 0;
+  thumbsUpGiven = false;
+
+  get isUnsupportedType(): boolean {
+    const type = this.registrationForm.get('type')?.value?.value;
+    return !!type && type !== NumberPlateType.Dateless;
+  }
+
+  get selectedTypeName(): string {
+    const type = this.registrationForm.get('type')?.value?.value as string;
+    return type ? type.charAt(0).toUpperCase() + type.slice(1) : '';
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -97,6 +108,7 @@ export class RegPlateMainComponent implements OnInit {
     this.registrationForm.get('type')?.valueChanges.subscribe((value) => {
       const regField = this.registrationForm.get('registration');
       this.toggleRegValidators(regField);
+      this.thumbsUpGiven = false;
     });
 
     this.registrationForm.get('registration')?.valueChanges.subscribe((value) => {
@@ -107,6 +119,18 @@ export class RegPlateMainComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.isUnsupportedType) {
+      const { registration, type } = this.registrationForm.value;
+      this.valuationService.savePlateSearch(
+        registration?.toUpperCase() ?? '',
+        type?.value ?? '',
+        this.selectedBadge.code,
+        this.frontBack
+      ).subscribe();
+      this.onFeatureRequest();
+      return;
+    }
+
     if (this.registrationForm.valid) {
       const { registration, type } = this.registrationForm.value;
       this.valuationService.savePlateSearch(
@@ -130,6 +154,19 @@ export class RegPlateMainComponent implements OnInit {
         this.sharedPlateDataService.setCurrentPlateData(null);
       }
     });
+  }
+
+  onFeatureRequest() {
+    this.thumbsUpGiven = true;
+    const type = this.registrationForm.get('type')?.value?.value ?? 'unknown';
+    const registration = this.registrationForm.get('registration')?.value?.toUpperCase() ?? '';
+    this.valuationService.saveFeatureRequest(type, registration);
+  }
+
+  startOver() {
+    this.thumbsUpGiven = false;
+    this.registrationForm.reset();
+    this.sharedPlateDataService.setCurrentPlateData(null);
   }
 
   selectBadge(badge: Badge) {
@@ -183,10 +220,12 @@ export class RegPlateMainComponent implements OnInit {
           regPatternValidator(
             datelessPattern,
             'error',
-            // 'The format should be XXX YYY or YYY XXX.'
             'This is not a valid dateless number plate format.'
           )
         ])
+        break;
+      default:
+        regField?.clearValidators();
         break;
     }
     regField?.updateValueAndValidity();
