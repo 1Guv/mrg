@@ -53,7 +53,8 @@ export const MY_FORMATS = {
         MatDatepickerModule,
         MatNativeDateModule,
       MatSliderModule,
-      MatExpansionModule
+      MatExpansionModule,
+      MatSnackBarModule
     ],
     templateUrl: './reg-plate-valuation-results.component.html',
     styleUrl: './reg-plate-valuation-results.component.scss',
@@ -114,6 +115,8 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   totalPointsWithPopularityMultiplier: number = 0;
   readonly panelOpenState = signal(false);
   subscriptions: Subscription[] = [];
+  feedbackGiven = false;
+  feedbackAgreed: boolean | null = null;
 
   private valuationService = inject(ValuationService);
   private authService = inject(AuthService);
@@ -329,6 +332,43 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   onResetPlateForm() {
     this.resetValuation();
     this.numberPlateFormService.triggerReset();
+    this.feedbackGiven = false;
+    this.feedbackAgreed = null;
+  }
+
+  get shareText(): string {
+    const plate = this.currentPlate.toUpperCase();
+    const price = (this.totalPoints * this.multiplier).toFixed(2);
+    return `${plate} has been valued at £${price} on MR Valuations!`;
+  }
+
+  get whatsappShareUrl(): string {
+    return `https://wa.me/?text=${encodeURIComponent(this.shareText)}`;
+  }
+
+  get facebookShareUrl(): string {
+    return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(this.shareText)}`;
+  }
+
+  onShare() {
+    if (navigator.share) {
+      navigator.share({ title: 'MR Valuations', text: this.shareText, url: window.location.href });
+    } else {
+      this.onCopyToClipboard();
+    }
+  }
+
+  onCopyToClipboard() {
+    navigator.clipboard.writeText(this.shareText);
+    this.snackBar.open('Valuation copied to clipboard!', 'Close', { duration: 3000 });
+  }
+
+  onFeedback(agreed: boolean) {
+    this.feedbackGiven = true;
+    this.feedbackAgreed = agreed;
+    const price = this.totalPoints * this.multiplier;
+    const popularityMultiplier = this.popularityMultiplier.value;
+    this.valuationService.saveFeedback(this.currentPlate.toUpperCase(), price, agreed, popularityMultiplier).subscribe();
   }
 
   resetValuation() {

@@ -52,24 +52,7 @@ export class LoadingValuationMessagesComponent implements OnInit {
   }
 
   startMessageCycle() {
-    const shownIndexes: number[] = [];
-    const maxMessages = 3;
-  
-    const interval = setInterval(() => {
-      if (shownIndexes.length >= maxMessages) {
-        clearInterval(interval); // Stop after 3 messages
-        this.dialogRef.close();
-        return;
-      }
-  
-      let randomIndex: number;
-  
-      do {
-        randomIndex = Math.floor(Math.random() * this.valuationMessages.length);
-      } while (shownIndexes.includes(randomIndex)); // Avoid repeats
-  
-      shownIndexes.push(randomIndex);
-      this.currentMessageIndex = randomIndex;
-    }, 3000);
+    this.currentMessageIndex = Math.floor(Math.random() * this.valuationMessages.length);
+    setTimeout(() => this.dialogRef.close(), 2000);
   }
 }

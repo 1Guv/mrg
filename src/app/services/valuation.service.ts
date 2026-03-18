@@ -88,6 +88,34 @@ export class ValuationService {
       .subscribe();
   }
 
+  saveFeedback(registration: string, valuation: number, agreed: boolean, popularityMultiplier: number) {
+    const ref = collection(this.firestore, 'valuation_feedback');
+    const mailRef = collection(this.firestore, 'mail');
+    const payload: any = { registration, valuation, agreed, popularityMultiplier, submittedAt: new Date() };
+    return this.authService.currentUser$.pipe(
+      take(1),
+      switchMap((user) => {
+        if (user) payload['userId'] = user.uid;
+        addDoc(mailRef, {
+          to: ['guv.mr.valuations@gmail.com'],
+          message: {
+            subject: `Valuation Feedback: ${registration}`,
+            html: `
+              <h2>New valuation feedback on MRG</h2>
+              <p><strong>Plate:</strong> ${registration}</p>
+              <p><strong>Valuation:</strong> £${valuation.toFixed(2)}</p>
+              <p><strong>Popularity Multiplier:</strong> ${popularityMultiplier}x</p>
+              <p><strong>Agreed:</strong> ${agreed ? '👍 Yes' : '👎 No'}</p>
+              <p><strong>User:</strong> ${user ? user.email ?? user.uid : 'Guest'}</p>
+              <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
+            `
+          }
+        });
+        return addDoc(ref, payload);
+      })
+    );
+  }
+
   saveFeatureRequest(type: string, registration: string) {
     const ref = collection(this.firestore, 'feature_requests');
     return addDoc(ref, { type, registration, requestedAt: new Date() });
