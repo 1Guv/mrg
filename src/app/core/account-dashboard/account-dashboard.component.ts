@@ -11,7 +11,7 @@ import { RegValuation } from '../../models/reg.model';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { AdminComponent } from "../admin/admin.component";
-import { AdminService, PlateSearch } from '../../services/admin.service';
+import { AdminService, AutoValuation, PlateSearch } from '../../services/admin.service';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -37,6 +37,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   private numberPlateFormService = inject(NumberPlateFormService);
   valuations$ = signal<RegValuation[]>([]);
   plateSearches$ = signal<PlateSearch[]>([]);
+  autoValuations$ = signal<AutoValuation[]>([]);
 
   constructor(
     private router: Router,
@@ -68,6 +69,12 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
       this.adminService
         .getPlateSearches()
         .subscribe((searches) => this.plateSearches$.set(searches))
+    );
+
+    this.subs.add(
+      this.adminService
+        .getAutoValuations()
+        .subscribe((valuations) => this.autoValuations$.set(valuations))
     );
   }
 

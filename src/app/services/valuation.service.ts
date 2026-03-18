@@ -121,7 +121,35 @@ export class ValuationService {
     return addDoc(ref, { type, registration, requestedAt: new Date() });
   }
 
-  savePlateSearch(registration: string, type: string, badge: string, frontBack: boolean) {
+  autoSaveValuation(registration: string, price: number, type: string, minPrice: number, maxPrice: number) {
+    const ref = collection(this.firestore, 'auto_valuations');
+    const mailRef = collection(this.firestore, 'mail');
+    const payload: any = { registration, price, type, minPrice, maxPrice, savedAt: new Date() };
+    return this.authService.currentUser$.pipe(
+      take(1),
+      switchMap((user) => {
+        if (user) payload['userId'] = user.uid;
+        addDoc(mailRef, {
+          to: ['guv.mr.valuations@gmail.com'],
+          message: {
+            subject: `New Valuation: ${registration}`,
+            html: `
+              <h2>New valuation on MRG</h2>
+              <p><strong>Plate:</strong> ${registration}</p>
+              <p><strong>Type:</strong> ${type}</p>
+              <p><strong>Valuation:</strong> £${price.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p><strong>Min:</strong> £${minPrice.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &nbsp; <strong>Max:</strong> £${maxPrice.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p><strong>User:</strong> ${user ? user.email ?? user.uid : 'Guest'}</p>
+              <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
+            `
+          }
+        });
+        return addDoc(ref, payload);
+      })
+    );
+  }
+
+  savePlateSearch(registration: string, type: string, badge: string, frontBack: boolean, sendEmail = true) {
     const searchesRef = collection(this.firestore, 'plate_searches');
     const mailRef = collection(this.firestore, 'mail');
     const payload: any = {
@@ -136,20 +164,22 @@ export class ValuationService {
       take(1),
       switchMap((user) => {
         if (user) payload['userId'] = user.uid;
-        addDoc(mailRef, {
-          to: ['guv.mr.valuations@gmail.com'],
-          message: {
-            subject: `New Plate Search: ${registration}`,
-            html: `
-              <h2>New plate search on MRG</h2>
-              <p><strong>Plate:</strong> ${registration}</p>
-              <p><strong>Type:</strong> ${type}</p>
-              <p><strong>Badge:</strong> ${badge}</p>
-              <p><strong>User:</strong> ${user ? user.email ?? user.uid : 'Guest'}</p>
-              <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
-            `
-          }
-        });
+        if (sendEmail) {
+          addDoc(mailRef, {
+            to: ['guv.mr.valuations@gmail.com'],
+            message: {
+              subject: `New Plate Search: ${registration}`,
+              html: `
+                <h2>New plate search on MRG</h2>
+                <p><strong>Plate:</strong> ${registration}</p>
+                <p><strong>Type:</strong> ${type}</p>
+                <p><strong>Badge:</strong> ${badge}</p>
+                <p><strong>User:</strong> ${user ? user.email ?? user.uid : 'Guest'}</p>
+                <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
+              `
+            }
+          });
+        }
         return addDoc(searchesRef, payload);
       })
     );

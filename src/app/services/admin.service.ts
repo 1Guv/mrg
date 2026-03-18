@@ -19,12 +19,29 @@ export interface PlateSearch {
   userId?: string;
 }
 
+export interface AutoValuation {
+  id?: string;
+  registration: string;
+  price: number;
+  type: string;
+  minPrice: number;
+  maxPrice: number;
+  savedAt: any;
+  userId?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
   private authService = inject(AuthService);
   private firestore = inject(Firestore);
+
+  getAutoValuations(): Observable<AutoValuation[]> {
+    const ref = collection(this.firestore, 'auto_valuations');
+    const q = query(ref, orderBy('savedAt', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<AutoValuation[]>;
+  }
 
   getPlateSearches(): Observable<PlateSearch[]> {
     const ref = collection(this.firestore, 'plate_searches');

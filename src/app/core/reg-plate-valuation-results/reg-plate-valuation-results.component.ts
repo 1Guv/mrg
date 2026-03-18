@@ -145,6 +145,15 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
         this.calcMaxPrice();
         this.popularityMultiplier.setValue(Math.round(1));
         this.calculateTotalWithPopularityMultiplier();
+        if (data) {
+          this.valuationService.autoSaveValuation(
+            this.currentPlate?.toUpperCase(),
+            this.totalPoints * this.multiplier,
+            this.currentPlateType,
+            this.minPrice,
+            this.maxPrice
+          ).subscribe();
+        }
       })
     );
   }

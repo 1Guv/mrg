@@ -7,7 +7,7 @@
 
                 <mat-tab [label]="'Plate Searches (' + plateSearches$().length + ')'">
                     <div class="tab-content">
-                        <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()"></app-admin>
+                        <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()" [autoValuations]="autoValuations$()"></app-admin>
                     </div>
                 </mat-tab>
 

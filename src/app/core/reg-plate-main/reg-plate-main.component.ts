@@ -131,16 +131,6 @@ export class RegPlateMainComponent implements OnInit {
       return;
     }
 
-    if (this.registrationForm.valid) {
-      const { registration, type } = this.registrationForm.value;
-      this.valuationService.savePlateSearch(
-        registration?.toUpperCase(),
-        type?.value ?? '',
-        this.selectedBadge.code,
-        this.frontBack
-      ).subscribe();
-    }
-
     const dialogRef = this.dialog.open(LoadingValuationMessagesComponent, {
       data: {
         messages: VALUATION_LOADING_MESSAGES
