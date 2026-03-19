@@ -17,3 +17,10 @@ th {
   font-weight: 600;
   color: #003399;
 }
+
+.type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}

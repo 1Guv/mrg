@@ -1,8 +1,9 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { AutoValuation, PlateSearch } from '../../services/admin.service';
 
 @Component({
@@ -12,6 +13,7 @@ import { AutoValuation, PlateSearch } from '../../services/admin.service';
     MatCardModule,
     MatTableModule,
     MatExpansionModule,
+    MatButtonToggleModule,
   ],
   template: `
     @if(currentUser()?.email === 'gurvinder.singh.sandhu@gmail.com' && currentUser()?.emailVerified){
@@ -69,13 +71,19 @@ import { AutoValuation, PlateSearch } from '../../services/admin.service';
                 <mat-expansion-panel-header>
                   <mat-panel-title>Other Users</mat-panel-title>
                   <mat-panel-description>
-                    <span class="search-count">{{ otherSearches().length }}</span>
+                    <span class="search-count">{{ filteredOtherSearches().length }}</span>
                   </mat-panel-description>
                 </mat-expansion-panel-header>
                 @if(otherSearches().length === 0){
                   <p class="text-muted mt-2">No searches from other users yet.</p>
                 } @else {
-                  <table mat-table [dataSource]="otherSearches()" class="w-100 mt-2">
+                  <mat-button-toggle-group class="type-filter mt-3" [value]="selectedSearchType()" (change)="selectedSearchType.set($event.value)">
+                    <mat-button-toggle value="">All ({{ otherSearches().length }})</mat-button-toggle>
+                    @for(type of otherSearchTypes(); track type){
+                      <mat-button-toggle [value]="type">{{ type }} ({{ searchCountByType(type) }})</mat-button-toggle>
+                    }
+                  </mat-button-toggle-group>
+                  <table mat-table [dataSource]="filteredOtherSearches()" class="w-100 mt-2">
                     <ng-container matColumnDef="registration">
                       <th mat-header-cell *matHeaderCellDef>Plate</th>
                       <td mat-cell *matCellDef="let s"><strong>{{ s.registration }}</strong></td>
@@ -235,6 +243,21 @@ export class AdminComponent {
   otherSearches = computed(() =>
     this.searches().filter((s) => s.userId !== this.currentUser()?.uid)
   );
+
+  selectedSearchType = signal('');
+
+  otherSearchTypes = computed(() =>
+    [...new Set(this.otherSearches().map((s) => s.type))].sort()
+  );
+
+  filteredOtherSearches = computed(() => {
+    const type = this.selectedSearchType();
+    return type ? this.otherSearches().filter((s) => s.type === type) : this.otherSearches();
+  });
+
+  searchCountByType(type: string): number {
+    return this.otherSearches().filter((s) => s.type === type).length;
+  }
 
   myAutoValuations = computed(() =>
     this.autoValuations().filter((v) => v.userId === this.currentUser()?.uid)
