@@ -7,20 +7,20 @@
     <div class="name-row">
       <mat-form-field appearance="fill" class="half-field">
         <mat-label>First Name</mat-label>
-        <input matInput formControlName="firstName" autocomplete="given-name">
+        <input matInput formControlName="firstName" autocomplete="given-name" placeholder="First name">
         <mat-error>First name is required</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="half-field">
         <mat-label>Last Name</mat-label>
-        <input matInput formControlName="lastName" autocomplete="family-name">
+        <input matInput formControlName="lastName" autocomplete="family-name" placeholder="Last name">
         <mat-error>Last name is required</mat-error>
       </mat-form-field>
     </div>
 
     <mat-form-field appearance="fill" class="full-field">
       <mat-label>Email Address</mat-label>
-      <input matInput type="email" formControlName="email" autocomplete="email">
+      <input matInput type="email" formControlName="email" autocomplete="email" placeholder="your@email.com">
       @if (form.get('email')?.hasError('required')) {
         <mat-error>Email is required</mat-error>
       }
