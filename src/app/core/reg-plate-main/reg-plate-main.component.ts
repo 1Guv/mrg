@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatRadioModule } from '@angular/material/radio';
-import { Badge, NumberPlateType, NumberPlateTypeExamples, NumberPlateTypeObj } from "../../models/reg.model";
+import { Badge, NumberPlateType, NumberPlateTypeExamples, NumberPlateTypeObj, UserDetails } from "../../models/reg.model";
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { regPatternValidator } from '../../form-validators/reg-type-validators';
@@ -18,11 +18,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { ValuationService } from '../../services/valuation.service';
+import { AuthService } from '../../services/auth.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
 import { MatDialog } from '@angular/material/dialog';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
+import { UserDetailsDialogComponent } from '../dialogs/user-details-dialog/user-details-dialog.component';
+import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
@@ -93,7 +96,8 @@ export class RegPlateMainComponent implements OnInit {
     private fb: FormBuilder,
     private sharedPlateDataService: SharedPlateDataService,
     private numberPlateFormService: NumberPlateFormService,
-    private valuationService: ValuationService
+    private valuationService: ValuationService,
+    private authService: AuthService
   ) {
     effect(() => {
       if (this.numberPlateFormService.resetSignal()) {
@@ -118,7 +122,19 @@ export class RegPlateMainComponent implements OnInit {
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
+    const user = await firstValueFrom(this.authService.currentUser$);
+
+    if (!user) {
+      const detailsDialogRef = this.dialog.open(UserDetailsDialogComponent, {
+        width: '520px',
+        disableClose: true
+      });
+      const details: UserDetails | undefined = await firstValueFrom(detailsDialogRef.afterClosed());
+      if (!details) return;
+      this.valuationService.setUserDetails(details);
+    }
+
     if (this.isUnsupportedType) {
       const { registration, type } = this.registrationForm.value;
       this.valuationService.savePlateSearch(

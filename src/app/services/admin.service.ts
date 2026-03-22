@@ -17,6 +17,11 @@ export interface PlateSearch {
   frontBack: boolean;
   searchedAt: any;
   userId?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  city?: string;
+  plateMeaning?: string;
 }
 
 export interface AutoValuation {
@@ -28,6 +33,11 @@ export interface AutoValuation {
   maxPrice: number;
   savedAt: any;
   userId?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  city?: string;
+  plateMeaning?: string;
 }
 
 @Injectable({

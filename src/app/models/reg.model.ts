@@ -23,12 +23,24 @@ export interface NumberPlateTypeObj {
     example: NumberPlateTypeExamples;
 }
 
+export interface UserDetails {
+  firstName: string;
+  lastName: string;
+  email: string;
+  city: string;
+  plateMeaning: string;
+}
+
 export interface RegValuation {
     id?: string;
     type?: NumberPlateType;
     registration?: string;
     badge?: Badge;
     frontBack?: boolean;
+    firstName?: string;
+    lastName?: string;
+    city?: string;
+    plateMeaning?: string;
     plateTypePoints?: number;
     howManyNumbersPoints?: number;
     howManyLettersPoints?: number;
