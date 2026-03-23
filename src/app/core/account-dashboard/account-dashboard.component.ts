@@ -78,6 +78,11 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  get isAdmin(): boolean {
+    const user = this.currentUser$() as any;
+    return user?.email === 'gurvinder.singh.sandhu@gmail.com' && user?.emailVerified;
+  }
+
   async signOut(): Promise<void> {
     await this.authService.logout();
     await this.router.navigateByUrl('/login');
