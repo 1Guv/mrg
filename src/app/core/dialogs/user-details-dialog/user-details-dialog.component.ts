@@ -70,7 +70,13 @@ export class UserDetailsDialogComponent implements OnInit {
     const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10) + '!A1';
 
     try {
-      await this.authService.register(email, randomPassword);
+      const credential = await this.authService.register(email, randomPassword);
+      await this.authService.saveUserProfile(credential.user.uid, email, 'auto', {
+        firstName: this.form.value.firstName,
+        lastName: this.form.value.lastName,
+        city: this.form.value.city,
+        plateMeaning: this.form.value.plateMeaning
+      });
       await this.authService.sendPasswordReset(email);
       this.dialogRef.close(this.form.value);
     } catch (error: any) {

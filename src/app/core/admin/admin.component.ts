@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { AutoValuation, PlateSearch } from '../../services/admin.service';
+import { AutoValuation, PlateSearch, UserProfile } from '../../services/admin.service';
 
 @Component({
   selector: 'app-admin',
@@ -222,6 +222,43 @@ import { AutoValuation, PlateSearch } from '../../services/admin.service';
           }
         </mat-card-content>
       </mat-card>
+
+      <mat-card class="mb-4">
+        <mat-card-header>
+          <mat-card-title>Registered Users ({{ users().length }})</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="user-counts mt-3">
+            <span class="search-count">Verified: {{ verifiedUsers().length }}</span>
+            &nbsp;&nbsp;
+            <span class="search-count">Unverified: {{ users().length - verifiedUsers().length }}</span>
+          </div>
+          @if (users().length === 0) {
+            <p class="text-muted mt-3">Loading users...</p>
+          } @else {
+            <table mat-table [dataSource]="users()" class="w-100 mt-3">
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef>Email</th>
+                <td mat-cell *matCellDef="let u">{{ u.email }}</td>
+              </ng-container>
+              <ng-container matColumnDef="emailVerified">
+                <th mat-header-cell *matHeaderCellDef>Verified</th>
+                <td mat-cell *matCellDef="let u">{{ u.emailVerified ? '✓' : '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef>Registered</th>
+                <td mat-cell *matCellDef="let u">{{ u.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="lastSignIn">
+                <th mat-header-cell *matHeaderCellDef>Last Sign In</th>
+                <td mat-cell *matCellDef="let u">{{ u.lastSignIn ? (u.lastSignIn | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
+            </table>
+          }
+        </mat-card-content>
+      </mat-card>
     }
   `,
   styleUrl: './admin.component.scss'
@@ -230,6 +267,10 @@ export class AdminComponent {
   currentUser = input<any>();
   searches = input<PlateSearch[]>([]);
   autoValuations = input<AutoValuation[]>([]);
+  users = input<UserProfile[]>([]);
+
+  verifiedUsers = computed(() => this.users().filter(u => u.emailVerified));
+  userColumns = ['email', 'emailVerified', 'createdAt', 'lastSignIn'];
 
   columns = ['registration', 'type', 'badge', 'searchedAt', 'price'];
   columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'userId'];

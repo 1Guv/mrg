@@ -11,7 +11,7 @@ import { RegValuation } from '../../models/reg.model';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { AdminComponent } from "../admin/admin.component";
-import { AdminService, AutoValuation, PlateSearch } from '../../services/admin.service';
+import { AdminService, AutoValuation, PlateSearch, UserProfile } from '../../services/admin.service';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -38,6 +38,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   valuations$ = signal<RegValuation[]>([]);
   plateSearches$ = signal<PlateSearch[]>([]);
   autoValuations$ = signal<AutoValuation[]>([]);
+  users$ = signal<UserProfile[]>([]);
 
   constructor(
     private router: Router,
@@ -76,6 +77,14 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         .getAutoValuations()
         .subscribe((valuations) => this.autoValuations$.set(valuations))
     );
+
+    if (this.isAdmin) {
+      this.subs.add(
+        this.adminService
+          .getAuthUsers()
+          .subscribe((users) => this.users$.set(users))
+      );
+    }
   }
 
   get isAdmin(): boolean {

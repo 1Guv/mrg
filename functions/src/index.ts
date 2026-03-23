@@ -1,11 +1,38 @@
 import {setGlobalOptions} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 setGlobalOptions({maxInstances: 10});
 
 admin.initializeApp();
 const db = admin.firestore();
+
+export const getUsers = onCall({ maxInstances: 1 }, async (request) => {
+  if (!request.auth || request.auth.token.email !== "gurvinder.singh.sandhu@gmail.com") {
+    throw new HttpsError("permission-denied", "Not authorised");
+  }
+
+  const users: object[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const result = await admin.auth().listUsers(1000, pageToken);
+    result.users.forEach((u) => {
+      users.push({
+        uid: u.uid,
+        email: u.email ?? "",
+        emailVerified: u.emailVerified,
+        createdAt: u.metadata.creationTime,
+        lastSignIn: u.metadata.lastSignInTime ?? null,
+        disabled: u.disabled,
+      });
+    });
+    pageToken = result.pageToken;
+  } while (pageToken);
+
+  return { users };
+});
 
 export const weeklyReport = onSchedule("every sunday 08:00", async () => {
   const now = new Date();
