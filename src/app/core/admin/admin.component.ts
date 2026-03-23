@@ -225,37 +225,56 @@ import { AutoValuation, PlateSearch, UserProfile } from '../../services/admin.se
 
       <mat-card class="mb-4">
         <mat-card-header>
-          <mat-card-title>Registered Users ({{ users().length }})</mat-card-title>
+          <mat-card-title>Registered Users</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <div class="user-counts mt-3">
-            <span class="search-count">Verified: {{ verifiedUsers().length }}</span>
-            &nbsp;&nbsp;
-            <span class="search-count">Unverified: {{ users().length - verifiedUsers().length }}</span>
-          </div>
           @if (users().length === 0) {
             <p class="text-muted mt-3">Loading users...</p>
           } @else {
-            <table mat-table [dataSource]="users()" class="w-100 mt-3">
-              <ng-container matColumnDef="email">
-                <th mat-header-cell *matHeaderCellDef>Email</th>
-                <td mat-cell *matCellDef="let u">{{ u.email }}</td>
-              </ng-container>
-              <ng-container matColumnDef="emailVerified">
-                <th mat-header-cell *matHeaderCellDef>Verified</th>
-                <td mat-cell *matCellDef="let u">{{ u.emailVerified ? '✓' : '—' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="createdAt">
-                <th mat-header-cell *matHeaderCellDef>Registered</th>
-                <td mat-cell *matCellDef="let u">{{ u.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
-              </ng-container>
-              <ng-container matColumnDef="lastSignIn">
-                <th mat-header-cell *matHeaderCellDef>Last Sign In</th>
-                <td mat-cell *matCellDef="let u">{{ u.lastSignIn ? (u.lastSignIn | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
-              </ng-container>
-              <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
-            </table>
+            <mat-accordion class="mt-3">
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>All Users</mat-panel-title>
+                  <mat-panel-description>
+                    <span class="search-count">{{ users().length }}</span>
+                    &nbsp;&nbsp;Verified: {{ verifiedUsers().length }}
+                    &nbsp;&nbsp;Unverified: {{ users().length - verifiedUsers().length }}
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+                <table mat-table [dataSource]="users()" class="w-100 mt-2">
+                  <ng-container matColumnDef="email">
+                    <th mat-header-cell *matHeaderCellDef>Email</th>
+                    <td mat-cell *matCellDef="let u">{{ u.email }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="emailVerified">
+                    <th mat-header-cell *matHeaderCellDef>Verified</th>
+                    <td mat-cell *matCellDef="let u">{{ u.emailVerified ? '✓' : '—' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="plates">
+                    <th mat-header-cell *matHeaderCellDef>Plates Valuated</th>
+                    <td mat-cell *matCellDef="let u">
+                      @if (getPlatesForUser(u.uid).length === 0) {
+                        <span>—</span>
+                      } @else {
+                        @for (plate of getPlatesForUser(u.uid); track plate) {
+                          <div>{{ plate }}</div>
+                        }
+                      }
+                    </td>
+                  </ng-container>
+                  <ng-container matColumnDef="createdAt">
+                    <th mat-header-cell *matHeaderCellDef>Registered</th>
+                    <td mat-cell *matCellDef="let u">{{ u.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="lastSignIn">
+                    <th mat-header-cell *matHeaderCellDef>Last Sign In</th>
+                    <td mat-cell *matCellDef="let u">{{ u.lastSignIn ? (u.lastSignIn | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: userColumns;"></tr>
+                </table>
+              </mat-expansion-panel>
+            </mat-accordion>
           }
         </mat-card-content>
       </mat-card>
@@ -270,7 +289,31 @@ export class AdminComponent {
   users = input<UserProfile[]>([]);
 
   verifiedUsers = computed(() => this.users().filter(u => u.emailVerified));
-  userColumns = ['email', 'emailVerified', 'createdAt', 'lastSignIn'];
+  userColumns = ['email', 'emailVerified', 'plates', 'createdAt', 'lastSignIn'];
+
+  getPlatesForUser(uid: string): string[] {
+    const parts: string[] = [];
+
+    const valuations = this.autoValuations().filter(v => v.userId === uid);
+    const seenV = new Set<string>();
+    valuations.forEach(v => {
+      if (!seenV.has(v.registration)) {
+        seenV.add(v.registration);
+        parts.push(`${v.registration} (${this.formatPrice(v.price)})`);
+      }
+    });
+
+    const searches = this.searches().filter(s => s.userId === uid);
+    const seenS = new Set<string>();
+    searches.forEach(s => {
+      if (!seenS.has(s.registration)) {
+        seenS.add(s.registration);
+        parts.push(`${s.registration} (${s.type})`);
+      }
+    });
+
+    return parts;
+  }
 
   columns = ['registration', 'type', 'badge', 'searchedAt', 'price'];
   columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'userId'];

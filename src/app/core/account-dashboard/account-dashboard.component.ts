@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import {Router, RouterModule} from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import {map, Subscription} from "rxjs";
+import {filter, map, Subscription, take} from "rxjs";
 import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
 import { ValuationService } from '../../services/valuation.service';
 import { inject } from '@angular/core';
@@ -78,13 +78,18 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         .subscribe((valuations) => this.autoValuations$.set(valuations))
     );
 
-    if (this.isAdmin) {
-      this.subs.add(
-        this.adminService
-          .getAuthUsers()
-          .subscribe((users) => this.users$.set(users))
-      );
-    }
+    // Wait for auth to resolve before checking admin and calling the Cloud Function
+    this.subs.add(
+      this.authService.currentUser$.pipe(
+        filter((user: any) => user !== null && user !== undefined),
+        take(1)
+      ).subscribe((user: any) => {
+        if (user?.email === 'gurvinder.singh.sandhu@gmail.com' && user?.emailVerified) {
+          this.adminService.getAuthUsers()
+            .subscribe((users) => this.users$.set(users));
+        }
+      })
+    );
   }
 
   get isAdmin(): boolean {
