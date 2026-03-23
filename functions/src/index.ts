@@ -8,8 +8,9 @@ setGlobalOptions({maxInstances: 10});
 admin.initializeApp();
 const db = admin.firestore();
 
-export const getUsers = onCall({ maxInstances: 1 }, async (request) => {
-  if (!request.auth || request.auth.token.email !== "gurvinder.singh.sandhu@gmail.com") {
+export const getUsers = onCall({maxInstances: 1}, async (request) => {
+  const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+  if (!request.auth || request.auth.token.email !== adminEmail) {
     throw new HttpsError("permission-denied", "Not authorised");
   }
 
@@ -28,10 +29,11 @@ export const getUsers = onCall({ maxInstances: 1 }, async (request) => {
         disabled: u.disabled,
       });
     });
+
     pageToken = result.pageToken;
   } while (pageToken);
 
-  return { users };
+  return {users};
 });
 
 export const weeklyReport = onSchedule("every sunday 08:00", async () => {
