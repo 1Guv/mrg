@@ -8,7 +8,7 @@
                 @if(isAdmin) {
                 <mat-tab [label]="'Plate Searches (' + plateSearches$().length + ')'">
                     <div class="tab-content">
-                        <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()" [autoValuations]="autoValuations$()"></app-admin>
+                        <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()" [autoValuations]="autoValuations$()" [users]="users$()"></app-admin>
                     </div>
                 </mat-tab>
                 }
