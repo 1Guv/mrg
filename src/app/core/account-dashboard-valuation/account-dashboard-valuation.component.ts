@@ -10,7 +10,7 @@ import { ValuationService } from '../../services/valuation.service';
   selector: 'app-account-dashboard-valuation',
   imports: [CommonModule, MatCardModule, MatCardHeader, MatCardTitle, MatCardSubtitle, DecimalPipe, MatButtonModule],
   template: `
-    <mat-card class="my-2 bg-warning">
+    <mat-card class="my-2" [ngClass]="typeColorClass">
       <mat-card-header>
         <mat-card-title>{{ valuation.registration }}</mat-card-title>
         <mat-card-subtitle>
@@ -40,6 +40,16 @@ export class AccountDashboardValuationComponent {
   @Input() valuation: RegValuation = {} as RegValuation;
 
   private valuationService = inject(ValuationService);
+
+  get typeColorClass(): string {
+    switch (this.valuation.type) {
+      case 'current':  return 'card-current';
+      case 'prefix':   return 'card-prefix';
+      case 'suffix':   return 'card-suffix';
+      case 'dateless': return 'card-dateless';
+      default:         return 'bg-warning';
+    }
+  }
 
   onDeleteValuation(valuationId: string) {
     this.valuationService.deleteValuation(valuationId);

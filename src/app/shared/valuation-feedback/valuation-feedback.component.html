@@ -1,0 +1,18 @@
+@if (!feedbackGiven) {
+  <mat-card class="feedback-card">
+    <p class="feedback-question">Do you agree with this valuation?</p>
+    <div class="feedback-actions">
+      <button type="button" class="feedback-icon-btn agree-btn" (click)="onFeedback(true)" aria-label="Agree">
+        <mat-icon>thumb_up</mat-icon>
+      </button>
+      <button type="button" class="feedback-icon-btn disagree-btn" (click)="onFeedback(false)" aria-label="Disagree">
+        <mat-icon>thumb_down</mat-icon>
+      </button>
+    </div>
+  </mat-card>
+} @else {
+  <mat-card class="feedback-card feedback-thankyou">
+    <mat-icon>{{ feedbackAgreed ? 'thumb_up' : 'thumb_down' }}</mat-icon>
+    <p>{{ feedbackAgreed ? 'Great, thanks for the confirmation!' : 'Thanks for the feedback — we\'ll use it to improve!' }}</p>
+  </mat-card>
+}

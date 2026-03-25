@@ -176,6 +176,24 @@ export class ValuationService {
     );
   }
 
+  savePlateValuationMessage(registration: string, valuation: number, plateMeaning: string, message: string) {
+    const ref = collection(this.firestore, 'plate_valuation_message_feedback');
+    return this.authService.currentUser$.pipe(
+      take(1),
+      switchMap((user) => {
+        const payload: any = {
+          registration,
+          valuation,
+          plateMeaning,
+          message,
+          submittedAt: new Date(),
+        };
+        if (user) payload['userId'] = user.uid;
+        return addDoc(ref, payload);
+      })
+    );
+  }
+
   savePlateSearch(registration: string, type: string, badge: string, frontBack: boolean, sendEmail = true) {
     const searchesRef = collection(this.firestore, 'plate_searches');
     const mailRef = collection(this.firestore, 'mail');

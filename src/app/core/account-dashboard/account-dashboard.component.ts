@@ -7,11 +7,11 @@ import {filter, map, Subscription, take} from "rxjs";
 import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
 import { ValuationService } from '../../services/valuation.service';
 import { inject } from '@angular/core';
-import { RegValuation } from '../../models/reg.model';
+import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { AdminComponent } from "../admin/admin.component";
-import { AdminService, AutoValuation, PlateSearch, UserProfile } from '../../services/admin.service';
+import { AdminService, AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -39,6 +39,8 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   plateSearches$ = signal<PlateSearch[]>([]);
   autoValuations$ = signal<AutoValuation[]>([]);
   users$ = signal<UserProfile[]>([]);
+  feedback$ = signal<ValuationFeedback[]>([]);
+  plateMessages$ = signal<PlateValuationMessage[]>([]);
 
   constructor(
     private router: Router,
@@ -62,7 +64,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.valuationService
         .getValuations()
-        .pipe(map((valuations: RegValuation[]) => this.valuations$.set(valuations)))
+        .pipe(map((valuations: RegValuation[]) => this.valuations$.set([...valuations].reverse())))
         .subscribe()
     );
 
@@ -78,6 +80,18 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         .subscribe((valuations) => this.autoValuations$.set(valuations))
     );
 
+    this.subs.add(
+      this.adminService
+        .getFeedback()
+        .subscribe((feedback) => this.feedback$.set(feedback))
+    );
+
+    this.subs.add(
+      this.adminService
+        .getPlateValuationMessages()
+        .subscribe((messages) => this.plateMessages$.set(messages))
+    );
+
     // Wait for auth to resolve before checking admin and calling the Cloud Function
     this.subs.add(
       this.authService.currentUser$.pipe(
@@ -90,6 +104,22 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         }
       })
     );
+  }
+
+  get currentValuations(): RegValuation[] {
+    return this.valuations$().filter(v => v.type === NumberPlateType.Current);
+  }
+
+  get prefixValuations(): RegValuation[] {
+    return this.valuations$().filter(v => v.type === NumberPlateType.Prefix);
+  }
+
+  get suffixValuations(): RegValuation[] {
+    return this.valuations$().filter(v => v.type === NumberPlateType.Suffix);
+  }
+
+  get datelessValuations(): RegValuation[] {
+    return this.valuations$().filter(v => v.type === NumberPlateType.Dateless);
   }
 
   get isAdmin(): boolean {

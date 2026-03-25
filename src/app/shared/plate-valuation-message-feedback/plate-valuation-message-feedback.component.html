@@ -1,0 +1,31 @@
+<mat-card class="feedback-msg-card">
+  <mat-accordion>
+    <mat-expansion-panel #panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Plate Feedback</mat-panel-title>
+      </mat-expansion-panel-header>
+
+      @if (submitted) {
+        <p class="thankyou-msg">Thanks — your message has been sent!</p>
+      } @else {
+        <mat-form-field appearance="fill" class="w-100">
+          <mat-label>Your message</mat-label>
+          <textarea
+            matInput
+            [formControl]="message"
+            rows="5"
+            placeholder="Share your thoughts on this valuation..."
+          ></textarea>
+        </mat-form-field>
+
+        <p class="ceo-note">💬 Sent directly to the MR Valuations team.</p>
+
+        <div class="d-flex gap-2 mt-2">
+          <button type="button" mat-raised-button color="primary" [disabled]="message.invalid" (click)="onSubmit()">Submit</button>
+          <button type="button" mat-stroked-button (click)="onCancel()">Cancel</button>
+        </div>
+      }
+
+    </mat-expansion-panel>
+  </mat-accordion>
+</mat-card>

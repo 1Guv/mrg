@@ -8,7 +8,7 @@
                 @if(isAdmin) {
                 <mat-tab [label]="'Plate Searches (' + plateSearches$().length + ')'">
                     <div class="tab-content">
-                        <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()" [autoValuations]="autoValuations$()" [users]="users$()"></app-admin>
+                        <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()" [autoValuations]="autoValuations$()" [users]="users$()" [feedback]="feedback$()" [plateMessages]="plateMessages$()"></app-admin>
                     </div>
                 </mat-tab>
                 }
@@ -21,10 +21,44 @@
 
                 <mat-tab [label]="'Saved Valuations (' + valuations$().length + ')'">
                     <div class="tab-content">
-                        @for( valuation of valuations$(); track valuation.id ){
-                            <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
-                        } @empty {
+                        @if (valuations$().length === 0) {
                             <p class="text-muted mt-3 text-center">No saved valuations yet.</p>
+                        } @else {
+                            <mat-tab-group animationDuration="200ms">
+
+                                <mat-tab [label]="'Current (' + currentValuations.length + ')'">
+                                    @for (valuation of currentValuations; track valuation.id) {
+                                        <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
+                                    } @empty {
+                                        <p class="text-muted mt-3 text-center">No current plate valuations saved.</p>
+                                    }
+                                </mat-tab>
+
+                                <mat-tab [label]="'Prefix (' + prefixValuations.length + ')'">
+                                    @for (valuation of prefixValuations; track valuation.id) {
+                                        <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
+                                    } @empty {
+                                        <p class="text-muted mt-3 text-center">No prefix plate valuations saved.</p>
+                                    }
+                                </mat-tab>
+
+                                <mat-tab [label]="'Suffix (' + suffixValuations.length + ')'">
+                                    @for (valuation of suffixValuations; track valuation.id) {
+                                        <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
+                                    } @empty {
+                                        <p class="text-muted mt-3 text-center">No suffix plate valuations saved.</p>
+                                    }
+                                </mat-tab>
+
+                                <mat-tab [label]="'Dateless (' + datelessValuations.length + ')'">
+                                    @for (valuation of datelessValuations; track valuation.id) {
+                                        <app-account-dashboard-valuation [valuation]="valuation"></app-account-dashboard-valuation>
+                                    } @empty {
+                                        <p class="text-muted mt-3 text-center">No dateless plate valuations saved.</p>
+                                    }
+                                </mat-tab>
+
+                            </mat-tab-group>
                         }
                     </div>
                 </mat-tab>

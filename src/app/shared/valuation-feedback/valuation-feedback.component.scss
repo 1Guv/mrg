@@ -1,0 +1,50 @@
+.feedback-card {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  background: linear-gradient(135deg, #1a237e, #283593);
+  border: none;
+
+  .feedback-question {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.75rem;
+  }
+
+  .feedback-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+
+    .feedback-icon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #555;
+
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    }
+
+    .agree-btn:hover    { background: #2e7d32; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+    .disagree-btn:hover { background: #c62828; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+  }
+
+  &.feedback-thankyou {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #fff;
+    font-weight: 500;
+
+    p { margin: 0; }
+  }
+}

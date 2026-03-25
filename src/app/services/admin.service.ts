@@ -35,6 +35,26 @@ export interface PlateSearch {
   plateMeaning?: string;
 }
 
+export interface PlateValuationMessage {
+  id?: string;
+  registration: string;
+  valuation: number;
+  plateMeaning: string;
+  message: string;
+  submittedAt: any;
+  userId?: string;
+}
+
+export interface ValuationFeedback {
+  id?: string;
+  registration: string;
+  valuation: number;
+  agreed: boolean;
+  popularityMultiplier: number;
+  submittedAt: any;
+  userId?: string;
+}
+
 export interface AutoValuation {
   id?: string;
   registration: string;
@@ -74,5 +94,17 @@ export class AdminService {
     const ref = collection(this.firestore, 'plate_searches');
     const q = query(ref, orderBy('searchedAt', 'desc'));
     return collectionData(q, { idField: 'id' }) as Observable<PlateSearch[]>;
+  }
+
+  getPlateValuationMessages(): Observable<PlateValuationMessage[]> {
+    const ref = collection(this.firestore, 'plate_valuation_message_feedback');
+    const q = query(ref, orderBy('submittedAt', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<PlateValuationMessage[]>;
+  }
+
+  getFeedback(): Observable<ValuationFeedback[]> {
+    const ref = collection(this.firestore, 'valuation_feedback');
+    const q = query(ref, orderBy('submittedAt', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<ValuationFeedback[]>;
   }
 }

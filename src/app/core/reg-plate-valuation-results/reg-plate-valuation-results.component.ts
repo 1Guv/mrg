@@ -23,6 +23,9 @@ import { ValuationService } from '../../services/valuation.service';
 import { AuthService } from '../../services/auth.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
+import { ValuationFeedbackComponent } from '../../shared/valuation-feedback/valuation-feedback.component';
+import { PlateValuationMessageFeedbackComponent } from '../../shared/plate-valuation-message-feedback/plate-valuation-message-feedback.component';
 
 export const MY_FORMATS = {
   parse: {
@@ -54,7 +57,10 @@ export const MY_FORMATS = {
         MatNativeDateModule,
       MatSliderModule,
       MatExpansionModule,
-      MatSnackBarModule
+      MatSnackBarModule,
+      ShareButtonsComponent,
+      ValuationFeedbackComponent,
+      PlateValuationMessageFeedbackComponent,
     ],
     templateUrl: './reg-plate-valuation-results.component.html',
     styleUrl: './reg-plate-valuation-results.component.scss',

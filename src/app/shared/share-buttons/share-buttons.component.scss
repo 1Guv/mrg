@@ -1,0 +1,31 @@
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0 0.5rem;
+
+  .share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    color: #555;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    svg { width: 18px; height: 18px; }
+
+    &:hover          { background: #003399; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+    &.whatsapp:hover { background: #25D366; }
+    &.facebook:hover { background: #1877F2; }
+    &.copy:hover     { background: #555; }
+  }
+}

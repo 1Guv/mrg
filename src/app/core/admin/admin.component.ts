@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { AutoValuation, PlateSearch, UserProfile } from '../../services/admin.service';
+import { AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 
 @Component({
   selector: 'app-admin',
@@ -225,6 +225,95 @@ import { AutoValuation, PlateSearch, UserProfile } from '../../services/admin.se
 
       <mat-card class="mb-4">
         <mat-card-header>
+          <mat-card-title>Valuation Feedback</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (feedback().length === 0) {
+            <p class="text-muted mt-3">No feedback yet.</p>
+          } @else {
+            <mat-accordion class="mt-3">
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>Feedback Summary</mat-panel-title>
+                  <mat-panel-description>
+                    👍 {{ totalLikes() }} &nbsp; 👎 {{ totalDislikes() }} &nbsp;
+                    <span class="search-count">{{ feedback().length }}</span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+                <table mat-table [dataSource]="feedbackByPlate()" class="w-100 mt-2">
+                  <ng-container matColumnDef="registration">
+                    <th mat-header-cell *matHeaderCellDef>Plate</th>
+                    <td mat-cell *matCellDef="let f"><strong>{{ f.registration }}</strong></td>
+                  </ng-container>
+                  <ng-container matColumnDef="valuation">
+                    <th mat-header-cell *matHeaderCellDef>Valuation</th>
+                    <td mat-cell *matCellDef="let f">{{ formatPrice(f.valuation) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="likes">
+                    <th mat-header-cell *matHeaderCellDef>👍 Likes</th>
+                    <td mat-cell *matCellDef="let f" class="text-success fw-bold">{{ f.likes }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="dislikes">
+                    <th mat-header-cell *matHeaderCellDef>👎 Dislikes</th>
+                    <td mat-cell *matCellDef="let f" class="text-danger fw-bold">{{ f.dislikes }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="feedbackColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: feedbackColumns;"></tr>
+                </table>
+              </mat-expansion-panel>
+            </mat-accordion>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="mb-4">
+        <mat-card-header>
+          <mat-card-title>Plate Valuation Messages ({{ plateMessages().length }})</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (plateMessages().length === 0) {
+            <p class="text-muted mt-3">No messages yet.</p>
+          } @else {
+            <mat-accordion class="mt-3">
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>All Messages</mat-panel-title>
+                  <mat-panel-description>
+                    <span class="search-count">{{ plateMessages().length }}</span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+                <table mat-table [dataSource]="plateMessages()" class="w-100 mt-3">
+                  <ng-container matColumnDef="registration">
+                    <th mat-header-cell *matHeaderCellDef>Plate</th>
+                    <td mat-cell *matCellDef="let m"><strong>{{ m.registration }}</strong></td>
+                  </ng-container>
+                  <ng-container matColumnDef="plateMeaning">
+                    <th mat-header-cell *matHeaderCellDef>Meaning</th>
+                    <td mat-cell *matCellDef="let m">{{ m.plateMeaning || '—' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="valuation">
+                    <th mat-header-cell *matHeaderCellDef>Valuation</th>
+                    <td mat-cell *matCellDef="let m">{{ formatPrice(m.valuation) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="message">
+                    <th mat-header-cell *matHeaderCellDef>Message</th>
+                    <td mat-cell *matCellDef="let m" class="message-cell">{{ m.message }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="submittedAt">
+                    <th mat-header-cell *matHeaderCellDef>Date</th>
+                    <td mat-cell *matCellDef="let m">{{ m.submittedAt?.toDate() | date:'dd/MM/yyyy HH:mm' }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="plateMessageColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: plateMessageColumns;"></tr>
+                </table>
+              </mat-expansion-panel>
+            </mat-accordion>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="mb-4">
+        <mat-card-header>
           <mat-card-title>Registered Users</mat-card-title>
         </mat-card-header>
         <mat-card-content>
@@ -287,8 +376,26 @@ export class AdminComponent {
   searches = input<PlateSearch[]>([]);
   autoValuations = input<AutoValuation[]>([]);
   users = input<UserProfile[]>([]);
+  feedback = input<ValuationFeedback[]>([]);
+  plateMessages = input<PlateValuationMessage[]>([]);
 
   verifiedUsers = computed(() => this.users().filter(u => u.emailVerified));
+
+  totalLikes = computed(() => this.feedback().filter(f => f.agreed).length);
+  totalDislikes = computed(() => this.feedback().filter(f => !f.agreed).length);
+
+  feedbackByPlate = computed(() => {
+    const map = new Map<string, { likes: number; dislikes: number; valuation: number }>();
+    for (const f of this.feedback()) {
+      const key = f.registration?.toUpperCase() ?? 'UNKNOWN';
+      const entry = map.get(key) ?? { likes: 0, dislikes: 0, valuation: f.valuation };
+      if (f.agreed) entry.likes++; else entry.dislikes++;
+      map.set(key, entry);
+    }
+    return [...map.entries()]
+      .map(([registration, data]) => ({ registration, ...data }))
+      .sort((a, b) => (b.likes + b.dislikes) - (a.likes + a.dislikes));
+  });
   userColumns = ['email', 'emailVerified', 'plates', 'createdAt', 'lastSignIn'];
 
   getPlatesForUser(uid: string): string[] {
@@ -315,6 +422,8 @@ export class AdminComponent {
     return parts;
   }
 
+  feedbackColumns = ['registration', 'valuation', 'likes', 'dislikes'];
+  plateMessageColumns = ['registration', 'plateMeaning', 'valuation', 'message', 'submittedAt'];
   columns = ['registration', 'type', 'badge', 'searchedAt', 'price'];
   columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'userId'];
   valuationColumns = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt'];
