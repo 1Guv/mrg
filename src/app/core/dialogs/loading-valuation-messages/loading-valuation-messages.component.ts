@@ -15,7 +15,7 @@ import { MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
               @if(loadingValuation) {
                   <mat-spinner class="my-2 spinner-sm"></mat-spinner>
                   <mat-card class="loading-valuation-card">
-                      <span class="p-2 m-2 cabin-font-text">{{ valuationMessages[currentMessageIndex] }}</span>
+                      <span class="p-2 m-2 message-text">{{ valuationMessages[currentMessageIndex] }}</span>
                   </mat-card>
               }
           </div>
@@ -31,6 +31,13 @@ import { MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
     .loading-valuation-card {
         width: 100%;
         max-width: 300px;
+    }
+    .message-text {
+        font-family: "Cabin", sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        color: #000;
     }
     .spinner-sm {
         width: 20px;

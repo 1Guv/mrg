@@ -1,3 +1,5 @@
+@use 'styles/variables' as *;
+
 html,
 body {
   height: 100%;
@@ -6,4 +8,54 @@ body {
 body {
   margin: 0;
   font-size: clamp(12px, 1.5vw, 75px);
+}
+
+// ── Shared plate / valuation styles ──────────────────────────────────────────
+
+.regInSelect {
+  background-color: yellow;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+
+.cabin-font-heading {
+  @include cabin-font;
+  color: blue;
+  margin-right: 1rem;
+}
+
+.cabin-font-text {
+  @include cabin-font;
+  color: #000;
+  font-size: 1.7rem;
+}
+
+.cabin-font-text-two {
+  @include cabin-font;
+  color: #000;
+  font-size: 1rem;
+}
+
+.cabin-font-text-three {
+  @include cabin-font;
+  color: #000;
+  font-size: 10px;
+}
+
+$text-color: rgb(11, 0, 11);
+$bevel-color: hsla(0, 0%, 100%, 1);
+
+.bevel-plate {
+  -webkit-text-stroke: 0.025em $text-color;
+  -webkit-text-fill-color: transparent;
+  color: rgba($text-color, 1);
+  text-shadow:
+    0  0.025em 0.0375em $text-color,
+    0  0       0        $bevel-color;
+  font: bold 5em/1 sans-serif;
+  position: relative;
+  z-index: 0;
 }

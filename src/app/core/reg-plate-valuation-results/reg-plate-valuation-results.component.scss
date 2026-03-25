@@ -1,30 +1,6 @@
 @use '../../../styles/variables' as *;
 
-.cabin-font-heading {
-    @include cabin-font;
-    color: blue;
-    margin-right: 1rem;
-}
-
-.cabin-font-text {
-    @include cabin-font;
-    color: #000;
-    font-size: 1.7rem;
-}
-
-.cabin-font-text-two {
-  @include cabin-font;
-  color: #000;
-  font-size: 1rem;
-}
-
-.cabin-font-text-three{
-  @include cabin-font;
-  color: #000;
-  font-size: 10px;
-}
-
-.date-of-purchase-font-text{
+.date-of-purchase-font-text {
   @include cabin-font;
   color: #000;
   font-size: 1.25rem;
@@ -37,21 +13,6 @@
     padding: 20px 35px;
     border: 3px solid #000;
     border-radius: 5px;
-}
-
-$text-color:  rgb(11, 0, 11);
-$bevel-color: hsla(  0,  0%, 100%, 1);
-
-.bevel-plate {
-  -webkit-text-stroke: 0.025em $text-color;
-  -webkit-text-fill-color: transparent;
-  color: rgba($text-color, 1);
-  text-shadow:
-    0  0.025em 0.0375em $text-color,
-    0  0       0        $bevel-color;
-  font: bold 5em/1 sans-serif;
-  position: relative;
-  z-index: 0;
 }
 
 ::selection {
