@@ -49,6 +49,6 @@
             <button mat-raised-button type="button" class="valuate-now" (click)="startOver()">Start Over</button>
         </div>
     } @else {
-        <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid && !isUnsupportedType">Valuate Now!</button>
+        <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid">Valuate Now!</button>
     }
 </form>
