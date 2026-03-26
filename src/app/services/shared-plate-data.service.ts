@@ -33,4 +33,14 @@ export class SharedPlateDataService {
   getPrefixPlatePending() {
     return this.prefixPlatePending.asObservable();
   }
+
+  suffixPlatePending: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+
+  setSuffixPlatePending(registration: string | null) {
+    this.suffixPlatePending.next(registration);
+  }
+
+  getSuffixPlatePending() {
+    return this.suffixPlatePending.asObservable();
+  }
 }

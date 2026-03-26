@@ -4,6 +4,7 @@ import { RegPlateMainComponent } from "../reg-plate-main/reg-plate-main.componen
 import { RegPlateValuationResultsComponent } from "../reg-plate-valuation-results/reg-plate-valuation-results.component";
 import { CurrentPlateValuationComponent } from "../current-plate-valuation/current-plate-valuation.component";
 import { PrefixPlateValuationComponent } from "../prefix-plate-valuation/prefix-plate-valuation.component";
+import { SuffixPlateValuationComponent } from "../suffix-plate-valuation/suffix-plate-valuation.component";
 
 @Component({
     selector: 'app-main-section',
@@ -13,6 +14,7 @@ import { PrefixPlateValuationComponent } from "../prefix-plate-valuation/prefix-
         RegPlateValuationResultsComponent,
         CurrentPlateValuationComponent,
         PrefixPlateValuationComponent,
+        SuffixPlateValuationComponent,
     ],
     templateUrl: './main-section.component.html',
     styleUrl: './main-section.component.scss'

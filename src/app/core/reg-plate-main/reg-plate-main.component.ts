@@ -84,7 +84,7 @@ export class RegPlateMainComponent implements OnInit {
 
   get isUnsupportedType(): boolean {
     const type = this.registrationForm.get('type')?.value?.value;
-    return !!type && type !== NumberPlateType.Dateless && type !== NumberPlateType.Current && type !== NumberPlateType.Prefix;
+    return !!type && type !== NumberPlateType.Dateless && type !== NumberPlateType.Current && type !== NumberPlateType.Prefix && type !== NumberPlateType.Suffix;
   }
 
   get selectedTypeName(): string {
@@ -160,6 +160,12 @@ export class RegPlateMainComponent implements OnInit {
       return;
     }
 
+    if (type === NumberPlateType.Suffix) {
+      const registration = this.registrationForm.get('registration')?.value?.toUpperCase().replace(/\s/g, '') ?? '';
+      this.sharedPlateDataService.setSuffixPlatePending(registration);
+      return;
+    }
+
     const dialogRef = this.dialog.open(LoadingValuationMessagesComponent, {
       data: {
         messages: VALUATION_LOADING_MESSAGES
@@ -188,6 +194,7 @@ export class RegPlateMainComponent implements OnInit {
     this.sharedPlateDataService.setCurrentPlateData(null);
     this.sharedPlateDataService.setCurrentPlatePending(null);
     this.sharedPlateDataService.setPrefixPlatePending(null);
+    this.sharedPlateDataService.setSuffixPlatePending(null);
   }
 
   selectBadge(badge: Badge) {
