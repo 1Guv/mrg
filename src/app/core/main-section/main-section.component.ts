@@ -3,6 +3,7 @@ import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import { RegPlateMainComponent } from "../reg-plate-main/reg-plate-main.component";
 import { RegPlateValuationResultsComponent } from "../reg-plate-valuation-results/reg-plate-valuation-results.component";
 import { CurrentPlateValuationComponent } from "../current-plate-valuation/current-plate-valuation.component";
+import { PrefixPlateValuationComponent } from "../prefix-plate-valuation/prefix-plate-valuation.component";
 
 @Component({
     selector: 'app-main-section',
@@ -10,7 +11,8 @@ import { CurrentPlateValuationComponent } from "../current-plate-valuation/curre
     imports: [
         RegPlateMainComponent,
         RegPlateValuationResultsComponent,
-        CurrentPlateValuationComponent
+        CurrentPlateValuationComponent,
+        PrefixPlateValuationComponent,
     ],
     templateUrl: './main-section.component.html',
     styleUrl: './main-section.component.scss'

@@ -8,6 +8,7 @@ export class SharedPlateDataService {
 
   currentPlateData: BehaviorSubject<any> = new BehaviorSubject(null);
   currentPlatePending: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+  prefixPlatePending: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
   setCurrentPlateData(data: any) {
     this.currentPlateData.next(data);
@@ -23,5 +24,13 @@ export class SharedPlateDataService {
 
   getCurrentPlatePending() {
     return this.currentPlatePending.asObservable();
+  }
+
+  setPrefixPlatePending(registration: string | null) {
+    this.prefixPlatePending.next(registration);
+  }
+
+  getPrefixPlatePending() {
+    return this.prefixPlatePending.asObservable();
   }
 }

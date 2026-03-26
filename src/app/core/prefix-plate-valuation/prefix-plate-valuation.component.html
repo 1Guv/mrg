@@ -1,0 +1,257 @@
+@if (registration) {
+  <div class="container-fluid d-flex flex-column p-4">
+    @if (!showResults) {
+      <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+        <p class="cabin-font-heading">Valuation for:</p>
+        <span class="bevel-plate">{{ registration | uppercase }}</span>
+        <p class="cabin-font-heading mt-4">Type:</p>
+        <span class="cabin-font-text">PREFIX</span>
+        <p class="cabin-font-heading mt-2">Year:</p>
+        <span class="cabin-font-text">{{ yearYear }}</span>
+      </div>
+
+      <hr>
+    }
+
+    @if (!isCalculating && !showResults) {
+      <mat-card class="plate-card mx-auto my-2">
+        <form [formGroup]="form">
+          <mat-card-content>
+            <p class="cabin-font-heading pt-2 text-center">Please adjust each character that best describes the word(s) the plate is trying to represent.</p>
+
+            <div class="dropdowns-row">
+
+              <!-- Fixed year letter badge -->
+              <div class="slot-group">
+                <div class="char-slot">
+                  <label class="char-label">Year Letter</label>
+                  <div class="year-letter-badge">{{ yearLetter }}</div>
+                </div>
+              </div>
+
+              <!-- Digit positions -->
+              @if (digitPositions.length > 0) {
+                <div class="slot-group">
+                  @for (i of digitPositions; track i) {
+                    <div class="char-slot">
+                      <label class="char-label">{{ positionLabels[i] }}</label>
+                      <mat-form-field appearance="fill" class="char-field">
+                        <mat-select [formControlName]="'char' + i">
+                          @for (opt of getOptions(i); track opt) {
+                            <mat-option [value]="opt">{{ opt }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Letter positions -->
+              <div class="slot-group">
+                @for (i of letterPositions; track i) {
+                  <div class="char-slot">
+                    <label class="char-label">{{ positionLabels[i] }}</label>
+                    <mat-form-field appearance="fill" class="char-field">
+                      <mat-select [formControlName]="'char' + i">
+                        @for (opt of getOptions(i); track opt) {
+                          <mat-option [value]="opt">{{ opt }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                }
+              </div>
+
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions class="d-flex flex-column align-items-center py-3 gap-3">
+            <span class="bevel-plate plate-preview">{{ getPlatePreview() }}</span>
+
+            <mat-form-field appearance="fill" class="w-100 px-3">
+              <mat-label>Is this a 1, 2 or 3 word combination?</mat-label>
+              <mat-select formControlName="wordCombination">
+                @for (opt of wordOptions; track opt) {
+                  <mat-option [value]="opt">{{ opt }} word{{ opt > 1 ? 's' : '' }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (isTwoWords) {
+              <mat-form-field appearance="fill" class="w-100 px-3">
+                <mat-label>Select your spacing combination</mat-label>
+                <mat-select formControlName="twoWordSpacing">
+                  @for (opt of twoWordSpacingOptions; track opt.value) {
+                    <mat-option [value]="opt.value">
+                      <span class="regInSelect">{{ opt.plate }}</span>
+                      &nbsp;{{ opt.description }}
+                      @if (opt.legal) {
+                        <small class="text-muted"> (Legal spacing)</small>
+                      }
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
+
+            <button
+              type="button"
+              mat-raised-button
+              color="primary"
+              [disabled]="form.invalid"
+              (click)="onCalculate()"
+            >
+              Calculate Valuation
+            </button>
+            <button
+              type="button"
+              mat-raised-button
+              color="warn"
+              (click)="onReset()"
+            >
+              Reset
+            </button>
+          </mat-card-actions>
+        </form>
+      </mat-card>
+    }
+
+    @if (showResults) {
+      <hr>
+      <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+        <div class="plate-header-block bg-warning">
+          <span class="plate-header-label">Plate</span>
+          <span class="bevel-plate">{{ registration | uppercase }}</span>
+          <span class="plate-header-label mt-3">Meaning</span>
+          <span class="plate-meaning-text">{{ getPlatePreview() }}</span>
+          <span class="plate-header-label mt-3">Type</span>
+          <span class="plate-type-badge">Prefix</span>
+        </div>
+      </div>
+      <hr>
+      <mat-card class="plate-card mx-auto my-2 p-3">
+        <div class="d-flex flex-column gap-2">
+
+          <div class="d-flex justify-content-between">
+            <span class="cabin-font-heading">Base price:</span>
+            <span class="cabin-font-text-two">£ {{ basePrice | number: '1.2-2' }}</span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="cabin-font-heading">Year letter ({{ yearLetter }} — {{ yearYear }}):</span>
+            <span class="cabin-font-text-two">£ {{ ageYearBonus | number: '1.2-2' }}</span>
+          </div>
+
+          <hr>
+
+          @if (isDictionaryWord !== null) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">
+                Dictionary word:
+                <span [class]="isDictionaryWord ? 'text-success' : 'text-danger'">
+                  {{ isDictionaryWord ? '✓ Yes' : '✗ No' }}
+                </span>
+              </span>
+              <span class="cabin-font-text-two" [class.text-success]="wordBonus > 0" [class.text-danger]="wordBonus < 0">
+                £ {{ wordBonus | number: '1.2-2' }}
+              </span>
+            </div>
+          }
+
+          @if (isWordOne !== null) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">
+                Word 1 ({{ wordOneText }}):
+                <span [class]="isWordOne ? 'text-success' : 'text-danger'">
+                  {{ isWordOne ? '✓ Yes' : '✗ No' }}
+                </span>
+              </span>
+              <span class="cabin-font-text-two" [class.text-success]="wordOneBonus > 0" [class.text-danger]="wordOneBonus < 0">
+                £ {{ wordOneBonus | number: '1.2-2' }}
+              </span>
+            </div>
+          }
+
+          @if (isWordTwo !== null) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">
+                Word 2 ({{ wordTwoText }}):
+                <span [class]="isWordTwo ? 'text-success' : 'text-danger'">
+                  {{ isWordTwo ? '✓ Yes' : '✗ No' }}
+                </span>
+              </span>
+              <span class="cabin-font-text-two" [class.text-success]="wordTwoBonus > 0" [class.text-danger]="wordTwoBonus < 0">
+                £ {{ wordTwoBonus | number: '1.2-2' }}
+              </span>
+            </div>
+          }
+
+          @if (legalSpacingBonus !== 0) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">MOT legal spacing:</span>
+              <span class="cabin-font-text-two" [class.text-success]="legalSpacingBonus > 0" [class.text-danger]="legalSpacingBonus < 0">
+                £ {{ legalSpacingBonus | number: '1.2-2' }}
+              </span>
+            </div>
+          }
+
+          @if (nameOneMatch) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">Popular first name (word 1): <span class="text-success">{{ nameOneMatch }}</span></span>
+              <span class="cabin-font-text-two text-success">£ {{ nameOneBonus | number: '1.2-2' }}</span>
+            </div>
+          }
+          @if (surnameOneMatch) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">Popular surname (word 1): <span class="text-success">{{ surnameOneMatch }}</span></span>
+              <span class="cabin-font-text-two text-success">£ {{ surnameOneBonus | number: '1.2-2' }}</span>
+            </div>
+          }
+          @if (nameTwoMatch) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">Popular first name (word 2): <span class="text-success">{{ nameTwoMatch }}</span></span>
+              <span class="cabin-font-text-two text-success">£ {{ nameTwoBonus | number: '1.2-2' }}</span>
+            </div>
+          }
+          @if (surnameTwoMatch) {
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="cabin-font-heading">Popular surname (word 2): <span class="text-success">{{ surnameTwoMatch }}</span></span>
+              <span class="cabin-font-text-two text-success">£ {{ surnameTwoBonus | number: '1.2-2' }}</span>
+            </div>
+          }
+
+          <hr>
+
+          <div class="d-flex justify-content-between">
+            <span class="cabin-font-heading">Total:</span>
+            <span class="cabin-font-text">£ {{ totalPrice | number: '1.2-2' }}</span>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <span class="cabin-font-heading">Min (- 75%):</span>
+            <span class="cabin-font-text-two">£ {{ minPrice | number: '1.2-2' }}</span>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <span class="cabin-font-heading">Max (+ 25%):</span>
+            <span class="cabin-font-text-two">£ {{ maxPrice | number: '1.2-2' }}</span>
+          </div>
+
+          <app-share-buttons [shareText]="shareText" />
+          <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />
+          <app-plate-valuation-message-feedback
+            [registration]="registration"
+            [valuation]="totalPrice"
+            [plateMeaning]="getPlatePreview()" />
+
+          <div class="d-flex justify-content-center gap-3 pt-3">
+            <button mat-raised-button type="button" (click)="onReset()">Start Over</button>
+            <button mat-raised-button type="button" color="primary" (click)="onSaveValuation()">Save Valuation</button>
+          </div>
+
+        </div>
+      </mat-card>
+    }
+  </div>
+}
