@@ -154,19 +154,12 @@
 
     @if (showResults) {
       <hr>
-      <div class="d-flex flex-column align-items-center justify-content-center gap-2">
-        <div class="plate-header-block bg-warning">
-          <span class="plate-header-label">Plate</span>
-          <span class="bevel-plate">{{ registration | uppercase }}</span>
-          <span class="plate-header-label mt-3">Meaning</span>
-          <span class="plate-meaning-text">{{ getPlatePreview() }}</span>
-          <span class="plate-header-label mt-3">Type</span>
-          <span class="plate-type-badge">Current</span>
-        </div>
-      </div>
+      <app-plate-valuation-header
+        [registration]="registration"
+        [meaning]="getPlatePreview()"
+        plateType="Current" />
       <hr>
-      <mat-card class="plate-card mx-auto my-2 p-3">
-        <div class="d-flex flex-column gap-2">
+      <app-plate-breakdown-card>
 
           <div class="d-flex justify-content-between">
             <span class="cabin-font-heading">Base price:</span>
@@ -307,37 +300,26 @@
             </div>
           }
 
-          <hr>
+      </app-plate-breakdown-card>
 
-          <div class="d-flex justify-content-between">
-            <span class="cabin-font-heading">Total:</span>
-            <span class="cabin-font-text">£ {{ totalPrice | number: '1.2-2' }}</span>
-          </div>
+      <app-plate-valuation-totals
+        [totalPrice]="totalPrice"
+        [minPrice]="minPrice"
+        [maxPrice]="maxPrice" />
 
-          <div class="d-flex justify-content-between">
-            <span class="cabin-font-heading">Min (- 75%):</span>
-            <span class="cabin-font-text-two">£ {{ minPrice | number: '1.2-2' }}</span>
-          </div>
+      <app-share-buttons [shareText]="shareText" />
+      <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />
+      <app-plate-valuation-message-feedback
+        [registration]="registration"
+        [valuation]="totalPrice"
+        [plateMeaning]="getPlatePreview()" />
 
-          <div class="d-flex justify-content-between">
-            <span class="cabin-font-heading">Max (+ 25%):</span>
-            <span class="cabin-font-text-two">£ {{ maxPrice | number: '1.2-2' }}</span>
-          </div>
-
-          <app-share-buttons [shareText]="shareText" />
-          <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />
-          <app-plate-valuation-message-feedback
-            [registration]="registration"
-            [valuation]="totalPrice"
-            [plateMeaning]="getPlatePreview()" />
-
-          <div class="d-flex justify-content-center gap-3 pt-3">
-            <button mat-raised-button type="button" (click)="onReset()">Start Over</button>
-            <button mat-raised-button type="button" color="primary" (click)="onSaveValuation()">Save Valuation</button>
-          </div>
-
-        </div>
-      </mat-card>
+      <p class="d-flex justify-content-center pt-3">
+        <button mat-raised-button type="button" class="valuate-now bg-info" (click)="onSaveValuation()">Save Valuation</button>
+      </p>
+      <p class="d-flex justify-content-center pt-3">
+        <button mat-raised-button type="button" class="valuate-now" (click)="onReset()">Start Over</button>
+      </p>
     }
   </div>
 }

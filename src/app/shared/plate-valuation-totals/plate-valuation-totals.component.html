@@ -1,0 +1,16 @@
+<mat-card class="totals-card mx-auto my-2 p-3 bg-warning">
+  <div class="d-flex flex-column gap-2">
+    <div class="d-flex justify-content-between">
+      <span class="cabin-font-heading">Total:</span>
+      <span class="cabin-font-text">£ {{ totalPrice | number: '1.2-2' }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span class="cabin-font-heading">Min (- 75%):</span>
+      <span class="cabin-font-text-two">£ {{ minPrice | number: '1.2-2' }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+      <span class="cabin-font-heading">Max (+ 25%):</span>
+      <span class="cabin-font-text-two">£ {{ maxPrice | number: '1.2-2' }}</span>
+    </div>
+  </div>
+</mat-card>

@@ -19,6 +19,9 @@ import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messa
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
 import { ValuationFeedbackComponent } from '../../shared/valuation-feedback/valuation-feedback.component';
 import { PlateValuationMessageFeedbackComponent } from '../../shared/plate-valuation-message-feedback/plate-valuation-message-feedback.component';
+import { PlateValuationHeaderComponent } from '../../shared/plate-valuation-header/plate-valuation-header.component';
+import { PlateBreakdownCardComponent } from '../../shared/plate-breakdown-card/plate-breakdown-card.component';
+import { PlateValuationTotalsComponent } from '../../shared/plate-valuation-totals/plate-valuation-totals.component';
 import { PrefixReg, PREFIX_YEAR_LETTER_YEAR, PREFIX_YEAR_LETTER_BONUS } from '../../formulas/prefix-formula';
 import { VALID_TWO_LETTER_COMBINATIONS, POPULAR_NAMES, POPULAR_SURNAMES } from '../../formulas/current-formula';
 
@@ -41,6 +44,9 @@ type PositionType = 'digit' | 'letter';
     ShareButtonsComponent,
     ValuationFeedbackComponent,
     PlateValuationMessageFeedbackComponent,
+    PlateValuationHeaderComponent,
+    PlateBreakdownCardComponent,
+    PlateValuationTotalsComponent,
   ],
   templateUrl: './prefix-plate-valuation.component.html',
   styleUrl: './prefix-plate-valuation.component.scss',
@@ -111,6 +117,8 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
       this.sharedPlateDataService.getPrefixPlatePending().subscribe(reg => {
         this.registration = reg;
         if (reg) {
+          this.showResults = false;
+          this.savedValuationId = null;
           this.parseRegistration(reg);
           this.buildForm();
           this.cdr.detectChanges();

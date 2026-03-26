@@ -12,6 +12,9 @@ import { catchError, map } from 'rxjs';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
 import { ValuationFeedbackComponent } from '../../shared/valuation-feedback/valuation-feedback.component';
 import { PlateValuationMessageFeedbackComponent } from '../../shared/plate-valuation-message-feedback/plate-valuation-message-feedback.component';
+import { PlateValuationHeaderComponent } from '../../shared/plate-valuation-header/plate-valuation-header.component';
+import { PlateBreakdownCardComponent } from '../../shared/plate-breakdown-card/plate-breakdown-card.component';
+import { PlateValuationTotalsComponent } from '../../shared/plate-valuation-totals/plate-valuation-totals.component';
 import { ValuationService } from '../../services/valuation.service';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { Subscription } from 'rxjs';
@@ -48,6 +51,9 @@ const POSITION_LABELS = [
     ShareButtonsComponent,
     ValuationFeedbackComponent,
     PlateValuationMessageFeedbackComponent,
+    PlateValuationHeaderComponent,
+    PlateBreakdownCardComponent,
+    PlateValuationTotalsComponent,
   ],
   templateUrl: './current-plate-valuation.component.html',
   styleUrl: './current-plate-valuation.component.scss'
@@ -108,6 +114,8 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
       this.sharedPlateDataService.getCurrentPlatePending().subscribe(reg => {
         this.registration = reg;
         if (reg) {
+          this.showResults = false;
+          this.savedValuationId = null;
           this.buildForm(reg);
           this.cdr.detectChanges();
         }

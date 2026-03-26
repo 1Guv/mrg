@@ -113,6 +113,10 @@ export class RegPlateMainComponent implements OnInit {
       const regField = this.registrationForm.get('registration');
       this.toggleRegValidators(regField);
       this.thumbsUpGiven = false;
+      this.sharedPlateDataService.setCurrentPlateData(null);
+      this.sharedPlateDataService.setCurrentPlatePending(null);
+      this.sharedPlateDataService.setPrefixPlatePending(null);
+      this.sharedPlateDataService.setSuffixPlatePending(null);
     });
 
     this.registrationForm.get('registration')?.valueChanges.subscribe((value) => {

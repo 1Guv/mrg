@@ -1,0 +1,13 @@
+.breakdown-card {
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+
+  @media (min-width: 768px) {
+    max-width: 600px;
+  }
+
+  @media (min-width: 1024px) {
+    max-width: 700px;
+  }
+}
