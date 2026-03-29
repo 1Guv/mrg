@@ -56,7 +56,9 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
       const uid = (this.currentUser$() as any)?.uid;
       if (uid && this.adminsService.isAdmin(uid) && !this.hasLoadedUsers) {
         this.hasLoadedUsers = true;
-        this.adminService.getAuthUsers().subscribe((users) => this.users$.set(users));
+        this.subs.add(
+          this.adminService.getAuthUsers().subscribe((users) => this.users$.set(users))
+        );
       }
     });
   }

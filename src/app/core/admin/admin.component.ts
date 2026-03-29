@@ -17,7 +17,7 @@ import { AdminsService } from '../../services/admins.service';
     MatButtonToggleModule,
   ],
   template: `
-    @if(adminsService.isAdmin(currentUser()?.uid)){
+    @if(isAdmin){
       <mat-card class="mb-4">
         <mat-card-header>
           <mat-card-title>Plate Searches</mat-card-title>
@@ -342,7 +342,11 @@ export class AdminComponent {
   feedback = input<ValuationFeedback[]>([]);
   plateMessages = input<PlateValuationMessage[]>([]);
 
-  adminsService = inject(AdminsService);
+  private adminsService = inject(AdminsService);
+
+  protected get isAdmin(): boolean {
+    return this.adminsService.isAdmin(this.currentUser()?.uid);
+  }
 
   verifiedUsers = computed(() => this.users().filter(u => u.emailVerified));
 
