@@ -59,6 +59,56 @@ import { AdminsService } from '../../services/admins.service';
 
     <mat-card class="mb-4">
       <mat-card-header>
+        <mat-card-title>My Valuations</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if(myAutoValuations().length === 0){
+          <p class="text-muted mt-3">No valuations from you yet.</p>
+        } @else {
+          <mat-accordion class="mt-3">
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>Valuations</mat-panel-title>
+                <mat-panel-description>
+                  <span class="search-count">{{ myAutoValuations().length }}</span>
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+              <table mat-table [dataSource]="myAutoValuations()" class="w-100 mt-2">
+                <ng-container matColumnDef="registration">
+                  <th mat-header-cell *matHeaderCellDef>Plate</th>
+                  <td mat-cell *matCellDef="let v"><strong>{{ v.registration }}</strong></td>
+                </ng-container>
+                <ng-container matColumnDef="type">
+                  <th mat-header-cell *matHeaderCellDef>Type</th>
+                  <td mat-cell *matCellDef="let v">{{ v.type }}</td>
+                </ng-container>
+                <ng-container matColumnDef="price">
+                  <th mat-header-cell *matHeaderCellDef>Valuation</th>
+                  <td mat-cell *matCellDef="let v">{{ formatPrice(v.price) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="minPrice">
+                  <th mat-header-cell *matHeaderCellDef>Min</th>
+                  <td mat-cell *matCellDef="let v">{{ formatPrice(v.minPrice) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="maxPrice">
+                  <th mat-header-cell *matHeaderCellDef>Max</th>
+                  <td mat-cell *matCellDef="let v">{{ formatPrice(v.maxPrice) }}</td>
+                </ng-container>
+                <ng-container matColumnDef="savedAt">
+                  <th mat-header-cell *matHeaderCellDef>Valued At</th>
+                  <td mat-cell *matCellDef="let v">{{ v.savedAt?.toDate() | date:'dd/MM/yyyy HH:mm' }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="valuationColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: valuationColumns;"></tr>
+              </table>
+            </mat-expansion-panel>
+          </mat-accordion>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="mb-4">
+      <mat-card-header>
         <mat-card-title>My Valuation Feedback</mat-card-title>
       </mat-card-header>
       <mat-card-content>
@@ -160,6 +210,10 @@ export class MeComponent {
     this.searches().filter(s => s.userId === this.currentUser()?.uid)
   );
 
+  myAutoValuations = computed(() =>
+    this.autoValuations().filter(v => v.userId === this.currentUser()?.uid)
+  );
+
   adminFeedback = computed(() =>
     this.feedback().filter(f => this.adminsService.adminUids().includes(f.userId ?? ''))
   );
@@ -169,6 +223,7 @@ export class MeComponent {
   );
 
   searchColumns = ['registration', 'type', 'badge', 'searchedAt', 'price'];
+  valuationColumns = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt'];
   feedbackColumns = ['registration', 'valuation', 'agreed', 'submittedAt'];
   messageColumns = ['registration', 'plateMeaning', 'valuation', 'message', 'submittedAt'];
 

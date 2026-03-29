@@ -93,48 +93,6 @@ import { AdminsService } from '../../services/admins.service';
 
             <mat-accordion class="mt-3">
 
-              <!-- My Valuations -->
-              <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                  <mat-panel-title>My Valuations</mat-panel-title>
-                  <mat-panel-description>
-                    <span class="search-count">{{ myAutoValuations().length }}</span>
-                  </mat-panel-description>
-                </mat-expansion-panel-header>
-                @if(myAutoValuations().length === 0){
-                  <p class="text-muted mt-2">No valuations from you yet.</p>
-                } @else {
-                  <table mat-table [dataSource]="myAutoValuations()" class="w-100 mt-2">
-                    <ng-container matColumnDef="registration">
-                      <th mat-header-cell *matHeaderCellDef>Plate</th>
-                      <td mat-cell *matCellDef="let v"><strong>{{ v.registration }}</strong></td>
-                    </ng-container>
-                    <ng-container matColumnDef="type">
-                      <th mat-header-cell *matHeaderCellDef>Type</th>
-                      <td mat-cell *matCellDef="let v">{{ v.type }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="price">
-                      <th mat-header-cell *matHeaderCellDef>Valuation</th>
-                      <td mat-cell *matCellDef="let v">{{ formatPrice(v.price) }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="minPrice">
-                      <th mat-header-cell *matHeaderCellDef>Min</th>
-                      <td mat-cell *matCellDef="let v">{{ formatPrice(v.minPrice) }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="maxPrice">
-                      <th mat-header-cell *matHeaderCellDef>Max</th>
-                      <td mat-cell *matCellDef="let v">{{ formatPrice(v.maxPrice) }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="savedAt">
-                      <th mat-header-cell *matHeaderCellDef>Valued At</th>
-                      <td mat-cell *matCellDef="let v">{{ v.savedAt?.toDate() | date:'dd/MM/yyyy HH:mm' }}</td>
-                    </ng-container>
-                    <tr mat-header-row *matHeaderRowDef="valuationColumns"></tr>
-                    <tr mat-row *matRowDef="let row; columns: valuationColumns;"></tr>
-                  </table>
-                }
-              </mat-expansion-panel>
-
               <!-- Other Users -->
               <mat-expansion-panel>
                 <mat-expansion-panel-header>
@@ -394,7 +352,6 @@ export class AdminComponent {
   feedbackColumns = ['registration', 'valuation', 'likes', 'dislikes'];
   plateMessageColumns = ['registration', 'plateMeaning', 'valuation', 'message', 'submittedAt'];
   columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'userId'];
-  valuationColumns = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt'];
   valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'userId'];
 
   otherSearches = computed(() =>
@@ -415,10 +372,6 @@ export class AdminComponent {
   searchCountByType(type: string): number {
     return this.otherSearches().filter((s) => s.type === type).length;
   }
-
-  myAutoValuations = computed(() =>
-    this.autoValuations().filter((v) => v.userId === this.currentUser()?.uid)
-  );
 
   otherAutoValuations = computed(() =>
     this.autoValuations().filter((v) => v.userId !== this.currentUser()?.uid)
