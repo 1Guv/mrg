@@ -389,7 +389,6 @@ export class AdminComponent {
 
   feedbackColumns = ['registration', 'valuation', 'likes', 'dislikes'];
   plateMessageColumns = ['registration', 'plateMeaning', 'valuation', 'message', 'submittedAt'];
-  columns = ['registration', 'type', 'badge', 'searchedAt', 'price'];
   columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'userId'];
   valuationColumns = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt'];
   valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'userId'];
