@@ -6,6 +6,20 @@
             <mat-tab-group animationDuration="200ms" class="dashboard-tabs">
 
                 @if(isAdmin) {
+                <mat-tab label="Me">
+                    <div class="tab-content">
+                        <app-me
+                            [currentUser]="currentUser$()"
+                            [searches]="plateSearches$()"
+                            [autoValuations]="autoValuations$()"
+                            [feedback]="feedback$()"
+                            [plateMessages]="plateMessages$()">
+                        </app-me>
+                    </div>
+                </mat-tab>
+                }
+
+                @if(isAdmin) {
                 <mat-tab [label]="'Plate Searches (' + plateSearches$().length + ')'">
                     <div class="tab-content">
                         <app-admin [currentUser]="currentUser$()" [searches]="plateSearches$()" [autoValuations]="autoValuations$()" [users]="users$()" [feedback]="feedback$()" [plateMessages]="plateMessages$()"></app-admin>

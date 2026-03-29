@@ -1,17 +1,18 @@
-import {Component, OnDestroy, OnInit, signal} from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
-import {Router, RouterModule} from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import {filter, map, Subscription, take} from "rxjs";
+import { map, Subscription } from 'rxjs';
 import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
 import { ValuationService } from '../../services/valuation.service';
-import { inject } from '@angular/core';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
-import { AdminComponent } from "../admin/admin.component";
+import { AdminComponent } from '../admin/admin.component';
 import { AdminService, AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
+import { AdminsService } from '../../services/admins.service';
+import { MeComponent } from '../me/me.component';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -22,8 +23,9 @@ import { AdminService, AutoValuation, PlateSearch, PlateValuationMessage, UserPr
     RouterModule,
     UserAccountDetailsComponent,
     AccountDashboardValuationComponent,
-    AdminComponent
-],
+    AdminComponent,
+    MeComponent
+  ],
   templateUrl: './account-dashboard.component.html',
   styleUrl: './account-dashboard.component.scss'
 })
@@ -31,10 +33,12 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   currentUser$ = signal({});
   subs = new Subscription();
-  
+
   private valuationService = inject(ValuationService);
   private adminService = inject(AdminService);
+  adminsService = inject(AdminsService);
   private numberPlateFormService = inject(NumberPlateFormService);
+
   valuations$ = signal<RegValuation[]>([]);
   plateSearches$ = signal<PlateSearch[]>([]);
   autoValuations$ = signal<AutoValuation[]>([]);
@@ -42,10 +46,19 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   feedback$ = signal<ValuationFeedback[]>([]);
   plateMessages$ = signal<PlateValuationMessage[]>([]);
 
+  private hasLoadedUsers = false;
+
   constructor(
     private router: Router,
     private authService: AuthService
   ) {
+    effect(() => {
+      const uid = (this.currentUser$() as any)?.uid;
+      if (uid && this.adminsService.isAdmin(uid) && !this.hasLoadedUsers) {
+        this.hasLoadedUsers = true;
+        this.adminService.getAuthUsers().subscribe((users) => this.users$.set(users));
+      }
+    });
   }
 
   ngOnInit() {
@@ -53,11 +66,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
     this.subs.add(
       this.authService.currentUser$
-        .pipe(
-          map((user: any) => {
-            this.currentUser$.set(user);
-          })
-        )
+        .pipe(map((user: any) => this.currentUser$.set(user)))
         .subscribe()
     );
 
@@ -91,19 +100,6 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         .getPlateValuationMessages()
         .subscribe((messages) => this.plateMessages$.set(messages))
     );
-
-    // Wait for auth to resolve before checking admin and calling the Cloud Function
-    this.subs.add(
-      this.authService.currentUser$.pipe(
-        filter((user: any) => user !== null && user !== undefined),
-        take(1)
-      ).subscribe((user: any) => {
-        if (user?.email === 'gurvinder.singh.sandhu@gmail.com' && user?.emailVerified) {
-          this.adminService.getAuthUsers()
-            .subscribe((users) => this.users$.set(users));
-        }
-      })
-    );
   }
 
   get currentValuations(): RegValuation[] {
@@ -123,8 +119,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   }
 
   get isAdmin(): boolean {
-    const user = this.currentUser$() as any;
-    return user?.email === 'gurvinder.singh.sandhu@gmail.com' && user?.emailVerified;
+    return this.adminsService.isAdmin((this.currentUser$() as any)?.uid);
   }
 
   async signOut(): Promise<void> {
