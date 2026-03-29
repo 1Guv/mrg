@@ -71,6 +71,10 @@ import { AdminsService } from '../../services/admins.service';
                       <th mat-header-cell *matHeaderCellDef>Name</th>
                       <td mat-cell *matCellDef="let s">{{ (s.firstName || s.lastName) ? (s.firstName + ' ' + s.lastName).trim() : '—' }}</td>
                     </ng-container>
+                    <ng-container matColumnDef="email">
+                      <th mat-header-cell *matHeaderCellDef>Email</th>
+                      <td mat-cell *matCellDef="let s">{{ s.email || '—' }}</td>
+                    </ng-container>
                     <ng-container matColumnDef="userId">
                       <th mat-header-cell *matHeaderCellDef>User</th>
                       <td mat-cell *matCellDef="let s">{{ s.userId ?? 'Guest' }}</td>
@@ -132,6 +136,14 @@ import { AdminsService } from '../../services/admins.service';
                     <ng-container matColumnDef="savedAt">
                       <th mat-header-cell *matHeaderCellDef>Valued At</th>
                       <td mat-cell *matCellDef="let v">{{ v.savedAt?.toDate() | date:'dd/MM/yyyy HH:mm' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="fullName">
+                      <th mat-header-cell *matHeaderCellDef>Name</th>
+                      <td mat-cell *matCellDef="let v">{{ (v.firstName || v.lastName) ? (v.firstName + ' ' + v.lastName).trim() : '—' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="email">
+                      <th mat-header-cell *matHeaderCellDef>Email</th>
+                      <td mat-cell *matCellDef="let v">{{ v.email || '—' }}</td>
                     </ng-container>
                     <ng-container matColumnDef="userId">
                       <th mat-header-cell *matHeaderCellDef>User</th>
@@ -367,8 +379,8 @@ export class AdminComponent {
 
   feedbackColumns = ['registration', 'valuation', 'likes', 'dislikes'];
   plateMessageColumns = ['registration', 'plateMeaning', 'valuation', 'message', 'submittedAt'];
-  columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'fullName', 'userId'];
-  valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'userId'];
+  columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'fullName', 'email', 'userId'];
+  valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'fullName', 'email', 'userId'];
 
   otherSearches = computed(() =>
     this.searches().filter((s) => s.userId !== this.currentUser()?.uid)
