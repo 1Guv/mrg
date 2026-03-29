@@ -149,7 +149,7 @@ import { AdminsService } from '../../services/admins.service';
           <mat-card-title>Valuation Feedback</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          @if (feedback().length === 0) {
+          @if (userFeedback().length === 0) {
             <p class="text-muted mt-3">No feedback yet.</p>
           } @else {
             <mat-accordion class="mt-3">
@@ -158,7 +158,7 @@ import { AdminsService } from '../../services/admins.service';
                   <mat-panel-title>Feedback Summary</mat-panel-title>
                   <mat-panel-description>
                     👍 {{ totalLikes() }} &nbsp; 👎 {{ totalDislikes() }} &nbsp;
-                    <span class="search-count">{{ feedback().length }}</span>
+                    <span class="search-count">{{ userFeedback().length }}</span>
                   </mat-panel-description>
                 </mat-expansion-panel-header>
                 <table mat-table [dataSource]="feedbackByPlate()" class="w-100 mt-2">
@@ -189,10 +189,10 @@ import { AdminsService } from '../../services/admins.service';
 
       <mat-card class="mb-4">
         <mat-card-header>
-          <mat-card-title>Plate Valuation Messages ({{ plateMessages().length }})</mat-card-title>
+          <mat-card-title>Plate Valuation Messages ({{ userMessages().length }})</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          @if (plateMessages().length === 0) {
+          @if (userMessages().length === 0) {
             <p class="text-muted mt-3">No messages yet.</p>
           } @else {
             <mat-accordion class="mt-3">
@@ -200,10 +200,10 @@ import { AdminsService } from '../../services/admins.service';
                 <mat-expansion-panel-header>
                   <mat-panel-title>All Messages</mat-panel-title>
                   <mat-panel-description>
-                    <span class="search-count">{{ plateMessages().length }}</span>
+                    <span class="search-count">{{ userMessages().length }}</span>
                   </mat-panel-description>
                 </mat-expansion-panel-header>
-                <table mat-table [dataSource]="plateMessages()" class="w-100 mt-3">
+                <table mat-table [dataSource]="userMessages()" class="w-100 mt-3">
                   <ng-container matColumnDef="registration">
                     <th mat-header-cell *matHeaderCellDef>Plate</th>
                     <td mat-cell *matCellDef="let m"><strong>{{ m.registration }}</strong></td>
@@ -308,12 +308,20 @@ export class AdminComponent {
 
   verifiedUsers = computed(() => this.users().filter(u => u.emailVerified));
 
-  totalLikes = computed(() => this.feedback().filter(f => f.agreed).length);
-  totalDislikes = computed(() => this.feedback().filter(f => !f.agreed).length);
+  userFeedback = computed(() =>
+    this.feedback().filter(f => !this.adminsService.adminUids().includes(f.userId ?? ''))
+  );
+
+  userMessages = computed(() =>
+    this.plateMessages().filter(m => !this.adminsService.adminUids().includes(m.userId ?? ''))
+  );
+
+  totalLikes = computed(() => this.userFeedback().filter(f => f.agreed).length);
+  totalDislikes = computed(() => this.userFeedback().filter(f => !f.agreed).length);
 
   feedbackByPlate = computed(() => {
     const map = new Map<string, { likes: number; dislikes: number; valuation: number }>();
-    for (const f of this.feedback()) {
+    for (const f of this.userFeedback()) {
       const key = f.registration?.toUpperCase() ?? 'UNKNOWN';
       const entry = map.get(key) ?? { likes: 0, dislikes: 0, valuation: f.valuation };
       if (f.agreed) entry.likes++; else entry.dislikes++;
