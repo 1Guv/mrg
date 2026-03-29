@@ -238,7 +238,7 @@ import { AdminsService } from '../../services/admins.service';
           <mat-card-title>Registered Users</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          @if (users().length === 0) {
+          @if (nonAdminUsers().length === 0) {
             <p class="text-muted mt-3">Loading users...</p>
           } @else {
             <mat-accordion class="mt-3">
@@ -246,12 +246,12 @@ import { AdminsService } from '../../services/admins.service';
                 <mat-expansion-panel-header>
                   <mat-panel-title>All Users</mat-panel-title>
                   <mat-panel-description>
-                    <span class="search-count">{{ users().length }}</span>
+                    <span class="search-count">{{ nonAdminUsers().length }}</span>
                     &nbsp;&nbsp;Verified: {{ verifiedUsers().length }}
-                    &nbsp;&nbsp;Unverified: {{ users().length - verifiedUsers().length }}
+                    &nbsp;&nbsp;Unverified: {{ nonAdminUsers().length - verifiedUsers().length }}
                   </mat-panel-description>
                 </mat-expansion-panel-header>
-                <table mat-table [dataSource]="users()" class="w-100 mt-2">
+                <table mat-table [dataSource]="nonAdminUsers()" class="w-100 mt-2">
                   <ng-container matColumnDef="email">
                     <th mat-header-cell *matHeaderCellDef>Email</th>
                     <td mat-cell *matCellDef="let u">{{ u.email }}</td>
@@ -306,7 +306,11 @@ export class AdminComponent {
     return this.adminsService.isAdmin(this.currentUser()?.uid);
   }
 
-  verifiedUsers = computed(() => this.users().filter(u => u.emailVerified));
+  nonAdminUsers = computed(() =>
+    this.users().filter(u => !this.adminsService.adminUids().includes(u.uid))
+  );
+
+  verifiedUsers = computed(() => this.nonAdminUsers().filter(u => u.emailVerified));
 
   userFeedback = computed(() =>
     this.feedback().filter(f => !this.adminsService.adminUids().includes(f.userId ?? ''))
