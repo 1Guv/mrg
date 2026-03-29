@@ -36,7 +36,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   private valuationService = inject(ValuationService);
   private adminService = inject(AdminService);
-  adminsService = inject(AdminsService);
+  private adminsService = inject(AdminsService);
   private numberPlateFormService = inject(NumberPlateFormService);
 
   valuations$ = signal<RegValuation[]>([]);
