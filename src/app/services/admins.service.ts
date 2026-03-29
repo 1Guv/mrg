@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 
 export interface Admin {
   uid: string;
-  email: string;
+  email?: string;
 }
 
 export const ADMINS_DATA = new InjectionToken<Observable<Admin[]>>('admins.data');
@@ -28,7 +28,7 @@ export class AdminsService {
 
   private admins = toSignal(this.adminsData, { initialValue: [] as Admin[] });
 
-  adminUids = computed(() => this.admins().map((a: Admin) => a.uid));
+  readonly adminUids = computed(() => this.admins().map((a: Admin) => a.uid));
 
   isAdmin(uid: string | undefined): boolean {
     if (!uid) return false;
