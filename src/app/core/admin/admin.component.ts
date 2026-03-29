@@ -67,6 +67,10 @@ import { AdminsService } from '../../services/admins.service';
                       <th mat-header-cell *matHeaderCellDef>Valuation</th>
                       <td mat-cell *matCellDef="let s">{{ getPrice(s.registration) }}</td>
                     </ng-container>
+                    <ng-container matColumnDef="fullName">
+                      <th mat-header-cell *matHeaderCellDef>Name</th>
+                      <td mat-cell *matCellDef="let s">{{ (s.firstName || s.lastName) ? (s.firstName + ' ' + s.lastName).trim() : '—' }}</td>
+                    </ng-container>
                     <ng-container matColumnDef="userId">
                       <th mat-header-cell *matHeaderCellDef>User</th>
                       <td mat-cell *matCellDef="let s">{{ s.userId ?? 'Guest' }}</td>
@@ -363,7 +367,7 @@ export class AdminComponent {
 
   feedbackColumns = ['registration', 'valuation', 'likes', 'dislikes'];
   plateMessageColumns = ['registration', 'plateMeaning', 'valuation', 'message', 'submittedAt'];
-  columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'userId'];
+  columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'fullName', 'userId'];
   valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'userId'];
 
   otherSearches = computed(() =>
