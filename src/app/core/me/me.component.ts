@@ -181,7 +181,7 @@ export class MeComponent {
   }
 
   formatPrice(price: number): string {
-    if (!price) return '-';
+    if (price == null) return '-';
     return '£' + price.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 }
