@@ -477,12 +477,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 --------------------------------------------------------------------------------
-Package: @firebase/functions
-License: "Apache-2.0"
-
-
---------------------------------------------------------------------------------
-Package: @angular/animations
+Package: @angular/core
 License: "MIT"
 
 The MIT License
@@ -508,7 +503,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 --------------------------------------------------------------------------------
-Package: @angular/core
+Package: @firebase/functions
+License: "Apache-2.0"
+
+
+--------------------------------------------------------------------------------
+Package: @angular/animations
 License: "MIT"
 
 The MIT License
