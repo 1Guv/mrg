@@ -1,10 +1,11 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
+import { AdminsService } from '../../services/admins.service';
 
 @Component({
   selector: 'app-admin',
@@ -16,7 +17,7 @@ import { AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, Valuati
     MatButtonToggleModule,
   ],
   template: `
-    @if(currentUser()?.email === 'gurvinder.singh.sandhu@gmail.com' && currentUser()?.emailVerified){
+    @if(adminsService.isAdmin(currentUser()?.uid)){
       <mat-card class="mb-4">
         <mat-card-header>
           <mat-card-title>Plate Searches</mat-card-title>
@@ -27,44 +28,6 @@ import { AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, Valuati
           } @else {
 
             <mat-accordion class="mt-3">
-
-              <!-- My Searches -->
-              <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                  <mat-panel-title>My Searches</mat-panel-title>
-                  <mat-panel-description>
-                    <span class="search-count">{{ mySearches().length }}</span>
-                  </mat-panel-description>
-                </mat-expansion-panel-header>
-                @if(mySearches().length === 0){
-                  <p class="text-muted mt-2">No searches from you yet.</p>
-                } @else {
-                  <table mat-table [dataSource]="mySearches()" class="w-100 mt-2">
-                    <ng-container matColumnDef="registration">
-                      <th mat-header-cell *matHeaderCellDef>Plate</th>
-                      <td mat-cell *matCellDef="let s"><strong>{{ s.registration }}</strong></td>
-                    </ng-container>
-                    <ng-container matColumnDef="type">
-                      <th mat-header-cell *matHeaderCellDef>Type</th>
-                      <td mat-cell *matCellDef="let s">{{ s.type }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="badge">
-                      <th mat-header-cell *matHeaderCellDef>Badge</th>
-                      <td mat-cell *matCellDef="let s">{{ s.badge }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="searchedAt">
-                      <th mat-header-cell *matHeaderCellDef>Searched At</th>
-                      <td mat-cell *matCellDef="let s">{{ s.searchedAt?.toDate() | date:'dd/MM/yyyy HH:mm' }}</td>
-                    </ng-container>
-                    <ng-container matColumnDef="price">
-                      <th mat-header-cell *matHeaderCellDef>Valuation</th>
-                      <td mat-cell *matCellDef="let s">{{ getPrice(s.registration) }}</td>
-                    </ng-container>
-                    <tr mat-header-row *matHeaderRowDef="columns"></tr>
-                    <tr mat-row *matRowDef="let row; columns: columns;"></tr>
-                  </table>
-                }
-              </mat-expansion-panel>
 
               <!-- Other Users -->
               <mat-expansion-panel>
@@ -379,6 +342,8 @@ export class AdminComponent {
   feedback = input<ValuationFeedback[]>([]);
   plateMessages = input<PlateValuationMessage[]>([]);
 
+  adminsService = inject(AdminsService);
+
   verifiedUsers = computed(() => this.users().filter(u => u.emailVerified));
 
   totalLikes = computed(() => this.feedback().filter(f => f.agreed).length);
@@ -428,10 +393,6 @@ export class AdminComponent {
   columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'userId'];
   valuationColumns = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt'];
   valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'userId'];
-
-  mySearches = computed(() =>
-    this.searches().filter((s) => s.userId === this.currentUser()?.uid)
-  );
 
   otherSearches = computed(() =>
     this.searches().filter((s) => s.userId !== this.currentUser()?.uid)
