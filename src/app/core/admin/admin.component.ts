@@ -75,6 +75,10 @@ import { AdminsService } from '../../services/admins.service';
                       <th mat-header-cell *matHeaderCellDef>Email</th>
                       <td mat-cell *matCellDef="let s">{{ s.email || '—' }}</td>
                     </ng-container>
+                    <ng-container matColumnDef="city">
+                      <th mat-header-cell *matHeaderCellDef>City</th>
+                      <td mat-cell *matCellDef="let s">{{ s.city || '—' }}</td>
+                    </ng-container>
                     <ng-container matColumnDef="userId">
                       <th mat-header-cell *matHeaderCellDef>User</th>
                       <td mat-cell *matCellDef="let s">{{ s.userId ?? 'Guest' }}</td>
@@ -144,6 +148,10 @@ import { AdminsService } from '../../services/admins.service';
                     <ng-container matColumnDef="email">
                       <th mat-header-cell *matHeaderCellDef>Email</th>
                       <td mat-cell *matCellDef="let v">{{ v.email || '—' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="city">
+                      <th mat-header-cell *matHeaderCellDef>City</th>
+                      <td mat-cell *matCellDef="let v">{{ v.city || '—' }}</td>
                     </ng-container>
                     <ng-container matColumnDef="userId">
                       <th mat-header-cell *matHeaderCellDef>User</th>
@@ -304,6 +312,40 @@ import { AdminsService } from '../../services/admins.service';
           }
         </mat-card-content>
       </mat-card>
+
+      <mat-card class="mb-4">
+        <mat-card-header>
+          <mat-card-title>Locations</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (userLocations().length === 0) {
+            <p class="text-muted mt-3">No location data yet.</p>
+          } @else {
+            <mat-accordion class="mt-3">
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>User Locations</mat-panel-title>
+                  <mat-panel-description>
+                    <span class="search-count">{{ userLocations().length }}</span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+                <table mat-table [dataSource]="userLocations()" class="w-100 mt-2">
+                  <ng-container matColumnDef="city">
+                    <th mat-header-cell *matHeaderCellDef>City</th>
+                    <td mat-cell *matCellDef="let l"><strong>{{ l.city }}</strong></td>
+                  </ng-container>
+                  <ng-container matColumnDef="count">
+                    <th mat-header-cell *matHeaderCellDef>Users</th>
+                    <td mat-cell *matCellDef="let l">{{ l.count }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="locationColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: locationColumns;"></tr>
+                </table>
+              </mat-expansion-panel>
+            </mat-accordion>
+          }
+        </mat-card-content>
+      </mat-card>
     }
   `,
   styleUrl: './admin.component.scss'
@@ -327,6 +369,20 @@ export class AdminComponent {
   );
 
   verifiedUsers = computed(() => this.nonAdminUsers().filter(u => u.emailVerified));
+
+  userLocations = computed(() => {
+    const cityCount = new Map<string, number>();
+    const allRecords = [...this.otherSearches(), ...this.otherAutoValuations()];
+    for (const r of allRecords) {
+      const city = r.city?.trim();
+      if (city) cityCount.set(city, (cityCount.get(city) ?? 0) + 1);
+    }
+    return [...cityCount.entries()]
+      .map(([city, count]) => ({ city, count }))
+      .sort((a, b) => b.count - a.count);
+  });
+
+  locationColumns = ['city', 'count'];
 
   userFeedback = computed(() =>
     this.feedback().filter(f => !this.adminsService.adminUids().includes(f.userId ?? ''))
@@ -379,8 +435,8 @@ export class AdminComponent {
 
   feedbackColumns = ['registration', 'valuation', 'likes', 'dislikes'];
   plateMessageColumns = ['registration', 'plateMeaning', 'valuation', 'message', 'submittedAt'];
-  columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'fullName', 'email', 'userId'];
-  valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'fullName', 'email', 'userId'];
+  columnsWithUser = ['registration', 'type', 'badge', 'searchedAt', 'price', 'fullName', 'email', 'city', 'userId'];
+  valuationColumnsWithUser = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt', 'fullName', 'email', 'city', 'userId'];
 
   otherSearches = computed(() =>
     this.searches().filter((s) => s.userId !== this.currentUser()?.uid)
