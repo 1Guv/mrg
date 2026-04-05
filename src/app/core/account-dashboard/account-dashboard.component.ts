@@ -120,10 +120,9 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
     this.subs.add(
       this.authService.currentUser$.pipe(
-        switchMap(user => (user as any)?.email
-          ? this.sellerEnquiryService.getEnquiriesForSeller((user as any).email)
-          : of([])
-        )
+        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+          ? this.sellerEnquiryService.getAllEnquiries()
+          : of([] as SellerEnquiry[]))
       ).subscribe(enquiries => this.sellerEnquiries$.set(enquiries))
     );
   }

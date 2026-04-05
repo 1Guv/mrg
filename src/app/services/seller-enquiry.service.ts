@@ -83,4 +83,15 @@ export class SellerEnquiryService {
       }))
     );
   }
+
+  getAllEnquiries(): Observable<SellerEnquiry[]> {
+    const ref = collection(this.firestore, 'seller_enquiries');
+    return (collectionData(ref, { idField: 'id' }) as Observable<SellerEnquiry[]>).pipe(
+      map(enquiries => [...enquiries].sort((a, b) => {
+        const aTime = a.submittedAt?.toMillis?.() ?? 0;
+        const bTime = b.submittedAt?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      }))
+    );
+  }
 }
