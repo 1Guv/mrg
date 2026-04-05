@@ -9,9 +9,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { take } from 'rxjs';
-import { AuthService } from '../../../services/auth.service';
-import { SellerEnquiryService } from '../../../services/seller-enquiry.service';
-import { PlateListing } from '../../../models/plate-listing.model';
+import { User } from '@angular/fire/auth';
+import { AuthService } from '../../services/auth.service';
+import { SellerEnquiryService } from '../../services/seller-enquiry.service';
+import { PlateListing } from '../../models/plate-listing.model';
 
 @Component({
   selector: 'app-message-seller-dialog',
@@ -68,7 +69,7 @@ export class MessageSellerDialogComponent {
     this.loading = true;
     this.errorMessage = '';
 
-    this.authService.currentUser$.pipe(take(1)).subscribe(async user => {
+    this.authService.currentUser$.pipe(take(1)).subscribe(async (user: User | null) => {
       try {
         await this.enquiryService.saveEnquiry({
           plateId: this.listing.id,

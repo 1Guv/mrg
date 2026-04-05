@@ -1,0 +1,141 @@
+<div class="container-fluid d-flex flex-column p-4">
+    <h1 class="cabin-font-sketch responsive-heading text-center w-100">Plates for Sale</h1>
+    <h6 class="pt-4 text-center">Find your perfect plate. <span class="emphasis-text">Sell yours today.</span></h6>
+
+    <hr>
+
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="200ms">
+
+        <mat-tab label="Sell">
+            <div class="tab-content">
+                <app-recently-sold />
+
+                <p class="cabin-font-heading text-center mt-3">Why advertise with us?</p>
+
+                <div class="benefits-grid">
+                    @for (benefit of benefits; track $index) {
+                        <app-benefit-card [card]="benefit" />
+                    }
+                </div>
+
+                <hr>
+
+                <div class="coming-soon-section">
+                    <div class="coming-soon-header">
+                        <span class="coming-soon-dot"></span>
+                        <mat-icon class="coming-soon-rocket">rocket_launch</mat-icon>
+                        <span class="coming-soon-label">New features coming soon</span>
+                    </div>
+
+                    <div class="benefits-grid">
+                        @for (item of comingSoonItems; track $index) {
+                            <app-benefit-card [card]="item" />
+                        }
+                    </div>
+                </div>
+            </div>
+        </mat-tab>
+
+        <mat-tab label="Buy">
+            <div class="tab-content">
+
+                <mat-form-field class="w-100 mt-3" appearance="outline">
+                    <mat-label>Search plates</mat-label>
+                    <input matInput [(ngModel)]="searchTerm" placeholder="e.g. F1 or AB12">
+                    <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
+
+                <div class="listings-count">
+                    @if (searchTerm.trim()) {
+                        <span>{{ filteredListings.length }} of {{ allListings.length }} plates</span>
+                    } @else {
+                        <span>{{ allListings.length }} plates</span>
+                    }
+                </div>
+
+                @if (allListings.length === 0) {
+                    <div class="d-flex justify-content-center py-5">
+                        <p class="text-muted">Loading listings...</p>
+                    </div>
+                } @else if (filteredListings.length === 0) {
+                    <div class="d-flex flex-column align-items-center py-4">
+                        <mat-icon class="storefront-icon">search_off</mat-icon>
+                        <p class="text-muted">No plates found for "{{ searchTerm }}"</p>
+                    </div>
+                } @else {
+                    <cdk-virtual-scroll-viewport itemSize="420" minBufferPx="840" maxBufferPx="1260" class="listings-viewport">
+                        <div *cdkVirtualFor="let row of listingRows; trackBy: trackRow; templateCacheSize: 0" class="listings-row">
+                            @for (listing of row; track listing.id) {
+                                <div class="listing-card-wrapper">
+                                    <div class="listing-avatar">{{ listing.initials | uppercase }}</div>
+                                    <div class="listing-date">{{ listing.createdDate | date:'d MMM y' }}</div>
+                                    <mat-card class="listing-card">
+                                        <div class="plate-css">
+                                            <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
+                                        </div>
+                                        <span class="listing-price">£{{ listing.askingPrice }}</span>
+                                        @if (listing.meanings) {
+                                            <div class="listing-meanings">
+                                                <span class="listing-meanings-label">Meaning</span>
+                                                <span class="listing-meanings-text">{{ listing.meanings }}</span>
+                                            </div>
+                                        }
+                                        <hr class="listing-divider">
+                                        <button mat-raised-button class="message-seller-btn"
+                                            [matBadge]="listing.viewsPlaceholder"
+                                            matBadgePosition="above after"
+                                            matBadgeColor="accent"
+                                            (click)="onMessageSeller(listing)">
+                                            Message Seller
+                                        </button>
+                                        <div class="share-buttons-wrapper">
+                                            <app-share-buttons [shareText]="listing.plateCharacters + ' — £' + listing.askingPrice" />
+                                        </div>
+                                    </mat-card>
+                                </div>
+                            }
+                        </div>
+                    </cdk-virtual-scroll-viewport>
+                }
+            </div>
+        </mat-tab>
+
+        <mat-tab label="Sold">
+            <div class="tab-content">
+                @if (soldListings.length === 0) {
+                    <div class="d-flex justify-content-center py-5">
+                        <p class="text-muted">No sold plates yet.</p>
+                    </div>
+                } @else {
+                    <cdk-virtual-scroll-viewport itemSize="380" minBufferPx="760" maxBufferPx="1140" class="listings-viewport">
+                        <div *cdkVirtualFor="let row of soldListingRows; trackBy: trackRow; templateCacheSize: 0" class="listings-row">
+                            @for (listing of row; track listing.id) {
+                                <div class="listing-card-wrapper">
+                                    <div class="listing-avatar">{{ listing.initials | uppercase }}</div>
+                                    <div class="listing-date">{{ listing.createdDate | date:'d MMM y' }}</div>
+                                    <span class="sold-tab-badge">SOLD</span>
+                                    <mat-card class="listing-card">
+                                        <div class="plate-css">
+                                            <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
+                                        </div>
+                                        <span class="listing-price">£{{ listing.soldPrice | number }}</span>
+                                        @if (listing.meanings) {
+                                            <div class="listing-meanings">
+                                                <span class="listing-meanings-label">Meaning</span>
+                                                <span class="listing-meanings-text">{{ listing.meanings }}</span>
+                                            </div>
+                                        }
+                                        <div class="share-buttons-wrapper">
+                                            <app-share-buttons [shareText]="listing.plateCharacters + ' — Sold for £' + listing.soldPrice" />
+                                        </div>
+                                    </mat-card>
+                                </div>
+                            }
+                        </div>
+                    </cdk-virtual-scroll-viewport>
+                }
+            </div>
+        </mat-tab>
+
+    </mat-tab-group>
+</div>
