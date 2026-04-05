@@ -116,7 +116,7 @@ export class PlatesForSaleComponent {
       description: 'Pay once, no subscriptions or hidden fees.',
       backgroundColor: '#e8f0fe',
       button: true,
-      buttonName: 'List now for £22',
+      buttonName: `List now for £${this.plateListingService.listingFee}`,
       buttonLink: '/list-plate'
     },
     {
