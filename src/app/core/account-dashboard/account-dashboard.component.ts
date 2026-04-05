@@ -4,7 +4,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { map, of, Subscription, switchMap } from 'rxjs';
+import { combineLatest, map, of, Subscription, switchMap } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
 import { ValuationService } from '../../services/valuation.service';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
@@ -119,12 +120,15 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     );
 
     this.subs.add(
-      this.authService.currentUser$.pipe(
-        switchMap(user => {
+      combineLatest([
+        this.authService.currentUser$,
+        toObservable(this.adminsService.adminUids)
+      ]).pipe(
+        switchMap(([user, adminUids]) => {
           const uid = (user as any)?.uid;
           const email = (user as any)?.email;
           if (!email) return of([] as SellerEnquiry[]);
-          const queryEmail = this.adminsService.isAdmin(uid)
+          const queryEmail = uid && adminUids.includes(uid)
             ? 'guv.mr.valuations+apnaplates@gmail.com'
             : email;
           return this.sellerEnquiryService.getEnquiriesForSeller(queryEmail);
