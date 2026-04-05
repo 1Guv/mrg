@@ -1,0 +1,21 @@
+.success-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 4rem;
+  width: 4rem;
+  height: 4rem;
+  color: #2e7d32;
+}
+
+.cta-btn {
+  margin-top: 1rem;
+}
