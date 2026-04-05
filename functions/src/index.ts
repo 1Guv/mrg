@@ -229,7 +229,9 @@ export const stripeWebhook = onRequest(
       new (Stripe as any)(stripeSecretKey.value()) as import("stripe").Stripe;
     const sig = request.headers["stripe-signature"] as string;
 
-    let event: ReturnType<import("stripe").Stripe["webhooks"]["constructEvent"]>;
+    type StripeEvent =
+      ReturnType<import("stripe").Stripe["webhooks"]["constructEvent"]>;
+    let event: StripeEvent;
     try {
       event = stripe.webhooks.constructEvent(
         request.rawBody,
@@ -242,8 +244,11 @@ export const stripeWebhook = onRequest(
     }
 
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object as
-        Awaited<ReturnType<import("stripe").Stripe["checkout"]["sessions"]["create"]>>;
+      type CheckoutSession =
+        Awaited<ReturnType<
+          import("stripe").Stripe["checkout"]["sessions"]["create"]
+        >>;
+      const session = event.data.object as CheckoutSession;
       const meta = session.metadata as {
         plateCharacters: string;
         askingPrice: string;
