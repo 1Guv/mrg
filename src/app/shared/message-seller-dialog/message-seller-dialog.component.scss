@@ -1,0 +1,95 @@
+.plate-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.plate-css {
+  height: 60px;
+  border-radius: 5px;
+  background-color: #ff0;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+
+  .bevel-plate {
+    font-size: 2rem;
+  }
+}
+
+.summary-meaning {
+  font-size: 0.8rem;
+  color: #555;
+  text-align: center;
+  margin: 0;
+}
+
+.summary-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  background-color: #ff4081;
+  border-radius: 999px;
+  padding: 4px 14px;
+}
+
+.enquiry-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.full-field {
+  width: 100%;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: -0.5rem;
+}
+
+.whatsapp-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.whatsapp-label {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.whatsapp-link {
+  color: #25d366;
+  border-color: #25d366 !important;
+  text-decoration: none;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-right: 4px;
+  }
+}
+
+.success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: #2e7d32;
+}

@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>Message Seller › {{ listing.plateCharacters | uppercase }}</h2>
+
+<mat-dialog-content>
+  @if (submitted) {
+    <div class="success-state">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <p>Your message has been sent! The seller will be in touch.</p>
+    </div>
+  } @else {
+    <div class="plate-summary">
+      <div class="plate-css">
+        <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
+      </div>
+      @if (listing.meanings) {
+        <p class="summary-meaning">{{ listing.meanings }}</p>
+      }
+      <span class="summary-price">£{{ listing.askingPrice }}</span>
+    </div>
+
+    <form [formGroup]="form" class="enquiry-form">
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Reason for enquiry</mat-label>
+        <mat-select formControlName="enquiryType">
+          @for (type of enquiryTypes; track type) {
+            <mat-option [value]="type">{{ type }}</mat-option>
+          }
+        </mat-select>
+        <mat-error>Please select an enquiry type</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Your message</mat-label>
+        <textarea matInput formControlName="message" rows="4"
+          placeholder="Tell the seller more..."></textarea>
+        @if (form.get('message')?.hasError('required')) {
+          <mat-error>Message is required</mat-error>
+        }
+        @if (form.get('message')?.hasError('minlength')) {
+          <mat-error>Message must be at least 10 characters</mat-error>
+        }
+      </mat-form-field>
+
+      @if (errorMessage) {
+        <p class="error-message">{{ errorMessage }}</p>
+      }
+    </form>
+
+    <div class="whatsapp-row">
+      <span class="whatsapp-label">Or contact via</span>
+      <a [href]="whatsappUrl" target="_blank" rel="noopener noreferrer"
+        class="whatsapp-link" mat-stroked-button>
+        <mat-icon>chat</mat-icon>
+        WhatsApp
+      </a>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (submitted) {
+    <button mat-raised-button color="primary" mat-dialog-close>Close</button>
+  } @else {
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary"
+      [disabled]="form.invalid || loading"
+      (click)="onSubmit()">
+      @if (loading) { Sending... } @else { Send Message }
+    </button>
+  }
+</mat-dialog-actions>
