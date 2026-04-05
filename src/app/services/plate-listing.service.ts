@@ -20,6 +20,7 @@ export class PlateListingService {
 
   private firestore = inject(Firestore);
   private readonly COLLECTION = 'plate-listings';
+  readonly listingFee = 6;
 
   getAll(): Observable<PlateListing[]> {
     const ref = collection(this.firestore, this.COLLECTION);
