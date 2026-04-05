@@ -87,27 +87,35 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     );
 
     this.subs.add(
-      this.adminService
-        .getPlateSearches()
-        .subscribe((searches) => this.plateSearches$.set(searches))
+      this.authService.currentUser$.pipe(
+        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+          ? this.adminService.getPlateSearches()
+          : of([] as PlateSearch[]))
+      ).subscribe((searches) => this.plateSearches$.set(searches))
     );
 
     this.subs.add(
-      this.adminService
-        .getAutoValuations()
-        .subscribe((valuations) => this.autoValuations$.set(valuations))
+      this.authService.currentUser$.pipe(
+        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+          ? this.adminService.getAutoValuations()
+          : of([] as AutoValuation[]))
+      ).subscribe((valuations) => this.autoValuations$.set(valuations))
     );
 
     this.subs.add(
-      this.adminService
-        .getFeedback()
-        .subscribe((feedback) => this.feedback$.set(feedback))
+      this.authService.currentUser$.pipe(
+        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+          ? this.adminService.getFeedback()
+          : of([] as ValuationFeedback[]))
+      ).subscribe((feedback) => this.feedback$.set(feedback))
     );
 
     this.subs.add(
-      this.adminService
-        .getPlateValuationMessages()
-        .subscribe((messages) => this.plateMessages$.set(messages))
+      this.authService.currentUser$.pipe(
+        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+          ? this.adminService.getPlateValuationMessages()
+          : of([] as PlateValuationMessage[]))
+      ).subscribe((messages) => this.plateMessages$.set(messages))
     );
 
     this.subs.add(
