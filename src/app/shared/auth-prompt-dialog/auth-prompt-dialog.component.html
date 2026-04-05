@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>Sign in to message the seller</h2>
+
+<mat-dialog-content>
+  <p class="prompt-message">
+    You need to be logged in to message a seller.
+    Please log in or create a free account to continue.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-stroked-button (click)="goToRegister()">Register</button>
+  <button mat-raised-button color="primary" (click)="goToLogin()">Log in</button>
+</mat-dialog-actions>
