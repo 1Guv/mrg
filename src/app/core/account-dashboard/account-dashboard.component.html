@@ -128,13 +128,13 @@
                                         <input matInput formControlName="meanings">
                                     </mat-form-field>
 
-                                    @if (saveError.get(String(listing.id))) {
-                                        <p class="save-error">{{ saveError.get(String(listing.id)) }}</p>
+                                    @if (saveError.get('' + listing.id)) {
+                                        <p class="save-error">{{ saveError.get('' + listing.id) }}</p>
                                     }
 
                                     @if (getListingForm(listing).dirty) {
                                         <button type="button" mat-raised-button color="primary"
-                                            [disabled]="getListingForm(listing).invalid || savingListingId === String(listing.id)"
+                                            [disabled]="getListingForm(listing).invalid || savingListingId === ('' + listing.id)"
                                             (click)="saveListing(listing)">
                                             Save changes
                                         </button>
