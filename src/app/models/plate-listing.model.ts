@@ -22,4 +22,5 @@ export interface PlateListing {
   plateCategory: string;
   isSold: boolean;
   soldPrice: number | null;
+  sellerUid?: string;
 }

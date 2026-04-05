@@ -8,6 +8,7 @@ import {
   where,
   doc,
   getDoc,
+  updateDoc,
   runTransaction
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
@@ -47,5 +48,16 @@ export class PlateListingService {
       const current = Number(snap.data()?.['viewsPlaceholder'] ?? 0);
       transaction.update(ref, { viewsPlaceholder: current + 1 });
     });
+  }
+
+  getMyListings(uid: string): Observable<PlateListing[]> {
+    const ref = collection(this.firestore, this.COLLECTION);
+    const q = query(ref, where('sellerUid', '==', uid));
+    return collectionData(q, { idField: 'id' }) as Observable<PlateListing[]>;
+  }
+
+  updateListing(id: string, data: { askingPrice: string; meanings: string }): Promise<void> {
+    const ref = doc(this.firestore, `${this.COLLECTION}/${id}`);
+    return updateDoc(ref, data);
   }
 }
