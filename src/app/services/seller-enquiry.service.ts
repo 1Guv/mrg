@@ -93,11 +93,20 @@ export class SellerEnquiryService {
         html: `
           <h2>The seller has replied to your enquiry</h2>
           <p><strong>Plate:</strong> ${enquiry.plateCharacters.toUpperCase()}</p>
-          <p><strong>Reply:</strong> ${replyMessage}</p>
+          <p><strong>Reply:</strong> ${this.escapeHtml(replyMessage)}</p>
           <hr>
-          <p style="color:#888"><em>Your original message: ${enquiry.message}</em></p>
+          <p style="color:#888"><em>Your original message: ${this.escapeHtml(enquiry.message)}</em></p>
         `
       }
     });
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
   }
 }

@@ -33,7 +33,7 @@ export class ReplyToEnquiryDialogComponent {
   private enquiryService = inject(SellerEnquiryService);
 
   form: FormGroup = this.fb.group({
-    replyMessage: ['', [Validators.required, Validators.minLength(10)]]
+    replyMessage: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000)]]
   });
 
   loading = false;

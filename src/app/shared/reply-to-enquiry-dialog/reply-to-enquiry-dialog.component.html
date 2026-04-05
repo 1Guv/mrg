@@ -17,12 +17,15 @@
       <mat-form-field appearance="outline" class="full-field">
         <mat-label>Your reply</mat-label>
         <textarea matInput formControlName="replyMessage" rows="5"
-          placeholder="Type your reply here..."></textarea>
+          placeholder="Type your reply here..." maxlength="2000"></textarea>
         @if (form.get('replyMessage')?.hasError('required')) {
           <mat-error>Reply is required</mat-error>
         }
         @if (form.get('replyMessage')?.hasError('minlength')) {
           <mat-error>Reply must be at least 10 characters</mat-error>
+        }
+        @if (form.get('replyMessage')?.hasError('maxlength')) {
+          <mat-error>Reply must be 2000 characters or fewer</mat-error>
         }
       </mat-form-field>
 
