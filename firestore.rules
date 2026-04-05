@@ -49,11 +49,12 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // Seller enquiries — authenticated users can create; sellers can read their own
+    // Seller enquiries — authenticated users can create; sellers can read their own; admins can read all
     match /seller_enquiries/{docId} {
       allow create: if request.auth != null;
       allow read: if request.auth != null
-        && request.auth.token.email == resource.data.sellerEmail;
+        && (request.auth.token.email == resource.data.sellerEmail
+            || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
       allow update, delete: if false;
     }
 
