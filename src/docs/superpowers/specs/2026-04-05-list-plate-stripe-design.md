@@ -40,11 +40,16 @@ User visits /list-plate
 | Create | `src/app/core/list-plate-success/list-plate-success.component.html` | Success template |
 | Create | `src/app/core/list-plate-success/list-plate-success.component.scss` | Success styles |
 | Create | `src/app/services/stripe.service.ts` | Calls createCheckoutSession Cloud Function |
+| Modify | `src/app/models/plate-listing.model.ts` | Add `sellerUid?: string` field |
+| Modify | `src/app/services/plate-listing.service.ts` | Add `getMyListings()` and `updateListing()` |
+| Modify | `src/app/core/account-dashboard/account-dashboard.component.ts` | Add My Listings tab data |
+| Modify | `src/app/core/account-dashboard/account-dashboard.component.html` | Add My Listings tab with inline editing |
 | Modify | `src/app/app.routes.ts` | Add list-plate and list-plate/success routes |
 | Modify | `src/environments/environment.ts` | Add appBaseUrl, remove secretKey |
 | Modify | `src/environments/environment.prod.ts` | Add appBaseUrl, remove secretKey |
-| Modify | `functions/src/index.ts` | Add createCheckoutSession + stripeWebhook |
+| Modify | `functions/src/index.ts` | Add createCheckoutSession + stripeWebhook (stores sellerUid) |
 | Modify | `functions/package.json` | Add stripe dependency |
+| Modify | `firestore.rules` | Allow seller to update askingPrice and meanings only |
 
 ---
 
@@ -119,6 +124,7 @@ export const createCheckoutSession = onCall(
     }
 
     const { plateCharacters, askingPrice, phone, email, meanings, negotiable, appBaseUrl } = request.data;
+    const sellerUid = request.auth.uid;
 
     const stripe = new Stripe(stripeSecretKey.value());
 
@@ -145,6 +151,7 @@ export const createCheckoutSession = onCall(
         email: String(email),
         meanings: String(meanings ?? ''),
         negotiable: negotiable ? 'true' : 'false',
+        sellerUid,
       },
     });
 
@@ -192,6 +199,7 @@ export const stripeWebhook = onRequest(
         plateListingAccTelNumber: meta.phone,
         meanings: meta.meanings,
         plateNegotiable: meta.negotiable === 'true',
+        sellerUid: meta.sellerUid,
         initials,
         createdDate: new Date().toISOString(),
         isSold: false,
@@ -294,9 +302,103 @@ No `canActivate` guard — the component handles the auth check and shows the di
 
 ---
 
+## 6. PlateListing Model
+
+Add `sellerUid?: string` to the existing `PlateListing` interface in `src/app/models/plate-listing.model.ts`.
+
+---
+
+## 7. PlateListingService — New Methods
+
+```typescript
+getMyListings(uid: string): Observable<PlateListing[]> {
+  const ref = collection(this.firestore, this.COLLECTION);
+  const q = query(ref, where('sellerUid', '==', uid));
+  return collectionData(q, { idField: 'id' }) as Observable<PlateListing[]>;
+}
+
+updateListing(id: string, data: { askingPrice: string; meanings: string }): Promise<void> {
+  const ref = doc(this.firestore, `${this.COLLECTION}/${id}`);
+  return updateDoc(ref, data);
+}
+```
+
+Requires adding `where`, `doc`, `updateDoc` to the Angular Fire imports.
+
+---
+
+## 8. Account Dashboard — My Listings Tab
+
+### Data
+
+In `AccountDashboardComponent`:
+- Add `myListings$ = signal<PlateListing[]>([])`
+- In `ngOnInit`, subscribe to `plateListingService.getMyListings(uid)` when `currentUser$` emits a logged-in user
+- Only load when UID is available (not admin-gated — any logged-in user can see their own listings)
+
+### Tab
+
+Add a new tab `"My Listings"` to the dashboard tab group, showing a card for each listing in `myListings$()`.
+
+Each listing card displays:
+- `plateCharacters` — read-only, styled as a plate (`.bevel-plate`)
+- `askingPrice` — inline editable `<input>` (number, min 1)
+- `meanings` — inline editable `<input>` (text, optional)
+- A **Save** button that appears only when the value differs from the original
+- Saving calls `plateListingService.updateListing(listing.id, { askingPrice, meanings })`
+
+### Inline Editing Pattern
+
+Each card uses a local reactive form initialised from the listing's current values. The Save button is enabled only when `form.dirty && form.valid`. After a successful save, the form is marked as pristine.
+
+```typescript
+// Per-card form — created in the template using a helper
+buildListingForm(listing: PlateListing): FormGroup {
+  return this.fb.group({
+    askingPrice: [listing.askingPrice, [Validators.required, Validators.min(1)]],
+    meanings: [listing.meanings ?? '']
+  });
+}
+```
+
+Since there can be multiple listings, forms are managed in a `Map<string, FormGroup>` keyed by listing ID, initialised when `myListings$` emits.
+
+```typescript
+listingForms = new Map<string, FormGroup>();
+
+// Called whenever myListings$ updates:
+private initForms(listings: PlateListing[]): void {
+  listings.forEach(l => {
+    if (!this.listingForms.has(l.id!)) {
+      this.listingForms.set(l.id!, this.buildListingForm(l));
+    }
+  });
+}
+```
+
+`plateCharacters` is displayed as text only — no form control, no input.
+
+---
+
 ## Firestore Rules
 
-No changes required. The webhook uses the Firebase Admin SDK which bypasses Firestore security rules. The existing `plate-listings` rule (`allow create: if false`) remains correct — only the server can create listings.
+### plate-listings — updated
+
+Allow the listing owner to update `askingPrice` and `meanings` only. The existing `viewsPlaceholder` update rule is preserved.
+
+```
+match /plate-listings/{docId} {
+  allow read: if true;
+  allow update: if request.auth != null && (
+    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsPlaceholder']) ||
+    (
+      request.auth.uid == resource.data.sellerUid &&
+      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['askingPrice', 'meanings'])
+    )
+  );
+  allow create, delete: if false;
+}
+```
 
 ---
 
