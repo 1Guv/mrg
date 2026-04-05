@@ -229,8 +229,7 @@ export const stripeWebhook = onRequest(
       new (Stripe as any)(stripeSecretKey.value()) as import("stripe").Stripe;
     const sig = request.headers["stripe-signature"] as string;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let event: any;
+    let event: ReturnType<import("stripe").Stripe["webhooks"]["constructEvent"]>;
     try {
       event = stripe.webhooks.constructEvent(
         request.rawBody,
@@ -243,9 +242,9 @@ export const stripeWebhook = onRequest(
     }
 
     if (event.type === "checkout.session.completed") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const session = event.data.object as any;
-      const meta = session.metadata;
+      const session = event.data.object as
+        Awaited<ReturnType<import("stripe").Stripe["checkout"]["sessions"]["create"]>>;
+      const meta = session.metadata!;
       const initials = (meta.email ?? "XX").substring(0, 2).toUpperCase();
 
       await db.collection("plate-listings").add({
