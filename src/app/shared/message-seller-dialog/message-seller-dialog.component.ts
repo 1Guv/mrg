@@ -71,15 +71,13 @@ export class MessageSellerDialogComponent {
 
     this.authService.currentUser$.pipe(take(1)).subscribe(async (user: User | null) => {
       try {
-        await this.enquiryService.saveEnquiry({
-          plateId: this.listing.id,
-          plateCharacters: this.listing.plateCharacters,
-          enquiryType: this.form.value.enquiryType,
-          message: this.form.value.message,
-          buyerUid: user!.uid,
-          buyerEmail: user!.email ?? '',
-          sellerLCNumber: this.listing.lCNumber
-        });
+        await this.enquiryService.saveEnquiry(
+          this.listing,
+          this.form.value.enquiryType,
+          this.form.value.message,
+          user!.uid,
+          user!.email ?? ''
+        );
         this.submitted = true;
       } catch {
         this.errorMessage = 'Something went wrong. Please try again.';
