@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>Reply to {{ enquiry.plateCharacters | uppercase }}</h2>
+
+<mat-dialog-content>
+  @if (submitted) {
+    <div class="success-state">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <p>Reply sent!</p>
+    </div>
+  } @else {
+    <div class="enquiry-context">
+      <p><strong>From:</strong> {{ enquiry.buyerEmail }}</p>
+      <p><strong>Enquiry type:</strong> {{ enquiry.enquiryType }}</p>
+      <p><strong>Original message:</strong> {{ enquiry.message }}</p>
+    </div>
+
+    <form [formGroup]="form" class="reply-form">
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Your reply</mat-label>
+        <textarea matInput formControlName="replyMessage" rows="5"
+          placeholder="Type your reply here..."></textarea>
+        @if (form.get('replyMessage')?.hasError('required')) {
+          <mat-error>Reply is required</mat-error>
+        }
+        @if (form.get('replyMessage')?.hasError('minlength')) {
+          <mat-error>Reply must be at least 10 characters</mat-error>
+        }
+      </mat-form-field>
+
+      @if (errorMessage) {
+        <p class="error-message">{{ errorMessage }}</p>
+      }
+    </form>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (submitted) {
+    <button mat-raised-button color="primary" mat-dialog-close>Close</button>
+  } @else {
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary"
+      [disabled]="form.invalid || loading"
+      (click)="onSubmit()">
+      @if (loading) { Sending... } @else { Send Reply }
+    </button>
+  }
+</mat-dialog-actions>
