@@ -83,4 +83,21 @@ export class SellerEnquiryService {
       }))
     );
   }
+
+  async sendReply(enquiry: SellerEnquiry, replyMessage: string): Promise<void> {
+    const mailRef = collection(this.firestore, 'mail');
+    await addDoc(mailRef, {
+      to: [enquiry.buyerEmail],
+      message: {
+        subject: `Re: Your enquiry about ${enquiry.plateCharacters.toUpperCase()}`,
+        html: `
+          <h2>The seller has replied to your enquiry</h2>
+          <p><strong>Plate:</strong> ${enquiry.plateCharacters.toUpperCase()}</p>
+          <p><strong>Reply:</strong> ${replyMessage}</p>
+          <hr>
+          <p style="color:#888"><em>Your original message: ${enquiry.message}</em></p>
+        `
+      }
+    });
+  }
 }
