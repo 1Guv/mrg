@@ -14,7 +14,7 @@ export class StripeService {
     meanings: string;
     negotiable: boolean;
   }): Promise<string> {
-    const fn = httpsCallable<any, { url: string }>(
+    const fn = httpsCallable<typeof data & { appBaseUrl: string }, { url: string }>(
       this.functions,
       'createCheckoutSession'
     );

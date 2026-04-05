@@ -244,7 +244,15 @@ export const stripeWebhook = onRequest(
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as
         Awaited<ReturnType<import("stripe").Stripe["checkout"]["sessions"]["create"]>>;
-      const meta = session.metadata!;
+      const meta = session.metadata as {
+        plateCharacters: string;
+        askingPrice: string;
+        phone: string;
+        email: string;
+        meanings: string;
+        negotiable: string;
+        sellerUid: string;
+      };
       const initials = (meta.email ?? "XX").substring(0, 2).toUpperCase();
 
       await db.collection("plate-listings").add({
