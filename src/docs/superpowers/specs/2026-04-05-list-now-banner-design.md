@@ -2,7 +2,7 @@
 **Date:** 2026-04-05
 
 ## Overview
-Extract the listing fee (£22) into `PlateListingService` as a single source of truth, create a reusable `ListNowBannerComponent` that reads from the service, and update the existing benefit card in `PlatesForSaleComponent` to use the service value instead of a hardcoded string.
+Extract the listing fee (£6) into `PlateListingService` as a single source of truth, create a reusable `ListNowBannerComponent` that reads from the service, and update the existing benefit card in `PlatesForSaleComponent` to use the service value instead of a hardcoded string.
 
 ---
 
@@ -25,7 +25,7 @@ Extract the listing fee (£22) into `PlateListingService` as a single source of 
 Add a single readonly property to the existing service:
 
 ```typescript
-readonly listingFee = 22;
+readonly listingFee = 6;
 ```
 
 No other changes to the service.
@@ -115,7 +115,7 @@ No other changes to the component.
 ```
 PlateListingService.listingFee (= 22)
   → ListNowBannerComponent (reads via inject)
-    → Rendered as: "Want to sell your plate? List now for £22"
+    → Rendered as: "Want to sell your plate? List now for £6"
   → PlatesForSaleComponent benefit card buttonName
-    → Rendered via BenefitCardComponent as: "List now for £22"
+    → Rendered via BenefitCardComponent as: "List now for £6"
 ```
