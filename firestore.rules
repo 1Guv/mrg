@@ -13,28 +13,32 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Auto valuations — write only (no auth required), no read from client
+    // Auto valuations — public write; admin read only
     match /auto_valuations/{docId} {
       allow create: if true;
-      allow read, update, delete: if false;
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow update, delete: if false;
     }
 
-    // Plate searches — write only (no auth required)
+    // Plate searches — public write; admin read only
     match /plate_searches/{docId} {
       allow create: if true;
-      allow read, update, delete: if false;
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow update, delete: if false;
     }
 
-    // Valuation feedback — write only
+    // Valuation feedback — public write; admin read only
     match /valuation_feedback/{docId} {
       allow create: if true;
-      allow read, update, delete: if false;
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow update, delete: if false;
     }
 
-    // Plate valuation message feedback — write only
+    // Plate valuation message feedback — public write; admin read only
     match /plate_valuation_message_feedback/{docId} {
       allow create: if true;
-      allow read, update, delete: if false;
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow update, delete: if false;
     }
 
     // Feature requests — write only
