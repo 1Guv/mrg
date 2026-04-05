@@ -19,6 +19,7 @@ module.exports = {
   },
   ignorePatterns: [
     "/lib/**/*", // Ignore built files.
+    "/dist/**/*", // Ignore built files.
     "/generated/**/*", // Ignore generated files.
   ],
   plugins: [

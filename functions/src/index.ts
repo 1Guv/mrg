@@ -1,12 +1,17 @@
 import {setGlobalOptions} from "firebase-functions";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
+import {defineSecret} from "firebase-functions/params";
 import * as admin from "firebase-admin";
+import Stripe from "stripe";
 
 setGlobalOptions({maxInstances: 10});
 
 admin.initializeApp();
 const db = admin.firestore();
+
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 export const getUsers = onCall({maxInstances: 1}, async (request) => {
   const adminEmail = "gurvinder.singh.sandhu@gmail.com";
@@ -159,3 +164,117 @@ export const weeklyReport = onSchedule("every sunday 08:00", async () => {
     },
   });
 });
+
+export const createCheckoutSession = onCall(
+  {maxInstances: 10, secrets: [stripeSecretKey]},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+
+    const {
+      plateCharacters,
+      askingPrice,
+      phone,
+      email,
+      meanings,
+      negotiable,
+      appBaseUrl,
+    } = request.data;
+
+    const sellerUid = request.auth.uid;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe =
+      new (Stripe as any)(stripeSecretKey.value()) as import("stripe").Stripe;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer_email: email,
+      line_items: [
+        {
+          price_data: {
+            currency: "gbp",
+            unit_amount: 600,
+            product_data: {
+              name: `Plate listing: ${String(plateCharacters).toUpperCase()}`,
+              description: "One-off listing fee — listed until sold",
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      // eslint-disable-next-line max-len
+      success_url: `${appBaseUrl}/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appBaseUrl}/list-plate`,
+      metadata: {
+        plateCharacters: String(plateCharacters).toUpperCase(),
+        askingPrice: String(askingPrice),
+        phone: String(phone),
+        email: String(email),
+        meanings: String(meanings ?? ""),
+        negotiable: negotiable ? "true" : "false",
+        sellerUid,
+      },
+    });
+
+    return {url: session.url};
+  }
+);
+
+export const stripeWebhook = onRequest(
+  {maxInstances: 10, secrets: [stripeSecretKey, stripeWebhookSecret]},
+  async (request, response) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe =
+      new (Stripe as any)(stripeSecretKey.value()) as import("stripe").Stripe;
+    const sig = request.headers["stripe-signature"] as string;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let event: any;
+    try {
+      event = stripe.webhooks.constructEvent(
+        request.rawBody,
+        sig,
+        stripeWebhookSecret.value()
+      );
+    } catch (err) {
+      response.status(400).send(`Webhook error: ${err}`);
+      return;
+    }
+
+    if (event.type === "checkout.session.completed") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const session = event.data.object as any;
+      const meta = session.metadata;
+      const initials = (meta.email ?? "XX").substring(0, 2).toUpperCase();
+
+      await db.collection("plate-listings").add({
+        plateCharacters: meta.plateCharacters,
+        askingPrice: meta.askingPrice,
+        lCEmail: meta.email,
+        lCNumber: meta.phone,
+        lCName: meta.email,
+        plateListingAccName: meta.email,
+        plateListingAccTelNumber: meta.phone,
+        meanings: meta.meanings,
+        plateNegotiable: meta.negotiable === "true",
+        sellerUid: meta.sellerUid,
+        initials,
+        createdDate: new Date().toISOString(),
+        isSold: false,
+        soldPrice: null,
+        viewsPlaceholder: 0,
+        plateBestOffer: false,
+        offersOver: false,
+        orNearestOffer: false,
+        plateType: "",
+        plateCategory: "",
+        profiletPicUrl: "",
+        profiletPicInitials: true,
+        messageSeller: "",
+      });
+    }
+
+    response.status(200).send("ok");
+  }
+);
