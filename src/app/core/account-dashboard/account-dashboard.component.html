@@ -77,12 +77,11 @@
                     </div>
                 </mat-tab>
 
-                @if(isAdmin) {
                 <mat-tab [label]="'Messages (' + sellerEnquiries$().length + ')'">
                     <div class="tab-content">
                         @if (sellerEnquiries$().length === 0) {
                             <p class="text-muted mt-3 text-center">
-                                No messages yet.
+                                No messages yet. When someone enquires about your plate, it will appear here.
                             </p>
                         } @else {
                             @for (enquiry of sellerEnquiries$(); track enquiry.id) {
@@ -94,13 +93,11 @@
                                     <p class="enquiry-type">{{ enquiry.enquiryType }}</p>
                                     <p class="enquiry-message">{{ enquiry.message }}</p>
                                     <p class="enquiry-from">From: {{ enquiry.buyerEmail }}</p>
-                                    <p class="enquiry-from">To: {{ enquiry.sellerEmail }}</p>
                                 </div>
                             }
                         }
                     </div>
                 </mat-tab>
-                }
 
             </mat-tab-group>
 
