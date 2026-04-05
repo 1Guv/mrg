@@ -37,9 +37,9 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // Mail — write only (used by Firebase Extension)
+    // Mail — authenticated users only (triggers real email sends via Firebase Extension)
     match /mail/{docId} {
-      allow create: if true;
+      allow create: if request.auth != null;
       allow read, update, delete: if false;
     }
 
