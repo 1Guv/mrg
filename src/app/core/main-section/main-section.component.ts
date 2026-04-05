@@ -5,6 +5,7 @@ import { RegPlateValuationResultsComponent } from "../reg-plate-valuation-result
 import { CurrentPlateValuationComponent } from "../current-plate-valuation/current-plate-valuation.component";
 import { PrefixPlateValuationComponent } from "../prefix-plate-valuation/prefix-plate-valuation.component";
 import { SuffixPlateValuationComponent } from "../suffix-plate-valuation/suffix-plate-valuation.component";
+import { ListNowBannerComponent } from '../../shared/list-now-banner/list-now-banner.component';
 
 @Component({
     selector: 'app-main-section',
@@ -15,6 +16,7 @@ import { SuffixPlateValuationComponent } from "../suffix-plate-valuation/suffix-
         CurrentPlateValuationComponent,
         PrefixPlateValuationComponent,
         SuffixPlateValuationComponent,
+        ListNowBannerComponent,
     ],
     templateUrl: './main-section.component.html',
     styleUrl: './main-section.component.scss'
