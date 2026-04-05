@@ -1,0 +1,58 @@
+<div class="container-fluid main-bg-c">
+  <div class="list-plate-container">
+    <h1 class="cabin-font-sketch text-center">List Your Plate</h1>
+    <p class="text-center text-muted mb-4">One-off £6 listing fee — listed until sold.</p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="list-plate-form">
+
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Plate characters</mat-label>
+        <input matInput formControlName="plateCharacters" placeholder="e.g. AB12 CDE"
+          style="text-transform: uppercase">
+        @if (form.get('plateCharacters')?.hasError('required')) {
+          <mat-error>Plate characters are required</mat-error>
+        }
+        @if (form.get('plateCharacters')?.hasError('minlength') || form.get('plateCharacters')?.hasError('maxlength')) {
+          <mat-error>Must be between 2 and 8 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Asking price (£)</mat-label>
+        <input matInput type="number" formControlName="askingPrice" placeholder="e.g. 5000" min="1">
+        <mat-error>A valid asking price is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Phone number</mat-label>
+        <input matInput type="tel" formControlName="phone" placeholder="e.g. 07700 900000">
+        <mat-error>Phone number is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Email address</mat-label>
+        <input matInput type="email" formControlName="email">
+        <mat-error>A valid email address is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Meanings (optional)</mat-label>
+        <input matInput formControlName="meanings" placeholder="e.g. ABC = my initials">
+      </mat-form-field>
+
+      <mat-checkbox formControlName="negotiable" class="negotiable-check">
+        Price is negotiable
+      </mat-checkbox>
+
+      @if (errorMessage) {
+        <p class="error-message">{{ errorMessage }}</p>
+      }
+
+      <button type="submit" mat-raised-button color="primary" class="submit-btn"
+        [disabled]="form.invalid || loading">
+        @if (loading) { Processing... } @else { Pay £6 &amp; List }
+      </button>
+
+    </form>
+  </div>
+</div>

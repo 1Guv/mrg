@@ -1,0 +1,29 @@
+.list-plate-container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+
+.list-plate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.full-field {
+  width: 100%;
+}
+
+.negotiable-check {
+  margin-bottom: 0.5rem;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 0.85rem;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
