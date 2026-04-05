@@ -77,6 +77,28 @@
                     </div>
                 </mat-tab>
 
+                <mat-tab [label]="'Messages (' + sellerEnquiries$().length + ')'">
+                    <div class="tab-content">
+                        @if (sellerEnquiries$().length === 0) {
+                            <p class="text-muted mt-3 text-center">
+                                No messages yet. When someone enquires about your plate, it will appear here.
+                            </p>
+                        } @else {
+                            @for (enquiry of sellerEnquiries$(); track enquiry.id) {
+                                <div class="enquiry-card">
+                                    <div class="enquiry-plate-row">
+                                        <span class="bevel-plate enquiry-plate">{{ enquiry.plateCharacters | uppercase }}</span>
+                                        <span class="enquiry-date">{{ enquiry.submittedAt?.toDate() | date:'d MMM y, HH:mm' }}</span>
+                                    </div>
+                                    <p class="enquiry-type">{{ enquiry.enquiryType }}</p>
+                                    <p class="enquiry-message">{{ enquiry.message }}</p>
+                                    <p class="enquiry-from">From: {{ enquiry.buyerEmail }}</p>
+                                </div>
+                            }
+                        }
+                    </div>
+                </mat-tab>
+
             </mat-tab-group>
 
             <button type="button" class="my-3 mx-auto d-block" color="accent" mat-raised-button [disabled]="!currentUser$()" (click)="signOut()">Sign Out</button>

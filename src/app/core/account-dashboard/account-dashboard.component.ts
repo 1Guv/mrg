@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
+import { CommonModule, DatePipe, UpperCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { map, Subscription } from 'rxjs';
+import { map, of, Subscription, switchMap } from 'rxjs';
 import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
 import { ValuationService } from '../../services/valuation.service';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
@@ -13,11 +14,15 @@ import { AdminComponent } from '../admin/admin.component';
 import { AdminService, AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
 import { MeComponent } from '../me/me.component';
+import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enquiry.service';
 
 @Component({
   selector: 'app-account-dashboard',
   standalone: true,
   imports: [
+    CommonModule,
+    DatePipe,
+    UpperCasePipe,
     MatButtonModule,
     MatTabsModule,
     RouterModule,
@@ -38,6 +43,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   private adminService = inject(AdminService);
   private adminsService = inject(AdminsService);
   private numberPlateFormService = inject(NumberPlateFormService);
+  private sellerEnquiryService = inject(SellerEnquiryService);
 
   valuations$ = signal<RegValuation[]>([]);
   plateSearches$ = signal<PlateSearch[]>([]);
@@ -45,6 +51,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   users$ = signal<UserProfile[]>([]);
   feedback$ = signal<ValuationFeedback[]>([]);
   plateMessages$ = signal<PlateValuationMessage[]>([]);
+  sellerEnquiries$ = signal<SellerEnquiry[]>([]);
 
   private hasLoadedUsers = false;
 
@@ -101,6 +108,15 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
       this.adminService
         .getPlateValuationMessages()
         .subscribe((messages) => this.plateMessages$.set(messages))
+    );
+
+    this.subs.add(
+      this.authService.currentUser$.pipe(
+        switchMap(user => (user as any)?.email
+          ? this.sellerEnquiryService.getEnquiriesForSeller((user as any).email)
+          : of([])
+        )
+      ).subscribe(enquiries => this.sellerEnquiries$.set(enquiries))
     );
   }
 

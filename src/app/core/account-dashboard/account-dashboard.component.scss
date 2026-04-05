@@ -6,3 +6,55 @@
 .tab-content {
   padding: 1.5rem 0;
 }
+
+.enquiry-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.enquiry-plate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.enquiry-plate {
+  font-size: 1.4rem;
+  background-color: #fff9c4;
+  border-radius: 4px;
+  padding: 2px 10px;
+}
+
+.enquiry-date {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.enquiry-type {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1565c0;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.enquiry-message {
+  font-size: 0.9rem;
+  color: #333;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.enquiry-from {
+  font-size: 0.78rem;
+  color: #666;
+  margin: 0;
+}
