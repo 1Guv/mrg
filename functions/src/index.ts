@@ -260,7 +260,7 @@ export const stripeWebhook = onRequest(
       };
       const initials = (meta.email ?? "XX").substring(0, 2).toUpperCase();
 
-      await db.collection("plate-listings").add({
+      await db.collection("plate-listings-new").add({
         plateCharacters: meta.plateCharacters,
         askingPrice: meta.askingPrice,
         lCEmail: meta.email,

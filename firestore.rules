@@ -62,7 +62,20 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Plate listings — publicly readable; owner can update price/meanings; only server can create
+    // New plate listings — publicly readable; owner can update price/meanings; only server can create
+    match /plate-listings-new/{docId} {
+      allow read: if true;
+      allow update: if request.auth != null && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsPlaceholder']) ||
+        (
+          request.auth.uid == resource.data.sellerUid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['askingPrice', 'meanings'])
+        )
+      );
+      allow create, delete: if false;
+    }
+
+    // Legacy plate listings — publicly readable, view increment only
     match /plate-listings/{docId} {
       allow read: if true;
       allow update: if request.auth != null && (

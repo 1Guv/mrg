@@ -23,4 +23,5 @@ export interface PlateListing {
   isSold: boolean;
   soldPrice: number | null;
   sellerUid?: string;
+  _collection?: string;
 }

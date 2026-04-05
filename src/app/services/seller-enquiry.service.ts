@@ -68,7 +68,7 @@ export class SellerEnquiryService {
           `
         }
       }),
-      this.plateListingService.incrementViews(String(listing.id))
+      this.plateListingService.incrementViews(String(listing.id), listing._collection)
     ]);
   }
 
