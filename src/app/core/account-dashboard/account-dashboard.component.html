@@ -111,7 +111,8 @@
                             </p>
                         } @else {
                             @for (listing of myListings$(); track listing.id) {
-                                <div class="my-listing-card" [formGroup]="getListingForm(listing)">
+                                @let listingForm = getListingForm(listing);
+                                <div class="my-listing-card" [formGroup]="listingForm">
                                     <div class="enquiry-plate-row">
                                         <span class="bevel-plate enquiry-plate">{{ listing.plateCharacters | uppercase }}</span>
                                         <span class="enquiry-date">Listed {{ listing.createdDate | date:'d MMM y' }}</span>
@@ -128,13 +129,14 @@
                                         <input matInput formControlName="meanings">
                                     </mat-form-field>
 
-                                    @if (saveError.get('' + listing.id)) {
-                                        <p class="save-error">{{ saveError.get('' + listing.id) }}</p>
+                                    @let errMsg = saveError().get('' + listing.id);
+                                    @if (errMsg) {
+                                        <p class="save-error">{{ errMsg }}</p>
                                     }
 
-                                    @if (getListingForm(listing).dirty) {
+                                    @if (listingForm.dirty) {
                                         <button type="button" mat-raised-button color="primary"
-                                            [disabled]="getListingForm(listing).invalid || savingListingId === ('' + listing.id)"
+                                            [disabled]="listingForm.invalid || savingListingId() === ('' + listing.id)"
                                             (click)="saveListing(listing)">
                                             Save changes
                                         </button>

@@ -66,8 +66,8 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   sellerEnquiries$ = signal<SellerEnquiry[]>([]);
   myListings$ = signal<PlateListing[]>([]);
   listingForms = new Map<string, FormGroup>();
-  savingListingId: string | null = null;
-  saveError = new Map<string, string>();
+  savingListingId = signal<string | null>(null);
+  saveError = signal(new Map<string, string>());
 
   private plateListingService = inject(PlateListingService);
   private fb = inject(FormBuilder);
@@ -166,6 +166,13 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         })
       ).subscribe(listings => {
         this.myListings$.set(listings);
+        // Prune forms for listings that no longer exist
+        const currentIds = new Set(listings.map(l => String(l.id)));
+        for (const key of this.listingForms.keys()) {
+          if (!currentIds.has(key)) {
+            this.listingForms.delete(key);
+          }
+        }
         listings.forEach(l => {
           const id = String(l.id);
           if (!this.listingForms.has(id)) {
@@ -216,8 +223,10 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     const form = this.getListingForm(listing);
     if (!form || form.invalid) return;
     const id = String(listing.id);
-    this.savingListingId = id;
-    this.saveError.delete(id);
+    this.savingListingId.set(id);
+    const errors = new Map(this.saveError());
+    errors.delete(id);
+    this.saveError.set(errors);
     try {
       await this.plateListingService.updateListing(id, {
         askingPrice: String(form.value.askingPrice),
@@ -225,9 +234,11 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
       });
       form.markAsPristine();
     } catch {
-      this.saveError.set(id, 'Failed to save. Please try again.');
+      const errs = new Map(this.saveError());
+      errs.set(id, 'Failed to save. Please try again.');
+      this.saveError.set(errs);
     } finally {
-      this.savingListingId = null;
+      this.savingListingId.set(null);
     }
   }
 
