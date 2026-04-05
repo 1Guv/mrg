@@ -8,8 +8,7 @@ import {
   where,
   doc,
   getDoc,
-  updateDoc,
-  increment
+  runTransaction
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { PlateListing } from '../models/plate-listing.model';
@@ -42,6 +41,10 @@ export class PlateListingService {
 
   incrementViews(plateId: string): Promise<void> {
     const ref = doc(this.firestore, `${this.COLLECTION}/${plateId}`);
-    return updateDoc(ref, { viewsPlaceholder: increment(1) }).then(() => {});
+    return runTransaction(this.firestore, async (transaction) => {
+      const snap = await transaction.get(ref);
+      const current = Number(snap.data()?.['viewsPlaceholder'] ?? 0);
+      transaction.update(ref, { viewsPlaceholder: current + 1 });
+    });
   }
 }
