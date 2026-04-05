@@ -93,6 +93,9 @@
                                     <p class="enquiry-type">{{ enquiry.enquiryType }}</p>
                                     <p class="enquiry-message">{{ enquiry.message }}</p>
                                     <p class="enquiry-from">From: {{ enquiry.buyerEmail }}</p>
+                                    <button type="button" mat-stroked-button color="primary" (click)="onReply(enquiry)">
+                                        Reply
+                                    </button>
                                 </div>
                             }
                         }

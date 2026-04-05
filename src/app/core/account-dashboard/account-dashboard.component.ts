@@ -2,8 +2,10 @@ import { Component, OnDestroy, OnInit, effect, inject, signal } from '@angular/c
 import { CommonModule, DatePipe, UpperCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ReplyToEnquiryDialogComponent } from '../../shared/reply-to-enquiry-dialog/reply-to-enquiry-dialog.component';
 import { combineLatest, map, of, Subscription, switchMap } from 'rxjs';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
@@ -26,6 +28,7 @@ import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enqui
     UpperCasePipe,
     MatButtonModule,
     MatTabsModule,
+    MatDialogModule,
     RouterModule,
     UserAccountDetailsComponent,
     AccountDashboardValuationComponent,
@@ -59,7 +62,8 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private dialog: MatDialog
   ) {
     effect(() => {
       const uid = (this.currentUser$() as any)?.uid;
@@ -161,6 +165,10 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   async signOut(): Promise<void> {
     await this.authService.logout();
     await this.router.navigateByUrl('/login');
+  }
+
+  onReply(enquiry: SellerEnquiry): void {
+    this.dialog.open(ReplyToEnquiryDialogComponent, { width: '520px', data: enquiry });
   }
 
   ngOnDestroy(): void {
