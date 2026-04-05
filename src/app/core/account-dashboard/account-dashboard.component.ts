@@ -89,32 +89,32 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     );
 
     this.subs.add(
-      this.authService.currentUser$.pipe(
-        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+      combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
+        switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
           ? this.adminService.getPlateSearches()
           : of([] as PlateSearch[]))
       ).subscribe((searches) => this.plateSearches$.set(searches))
     );
 
     this.subs.add(
-      this.authService.currentUser$.pipe(
-        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+      combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
+        switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
           ? this.adminService.getAutoValuations()
           : of([] as AutoValuation[]))
       ).subscribe((valuations) => this.autoValuations$.set(valuations))
     );
 
     this.subs.add(
-      this.authService.currentUser$.pipe(
-        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+      combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
+        switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
           ? this.adminService.getFeedback()
           : of([] as ValuationFeedback[]))
       ).subscribe((feedback) => this.feedback$.set(feedback))
     );
 
     this.subs.add(
-      this.authService.currentUser$.pipe(
-        switchMap(user => this.adminsService.isAdmin((user as any)?.uid)
+      combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
+        switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
           ? this.adminService.getPlateValuationMessages()
           : of([] as PlateValuationMessage[]))
       ).subscribe((messages) => this.plateMessages$.set(messages))
