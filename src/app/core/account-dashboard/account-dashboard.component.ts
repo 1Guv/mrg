@@ -53,6 +53,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   feedback$ = signal<ValuationFeedback[]>([]);
   plateMessages$ = signal<PlateValuationMessage[]>([]);
   sellerEnquiries$ = signal<SellerEnquiry[]>([]);
+  private adminUids$ = toObservable(this.adminsService.adminUids);
 
   private hasLoadedUsers = false;
 
@@ -122,7 +123,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     this.subs.add(
       combineLatest([
         this.authService.currentUser$,
-        toObservable(this.adminsService.adminUids)
+        this.adminUids$
       ]).pipe(
         switchMap(([user, adminUids]) => {
           const uid = (user as any)?.uid;
