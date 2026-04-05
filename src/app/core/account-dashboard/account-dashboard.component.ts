@@ -6,7 +6,12 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ReplyToEnquiryDialogComponent } from '../../shared/reply-to-enquiry-dialog/reply-to-enquiry-dialog.component';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { combineLatest, map, of, Subscription, switchMap } from 'rxjs';
+import { PlateListingService } from '../../services/plate-listing.service';
+import { PlateListing } from '../../models/plate-listing.model';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { UserAccountDetailsComponent } from '../user-account-details/user-account-details.component';
 import { ValuationService } from '../../services/valuation.service';
@@ -30,6 +35,9 @@ import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enqui
     MatTabsModule,
     MatDialogModule,
     RouterModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
     UserAccountDetailsComponent,
     AccountDashboardValuationComponent,
     AdminComponent,
@@ -56,6 +64,14 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   feedback$ = signal<ValuationFeedback[]>([]);
   plateMessages$ = signal<PlateValuationMessage[]>([]);
   sellerEnquiries$ = signal<SellerEnquiry[]>([]);
+  myListings$ = signal<PlateListing[]>([]);
+  listingForms = new Map<string, FormGroup>();
+  savingListingId: string | null = null;
+  saveError = new Map<string, string>();
+
+  private plateListingService = inject(PlateListingService);
+  private fb = inject(FormBuilder);
+
   private adminUids$ = toObservable(this.adminsService.adminUids);
 
   private hasLoadedUsers = false;
@@ -140,6 +156,27 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
         })
       ).subscribe(enquiries => this.sellerEnquiries$.set(enquiries))
     );
+
+    this.subs.add(
+      this.authService.currentUser$.pipe(
+        switchMap(user => {
+          const uid = (user as any)?.uid;
+          if (!uid) return of([] as PlateListing[]);
+          return this.plateListingService.getMyListings(uid);
+        })
+      ).subscribe(listings => {
+        this.myListings$.set(listings);
+        listings.forEach(l => {
+          const id = String(l.id);
+          if (!this.listingForms.has(id)) {
+            this.listingForms.set(id, this.fb.group({
+              askingPrice: [l.askingPrice, [Validators.required, Validators.min(1)]],
+              meanings: [l.meanings ?? ''],
+            }));
+          }
+        });
+      })
+    );
   }
 
   get currentValuations(): RegValuation[] {
@@ -169,6 +206,29 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   onReply(enquiry: SellerEnquiry): void {
     this.dialog.open(ReplyToEnquiryDialogComponent, { width: '520px', data: enquiry });
+  }
+
+  getListingForm(listing: PlateListing): FormGroup {
+    return this.listingForms.get(String(listing.id))!;
+  }
+
+  async saveListing(listing: PlateListing): Promise<void> {
+    const form = this.getListingForm(listing);
+    if (!form || form.invalid) return;
+    const id = String(listing.id);
+    this.savingListingId = id;
+    this.saveError.delete(id);
+    try {
+      await this.plateListingService.updateListing(id, {
+        askingPrice: String(form.value.askingPrice),
+        meanings: form.value.meanings ?? '',
+      });
+      form.markAsPristine();
+    } catch {
+      this.saveError.set(id, 'Failed to save. Please try again.');
+    } finally {
+      this.savingListingId = null;
+    }
   }
 
   ngOnDestroy(): void {

@@ -102,6 +102,49 @@
                     </div>
                 </mat-tab>
 
+                <mat-tab [label]="'My Listings (' + myListings$().length + ')'">
+                    <div class="tab-content">
+                        @if (myListings$().length === 0) {
+                            <p class="text-muted mt-3 text-center">
+                                No listings yet.
+                                <a routerLink="/list-plate">List a plate</a>
+                            </p>
+                        } @else {
+                            @for (listing of myListings$(); track listing.id) {
+                                <div class="my-listing-card" [formGroup]="getListingForm(listing)">
+                                    <div class="enquiry-plate-row">
+                                        <span class="bevel-plate enquiry-plate">{{ listing.plateCharacters | uppercase }}</span>
+                                        <span class="enquiry-date">Listed {{ listing.createdDate | date:'d MMM y' }}</span>
+                                    </div>
+
+                                    <mat-form-field appearance="outline" class="full-field">
+                                        <mat-label>Asking price (£)</mat-label>
+                                        <input matInput type="number" formControlName="askingPrice" min="1">
+                                        <mat-error>Valid price required</mat-error>
+                                    </mat-form-field>
+
+                                    <mat-form-field appearance="outline" class="full-field">
+                                        <mat-label>Meanings (optional)</mat-label>
+                                        <input matInput formControlName="meanings">
+                                    </mat-form-field>
+
+                                    @if (saveError.get(String(listing.id))) {
+                                        <p class="save-error">{{ saveError.get(String(listing.id)) }}</p>
+                                    }
+
+                                    @if (getListingForm(listing).dirty) {
+                                        <button type="button" mat-raised-button color="primary"
+                                            [disabled]="getListingForm(listing).invalid || savingListingId === String(listing.id)"
+                                            (click)="saveListing(listing)">
+                                            Save changes
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </mat-tab>
+
             </mat-tab-group>
 
             <button type="button" class="my-3 mx-auto d-block" color="accent" mat-raised-button [disabled]="!currentUser$()" (click)="signOut()">Sign Out</button>
