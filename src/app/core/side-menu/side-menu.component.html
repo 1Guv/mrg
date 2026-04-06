@@ -3,7 +3,7 @@
     <hr>
     <div class="d-flex align-content-center ms-2">
       <mat-icon class="mt-1">{{ opt.icon }}</mat-icon>
-      <a class="m-1 ps-1 base-font">{{ opt.name }}</a>
+      <a class="m-1 ps-1 base-font" [routerLink]="opt.url" (click)="linkClicked.emit()">{{ opt.name }}</a>
     </div>
   }
   <hr>

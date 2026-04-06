@@ -1,0 +1,22 @@
+@if (soldListings.length > 0) {
+    <div class="recently-sold-strip">
+        <div class="recently-sold-header">
+            <span class="sold-dot"></span>
+            <span class="sold-label">Recently Sold</span>
+        </div>
+        <div class="sold-scroll">
+            @for (listing of soldListings; track listing.id) {
+                <div class="sold-card">
+                    <span class="sold-badge">SOLD</span>
+                    <div class="plate-css">
+                        <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
+                    </div>
+                    @if (listing.meanings) {
+                        <span class="sold-meanings">{{ listing.meanings }}</span>
+                    }
+                    <span class="sold-price">£{{ listing.soldPrice | number }}</span>
+                </div>
+            }
+        </div>
+    </div>
+}

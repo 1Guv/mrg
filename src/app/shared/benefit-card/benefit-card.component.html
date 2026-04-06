@@ -1,0 +1,10 @@
+<mat-card class="benefit-card" [class.coming-soon]="card.comingSoon" [ngStyle]="{ 'background-color': card.backgroundColor }">
+    <div class="benefit-header">
+        <mat-icon class="benefit-icon">{{ card.icon }}</mat-icon>
+        <span class="benefit-title">{{ card.title }}</span>
+    </div>
+    <span class="benefit-desc">{{ card.description }}</span>
+    @if (card.button) {
+        <button mat-raised-button class="benefit-btn" [routerLink]="card.buttonLink">{{ card.buttonName }}</button>
+    }
+</mat-card>

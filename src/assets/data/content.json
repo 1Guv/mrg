@@ -27,14 +27,14 @@
         {
           "name": "Valuations",
           "icon": "verified",
-          "url": "/valuations",
+          "url": "/",
           "toolTip": "Valuations"
         },
         {
           "name": "Plates",
           "icon": "favorite",
-          "url": "/plates",
-          "toolTip": "Plates"
+          "url": "/plates-for-sale",
+          "toolTip": "Plates for sale"
         },
         {
           "name": "Cars",

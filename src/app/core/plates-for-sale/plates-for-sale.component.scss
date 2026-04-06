@@ -1,0 +1,357 @@
+@use '../../../styles/variables' as *;
+
+.cabin-font-sketch {
+  @include cabin-font-sketch;
+}
+
+.responsive-heading {
+  font-size: 75px;
+  line-height: 1.2;
+
+  @media (max-width: 991px) {
+    font-size: 45px;
+  }
+}
+
+.emphasis-text {
+  color: #1a237e;
+  font-weight: 500;
+  position: relative;
+  padding: 0 4px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: currentColor;
+    opacity: 0.08;
+    border-radius: 3px;
+  }
+}
+
+// Tabs
+::ng-deep .mat-mdc-tab-group {
+  .mat-mdc-tab-header {
+    background: transparent;
+    border-bottom: none;
+    margin-bottom: 0.75rem;
+  }
+
+  .mat-mdc-tab-list {
+    width: 100%;
+  }
+
+  .mat-mdc-tab {
+    flex: 1;
+    height: 44px;
+    opacity: 1;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    margin: 0 4px;
+    background-color: #f9f9f9;
+    transition: background 0.2s ease;
+
+    .mdc-tab__text-label {
+      color: #888;
+    }
+
+    &:first-child {
+      background-color: #e8f0fe;
+      border-color: #003399;
+
+      .mdc-tab__text-label { color: #003399; }
+
+      &.mdc-tab--active {
+        background-color: #003399;
+        .mdc-tab__text-label { color: white; }
+      }
+    }
+
+    &:nth-child(2) {
+      background-color: #e8f5e9;
+      border-color: #2e7d32;
+
+      .mdc-tab__text-label { color: #2e7d32; }
+
+      &.mdc-tab--active {
+        background-color: #2e7d32;
+        .mdc-tab__text-label { color: white; }
+      }
+    }
+
+    &:last-child {
+      background-color: #f3e5f5;
+      border-color: #6a1b9a;
+
+      .mdc-tab__text-label { color: #6a1b9a; }
+
+      &.mdc-tab--active {
+        background-color: #6a1b9a;
+        .mdc-tab__text-label { color: white; }
+      }
+    }
+  }
+
+  .mdc-tab-indicator {
+    display: none;
+  }
+
+  .mat-mdc-tab-header {
+    --mat-tab-header-divider-height: 0;
+    --mat-tab-header-divider-color: transparent;
+  }
+}
+
+// Benefits
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Coming soon
+.coming-soon-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  width: 100%;
+}
+
+.coming-soon-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #1a1a2e;
+  color: white;
+  border-radius: 8px;
+  padding: 0.6rem 1.25rem;
+  width: 100%;
+}
+
+.coming-soon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #00e676;
+  flex-shrink: 0;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.coming-soon-rocket {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: #00b3b3;
+}
+
+.coming-soon-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+
+.listings-count {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.75rem;
+  margin-bottom: 0.5rem;
+
+  span {
+    font-size: 0.75rem;
+    color: #000;
+    background-color: yellow;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+}
+
+.listings-viewport {
+  height: 75vh;
+  width: 100%;
+}
+
+.listings-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.75rem;
+  padding: 2.25rem 1rem 0;
+
+  &:last-child {
+    padding-bottom: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+::ng-deep .listings-row .mat-mdc-card {
+  background-color: white !important;
+  border-radius: 20px !important;
+  box-shadow: 0px 0px 16px 4px rgba(0, 0, 0, 0.2) !important;
+
+  .bevel-plate {
+    font-size: 3em;
+  }
+}
+
+.listing-card-wrapper {
+  position: relative;
+}
+
+.sold-tab-badge {
+  position: absolute;
+  top: 16px;
+  right: 95px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: white;
+  background-color: #ff4081;
+  border-radius: 4px;
+  padding: 1px 6px;
+  letter-spacing: 1px;
+  z-index: 1;
+}
+
+.listing-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  padding-top: 1.5rem;
+}
+
+.listing-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #111;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  position: absolute;
+  top: -18px;
+  left: 1rem;
+  z-index: 1;
+}
+
+.listing-date {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  border: 1px solid lightgreen;
+  border-radius: 10px;
+  padding: 2px 5px;
+  background-color: transparent;
+  position: absolute;
+  top: -12px;
+  right: 1rem;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.plate-css {
+  height: 60px;
+  border-radius: 5px;
+  background-color: #ff0;
+  color: #000;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+}
+
+.listing-price {
+  @include cabin-font;
+  font-size: 1rem;
+  color: white;
+  font-weight: 700;
+  background-color: #ff4081;
+  border-radius: 999px;
+  padding: 4px 14px;
+}
+
+.listing-meanings {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+.listing-meanings-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.listing-meanings-text {
+  font-size: 0.75rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.listing-divider {
+  width: 100%;
+  margin: 0.5rem 0 0.25rem;
+  border: none;
+  border-top: 1px solid #e0e0e0;
+}
+
+.share-buttons-wrapper {
+  width: calc(100% + 2rem);
+  margin-bottom: -1rem;
+  background-color: #f5f5f5;
+  border-radius: 0 0 20px 20px;
+  padding: 0 0.5rem;
+
+  ::ng-deep .action-buttons {
+    margin: 0.5rem 0;
+  }
+}
+
+.message-seller-btn {
+  border-radius: 4px !important;
+  background-color: #1565c0 !important;
+  color: white !important;
+  padding: 0 2rem !important;
+}
+
+
+.storefront-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: #00b3b3;
+  margin-bottom: 0.75rem;
+}

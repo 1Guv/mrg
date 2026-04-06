@@ -50,5 +50,6 @@
         </div>
     } @else {
         <button type="submit" class="valuate-now" [disabled]="registrationForm.invalid">Valuate Now!</button>
+        <button mat-raised-button type="button" class="plates-for-sale-btn" (click)="router.navigate(['/plates-for-sale'])">Plates for sale</button>
     }
 </form>

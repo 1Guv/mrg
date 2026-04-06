@@ -26,6 +26,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
 import { UserDetailsDialogComponent } from '../dialogs/user-details-dialog/user-details-dialog.component';
 import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
@@ -50,6 +51,7 @@ import { firstValueFrom } from 'rxjs';
 export class RegPlateMainComponent implements OnInit {
 
   dialog: MatDialog = inject(MatDialog);
+  router: Router = inject(Router);
 
   types: Array<NumberPlateTypeObj> = [
     { value: NumberPlateType.Current, example: NumberPlateTypeExamples.currentEg },
