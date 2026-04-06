@@ -351,6 +351,17 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
     this.feedbackAgreed = null;
   }
 
+  listNow(): void {
+    this.router.navigate(['/list-plate'], {
+      queryParams: {
+        plate: this.currentPlate.toUpperCase(),
+        price: (this.totalPoints * this.multiplier).toFixed(2),
+        min: this.minPrice.toFixed(2),
+        max: this.maxPrice.toFixed(2),
+      },
+    });
+  }
+
   get shareText(): string {
     const plate = this.currentPlate.toUpperCase();
     const price = (this.totalPoints * this.multiplier).toFixed(2);

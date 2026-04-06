@@ -207,6 +207,10 @@
         </div>
     </mat-card>
 
+    <p class="d-flex justify-content-center">
+      <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+    </p>
+
     <app-share-buttons [shareText]="shareText" />
 
     <app-valuation-feedback
@@ -265,8 +269,9 @@
         </div>
     </mat-card>
 
-    <p class="d-flex justify-content-center pt-3">
+    <p class="d-flex justify-content-center pt-3 gap-2">
         <button mat-raised-button type="button" class="valuate-now" (click)="onResetPlateForm()">Start Over</button>
+        <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
     </p>
 
     <p class="d-flex justify-content-center pt-3">
