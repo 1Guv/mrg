@@ -261,7 +261,8 @@ export const stripeWebhook = onRequest(
         negotiable: string;
         sellerUid: string;
       };
-      const initials = meta.initials || (meta.email ?? "XX").substring(0, 2).toUpperCase();
+      const fallback = (meta.email ?? "XX").substring(0, 2).toUpperCase();
+      const initials = meta.initials || fallback;
 
       await db.collection("plate-listings-new").add({
         plateCharacters: meta.plateCharacters,
