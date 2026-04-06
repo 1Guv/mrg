@@ -11,6 +11,6 @@ export const environment = {
   },
   appBaseUrl: 'https://mrvaluations.co.uk',
   stripe: {
-    publishableKey: 'pk_test_51OuG6TEi1sf3ZM0t4Razx6wnAKZ6Y2qDMBdJUby9SDmgZdQ3sZZMLYKea0e4tGZqc2ayYuvRx2h2rPdTHXC3907g00T9jfx6fN'
+    publishableKey: 'pk_live_51OuG6TEi1sf3ZM0tTuYsxMOOwbK08ANngQ1icEAZxMMlkWwjzmHq6R36k47OobPTwFc1s3bHnbYUDe0czzLQxtGJ004dNtc1UG'
   }
 };
