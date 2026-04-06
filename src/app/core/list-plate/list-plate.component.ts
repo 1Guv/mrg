@@ -58,8 +58,10 @@ export class ListPlateComponent implements OnInit {
     if (params['plate']) prefill['plateCharacters'] = String(params['plate']).toUpperCase();
     if (params['price']) prefill['askingPrice'] = String(params['price']);
     if (Object.keys(prefill).length) this.form.patchValue(prefill);
-    if (params['min']) this.valuationMin = Number(params['min']);
-    if (params['max']) this.valuationMax = Number(params['max']);
+    const minVal = Number(params['min']);
+    if (!isNaN(minVal) && minVal > 0) this.valuationMin = minVal;
+    const maxVal = Number(params['max']);
+    if (!isNaN(maxVal) && maxVal > 0) this.valuationMax = maxVal;
 
     this.authService.currentUser$.pipe(take(1)).subscribe(user => {
       if (!user) {
