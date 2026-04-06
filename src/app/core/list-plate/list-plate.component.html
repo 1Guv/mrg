@@ -23,6 +23,13 @@
         <mat-error>A valid asking price is required</mat-error>
       </mat-form-field>
 
+      @if (valuationMin !== null && valuationMax !== null) {
+        <p class="valuation-hint text-muted">
+          Valuation range: £{{ valuationMin | number:'1.2-2' }} – £{{ valuationMax | number:'1.2-2' }}.
+          You can adjust the price above.
+        </p>
+      }
+
       <mat-form-field appearance="outline" class="full-field">
         <mat-label>Phone number</mat-label>
         <input matInput type="tel" formControlName="phone" placeholder="e.g. 07700 900000">
