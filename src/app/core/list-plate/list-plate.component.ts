@@ -41,6 +41,7 @@ export class ListPlateComponent implements OnInit {
     askingPrice: ['', [Validators.required, Validators.min(1)]],
     phone: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
+    initials: ['', [Validators.required, Validators.maxLength(3)]],
     meanings: [''],
     negotiable: [false],
   });
@@ -68,6 +69,7 @@ export class ListPlateComponent implements OnInit {
         askingPrice: String(this.form.value.askingPrice),
         phone: this.form.value.phone,
         email: this.form.value.email,
+        initials: this.form.value.initials.toUpperCase(),
         meanings: this.form.value.meanings ?? '',
         negotiable: this.form.value.negotiable ?? false,
       });

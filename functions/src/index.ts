@@ -177,6 +177,7 @@ export const createCheckoutSession = onCall(
       askingPrice,
       phone,
       email,
+      initials,
       meanings,
       negotiable,
       appBaseUrl,
@@ -211,6 +212,7 @@ export const createCheckoutSession = onCall(
         askingPrice: String(askingPrice),
         phone: String(phone),
         email: String(email),
+        initials: String(initials ?? "").toUpperCase(),
         meanings: String(meanings ?? ""),
         negotiable: negotiable ? "true" : "false",
         sellerUid,
@@ -254,11 +256,12 @@ export const stripeWebhook = onRequest(
         askingPrice: string;
         phone: string;
         email: string;
+        initials: string;
         meanings: string;
         negotiable: string;
         sellerUid: string;
       };
-      const initials = (meta.email ?? "XX").substring(0, 2).toUpperCase();
+      const initials = meta.initials || (meta.email ?? "XX").substring(0, 2).toUpperCase();
 
       await db.collection("plate-listings-new").add({
         plateCharacters: meta.plateCharacters,

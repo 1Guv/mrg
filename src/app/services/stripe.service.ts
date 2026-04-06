@@ -11,6 +11,7 @@ export class StripeService {
     askingPrice: string;
     phone: string;
     email: string;
+    initials: string;
     meanings: string;
     negotiable: boolean;
   }): Promise<string> {

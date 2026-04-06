@@ -36,6 +36,14 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Your initials</mat-label>
+        <input matInput formControlName="initials" placeholder="e.g. GS" maxlength="3"
+          style="text-transform: uppercase">
+        <mat-hint>Shown as your avatar on the listing</mat-hint>
+        <mat-error>Initials are required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-field">
         <mat-label>Meanings (optional)</mat-label>
         <input matInput formControlName="meanings" placeholder="e.g. ABC = my initials">
       </mat-form-field>
