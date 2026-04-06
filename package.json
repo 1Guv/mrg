@@ -2,7 +2,7 @@
   "name": "mrg-app-v1",
   "version": "0.0.0",
   "scripts": {
-    "build:gh-pages": "rm -rf docs && ng build --configuration production --output-path docs --base-href \"/\" --no-ssr && cp -a docs/browser/. docs/ && rm -rf docs/browser && echo 'mrvaluations.co.uk' > docs/CNAME",
+    "build:gh-pages": "rm -rf docs && ng build --configuration production --output-path docs --base-href \"/\" --no-ssr && cp -a docs/browser/. docs/ && rm -rf docs/browser && echo 'mrvaluations.co.uk' > docs/CNAME && cp docs/index.html docs/404.html",
     "ship": "git add -A && git commit -m 'Latest build' && git push && npm run build:gh-pages && git add docs/ && git commit -m 'Production build for GitHub Pages' && git push",
     "ng": "ng",
     "start": "ng serve",
