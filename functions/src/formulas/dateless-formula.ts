@@ -83,7 +83,7 @@ export enum DigitValues {
     _8 = 80,
     _9 = 40,
 }
-  
+
 export enum Spaces {
     _0 = 1000,
     _1 = 800,

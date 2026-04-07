@@ -13,106 +13,106 @@ export enum CurrentRegMultiplier {
 }
 
 export const CurrentRegYearMultiplier: Record<string, number> = {
-    // Future Plates (lowest value = furthest future)
-    '99': 100,  // Sept 2049
-    '49': 110,  // Mar 2049
-    '98': 120,  // Sept 2048
-    '48': 130,  // Mar 2048
-    '97': 140,  // Sept 2047
-    '47': 150,  // Mar 2047
-    '96': 160,  // Sept 2046
-    '46': 170,  // Mar 2046
-    '95': 180,  // Sept 2045
-    '45': 190,  // Mar 2045
-    '94': 200,
-    '44': 210,
-    '93': 220,
-    '43': 230,
-    '92': 240,
-    '42': 250,
-    '91': 260,
-    '41': 270,
-    '90': 280,
-    '40': 290,
-    '89': 300,
-    '39': 310,
-    '88': 320,
-    '38': 330,
-    '87': 340,
-    '37': 350,
-    '86': 360,
-    '36': 370,
-    '85': 380,
-    '35': 390,
-    '84': 400,
-    '34': 410,
-    '83': 420,
-    '33': 430,
-    '82': 440,
-    '32': 450,
-    '81': 460,
-    '31': 470,
-    '80': 480,
-    '30': 490,
-    '79': 500,
-    '29': 510,
-    '78': 520,
-    '28': 530,
-    '77': 540,
-    '27': 550,
-    // Current & Recent Plates
-    '76': 560,  // Sept 2026 (Coming Soon)
-    '26': 570,  // Mar 2026 (Current)
-    '75': 580,  // Sept 2025
-    '25': 590,  // Mar 2025
-    '74': 600,  // Sept 2024
-    '24': 610,  // Mar 2024
-    '73': 620,  // Sept 2023
-    '23': 630,  // Mar 2023
-    '72': 640,
-    '22': 650,
-    '71': 660,
-    '21': 670,
-    '70': 680,
-    '20': 690,
-    '69': 700,
-    '19': 710,
-    '68': 720,
-    '18': 730,
-    '67': 740,
-    '17': 750,
-    '66': 760,
-    '16': 770,
-    '65': 780,
-    '15': 790,
-    '64': 800,
-    '14': 810,
-    '63': 820,
-    '13': 830,
-    '62': 840,
-    '12': 850,
-    '61': 860,
-    '11': 870,
-    '60': 880,
-    '10': 890,
-    '59': 900,
-    '09': 910,
-    '58': 920,
-    '08': 930,
-    '57': 940,
-    '07': 950,
-    '56': 960,
-    '06': 970,
-    '55': 980,
-    '05': 990,
-    '54': 1000,
-    '04': 1010,
-    '53': 1020,
-    '03': 1030,
-    '52': 1040,
-    '02': 1050, // Mar 2002
-    '51': 1060, // Sept 2001 (Start of System)
-    '01': 1070, // Theoretical floor
+  // Future Plates (lowest value = furthest future)
+  "99": 100, // Sept 2049
+  "49": 110, // Mar 2049
+  "98": 120, // Sept 2048
+  "48": 130, // Mar 2048
+  "97": 140, // Sept 2047
+  "47": 150, // Mar 2047
+  "96": 160, // Sept 2046
+  "46": 170, // Mar 2046
+  "95": 180, // Sept 2045
+  "45": 190, // Mar 2045
+  "94": 200,
+  "44": 210,
+  "93": 220,
+  "43": 230,
+  "92": 240,
+  "42": 250,
+  "91": 260,
+  "41": 270,
+  "90": 280,
+  "40": 290,
+  "89": 300,
+  "39": 310,
+  "88": 320,
+  "38": 330,
+  "87": 340,
+  "37": 350,
+  "86": 360,
+  "36": 370,
+  "85": 380,
+  "35": 390,
+  "84": 400,
+  "34": 410,
+  "83": 420,
+  "33": 430,
+  "82": 440,
+  "32": 450,
+  "81": 460,
+  "31": 470,
+  "80": 480,
+  "30": 490,
+  "79": 500,
+  "29": 510,
+  "78": 520,
+  "28": 530,
+  "77": 540,
+  "27": 550,
+  // Current & Recent Plates
+  "76": 560, // Sept 2026 (Coming Soon)
+  "26": 570, // Mar 2026 (Current)
+  "75": 580, // Sept 2025
+  "25": 590, // Mar 2025
+  "74": 600, // Sept 2024
+  "24": 610, // Mar 2024
+  "73": 620, // Sept 2023
+  "23": 630, // Mar 2023
+  "72": 640,
+  "22": 650,
+  "71": 660,
+  "21": 670,
+  "70": 680,
+  "20": 690,
+  "69": 700,
+  "19": 710,
+  "68": 720,
+  "18": 730,
+  "67": 740,
+  "17": 750,
+  "66": 760,
+  "16": 770,
+  "65": 780,
+  "15": 790,
+  "64": 800,
+  "14": 810,
+  "63": 820,
+  "13": 830,
+  "62": 840,
+  "12": 850,
+  "61": 860,
+  "11": 870,
+  "60": 880,
+  "10": 890,
+  "59": 900,
+  "09": 910,
+  "58": 920,
+  "08": 930,
+  "57": 940,
+  "07": 950,
+  "56": 960,
+  "06": 970,
+  "55": 980,
+  "05": 990,
+  "54": 1000,
+  "04": 1010,
+  "53": 1020,
+  "03": 1030,
+  "52": 1040,
+  "02": 1050, // Mar 2002
+  "51": 1060, // Sept 2001 (Start of System)
+  "01": 1070, // Theoretical floor
 };
 
 // First 2 letters
@@ -170,7 +170,7 @@ export enum CurrentRegMemoryTagAndAgeIdentifier {
     RE04 = 1000, // REAR
     BA02 = 1000, // BAR (if suffix starts with R)
     MR51 = 1000, // MRSI (Mr Singh)
-    
+
     // --- Manual Overrides / Popular Requests ---
     TH15 = 2000, // THIS (Note: TH is not a standard Region Tag)
     GO55 = 1000, // GOSS
@@ -180,7 +180,6 @@ export enum CurrentRegMemoryTagAndAgeIdentifier {
 export enum CurrentRegAgeIdentifierAndSMRLetters {
     _51NGH = 10000,
 }
-
 
 
 // Plate Alphabet (the numbers that look most like letters):
@@ -194,14 +193,14 @@ export enum CurrentRegAgeIdentifierAndSMRLetters {
 // 0 = O
 
 export const PLATE_ALPHABET: Record<string, string[]> = {
-  '0': ['O'],
-  '1': ['I', 'L'],
-  '3': ['E'],
-  '4': ['A'],
-  '5': ['S'],
-  '6': ['G'],
-  '7': ['T'],
-  '8': ['B', 'R'],
+  "0": ["O"],
+  "1": ["I", "L"],
+  "3": ["E"],
+  "4": ["A"],
+  "5": ["S"],
+  "6": ["G"],
+  "7": ["T"],
+  "8": ["B", "R"],
 };
 
 export const AGE_IDENTIFIER_MATCH = 1000;
@@ -218,7 +217,7 @@ export const THREE_WORD_PENALTY = -5000;
 export const FIRST_CHAR_X_BONUS = 500;
 export const FIRST_CHAR_NOT_X_PENALTY = -250;
 
-// Dictionary match/no-match bonuses keyed by word length — used for all 2-word spacing combinations
+// Dictionary match/no-match bonuses keyed by word length
 export const WORD_DICT_MATCH_BONUS: Record<number, number> = {
   2: 2000,
   3: 1500,
@@ -238,74 +237,74 @@ export const WORD_DICT_NO_MATCH_PENALTY: Record<number, number> = {
 // Decoded plate characters (e.g. 51NGH → SINGH) are checked against this list
 export const POPULAR_SURNAMES: Record<string, number> = {
   // High demand — South Asian communities
-  SINGH:  8000,
-  KAUR:   7000,
-  GILL:   6000,
-  PATEL:  6000,
-  KHAN:   6000,
-  SHAH:   5000,
-  AHMED:  5000,
+  SINGH: 8000,
+  KAUR: 7000,
+  GILL: 6000,
+  PATEL: 6000,
+  KHAN: 6000,
+  SHAH: 5000,
+  AHMED: 5000,
   AKHTAR: 5000,
-  HUSSAIN:5000,
-  MALIK:  4500,
+  HUSSAIN: 5000,
+  MALIK: 4500,
   RAHMAN: 4500,
-  BEGUM:  4000,
-  IQBAL:  4000,
-  CHANA:  4000,
-  DHESI:  4000,
-  BHATT:  4000,
-  BAINS:  4000,
-  SOHAL:  4000,
+  BEGUM: 4000,
+  IQBAL: 4000,
+  CHANA: 4000,
+  DHESI: 4000,
+  BHATT: 4000,
+  BAINS: 4000,
+  SOHAL: 4000,
   GREWAL: 4000,
   SANDHU: 4000,
   DHALIWAL: 4000,
 
   // High demand — common UK surnames
-  SMITH:  3000,
-  JONES:  3000,
-  BROWN:  3000,
+  SMITH: 3000,
+  JONES: 3000,
+  BROWN: 3000,
   TAYLOR: 3000,
   WILSON: 3000,
   DAVIES: 3000,
-  EVANS:  3000,
+  EVANS: 3000,
   THOMAS: 3000,
-  WHITE:  3000,
+  WHITE: 3000,
   HARRIS: 3000,
   MARTIN: 3000,
   WALKER: 3000,
-  ALLEN:  3000,
-  YOUNG:  3000,
-  KING:   3500,
-  BALL:   3000,
-  BELL:   3000,
-  HALL:   3000,
-  HILL:   3000,
-  COLE:   3000,
-  FORD:   3000,
-  ROSS:   3000,
-  BASS:   3000,
-  BEST:   3500,
-  BOSS:   3500,
+  ALLEN: 3000,
+  YOUNG: 3000,
+  KING: 3500,
+  BALL: 3000,
+  BELL: 3000,
+  HALL: 3000,
+  HILL: 3000,
+  COLE: 3000,
+  FORD: 3000,
+  ROSS: 3000,
+  BASS: 3000,
+  BEST: 3500,
+  BOSS: 3500,
 };
 
 export const SURNAME_BONUS_NO_MATCH = 0;
 
-// Special full-plate combinations — prefix + surname pairings with high cultural demand
+// Special full-plate combinations (prefix + surname pairings)
 export const SPECIAL_COMBINATIONS: Record<string, number> = {
-  MRSINGH:  1000000,
-  DRSINGH:  1000000,
-  MRSKAUR:  1000000,
-  MRKHAN:   750000,
-  DRKHAN:   750000,
-  MRPATEL:  750000,
-  DRPATEL:  750000,
-  MRSGILL:  500000,
-  MRGILL:   500000,
-  DRGILL:   500000,
-  JUSTEAT:  500000,
+  MRSINGH: 1000000,
+  DRSINGH: 1000000,
+  MRSKAUR: 1000000,
+  MRKHAN: 750000,
+  DRKHAN: 750000,
+  MRPATEL: 750000,
+  DRPATEL: 750000,
+  MRSGILL: 500000,
+  MRGILL: 500000,
+  DRGILL: 500000,
+  JUSTEAT: 500000,
 };
 
-// Popular first names by length — checked against each word in a 2-word spacing combination
+// Popular first names by length
 export const POPULAR_NAMES: Record<string, number> = {
   // 3-letter names
   JON: 500, DAN: 500, BEN: 500, TOM: 500, ROB: 500, SAM: 500,
