@@ -1,0 +1,1 @@
+export const currentPattern = /^([A-Za-z]{2}[0-9]{2}[A-Za-z]{3})$/;

@@ -1,0 +1,1 @@
+export const prefixPattern = /^([A-Za-z][0-9]{1,3}[A-Za-z]{3})$/;
