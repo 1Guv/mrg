@@ -84,3 +84,51 @@
     min-height: 0;
   }
 }
+
+.list-now-btn {
+  margin: 0.75rem;
+  padding: 0.75rem 2.5rem;
+  background-color: #2e7d32;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 2rem;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  overflow: visible;
+
+  &::after {
+    content: '£6';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #f9a825;
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 0.75rem;
+    letter-spacing: 0;
+    line-height: 1.5;
+    text-transform: none;
+    pointer-events: none;
+  }
+
+  &:hover {
+    background-color: #1b5e20;
+    box-shadow: 0 6px 18px rgba(46, 125, 50, 0.55);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(46, 125, 50, 0.35);
+  }
+
+  &:focus {
+    outline: 2px solid #1b5e20;
+    outline-offset: 3px;
+  }
+}

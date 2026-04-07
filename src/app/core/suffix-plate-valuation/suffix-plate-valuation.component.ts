@@ -366,6 +366,17 @@ export class SuffixPlateValuationComponent implements OnInit, OnDestroy {
     this.numberPlateFormService.triggerReset();
   }
 
+  listNow(): void {
+    this.router.navigate(['/list-plate'], {
+      queryParams: {
+        plate: (this.registration ?? '').toUpperCase(),
+        price: this.totalPrice.toFixed(2),
+        min: this.minPrice.toFixed(2),
+        max: this.maxPrice.toFixed(2),
+      },
+    });
+  }
+
   private resetResults() {
     this.totalPrice = 0;
     this.minPrice = 0;

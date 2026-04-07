@@ -221,6 +221,10 @@
         [minPrice]="minPrice"
         [maxPrice]="maxPrice" />
 
+      <p class="d-flex justify-content-center">
+        <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+      </p>
+
       <app-share-buttons [shareText]="shareText" />
       <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />
       <app-plate-valuation-message-feedback
@@ -233,6 +237,9 @@
       </p>
       <p class="d-flex justify-content-center pt-3">
         <button mat-raised-button type="button" class="valuate-now" (click)="onReset()">Start Over</button>
+      </p>
+      <p class="d-flex justify-content-center pt-3">
+        <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
       </p>
     }
   </div>
