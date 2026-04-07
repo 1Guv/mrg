@@ -4,6 +4,7 @@ import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
+import {valuatePlate} from "./valuation.js";
 
 setGlobalOptions({maxInstances: 10});
 
@@ -12,6 +13,7 @@ const db = admin.firestore();
 
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
+const valuationApiKey = defineSecret("VALUATION_API_KEY");
 
 export const getUsers = onCall({maxInstances: 1}, async (request) => {
   const adminEmail = "gurvinder.singh.sandhu@gmail.com";
@@ -292,5 +294,32 @@ export const stripeWebhook = onRequest(
     }
 
     response.status(200).send("ok");
+  }
+);
+
+export const valuePlate = onRequest(
+  {maxInstances: 10, secrets: [valuationApiKey]},
+  (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+
+    const key = request.query["key"] as string | undefined;
+    if (!key || key !== valuationApiKey.value()) {
+      response.status(401).json({error: "Missing or invalid API key"});
+      return;
+    }
+
+    const rawPlate = request.query["plate"] as string | undefined;
+    if (!rawPlate) {
+      response.status(400).json({error: "Missing plate parameter"});
+      return;
+    }
+
+    const result = valuatePlate(rawPlate.trim());
+    if (!result) {
+      response.status(400).json({error: "Plate format not recognised"});
+      return;
+    }
+
+    response.status(200).json(result);
   }
 );
