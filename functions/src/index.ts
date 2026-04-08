@@ -5,6 +5,7 @@ import {defineSecret} from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import {valuatePlate} from "./valuation.js";
+import {processQueue} from "./social-post.js";
 
 setGlobalOptions({maxInstances: 10});
 
@@ -14,6 +15,15 @@ const db = admin.firestore();
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
+
+// Social post pipeline secrets
+const sheetsClientEmail = defineSecret("SHEETS_CLIENT_EMAIL");
+const sheetsPrivateKey = defineSecret("SHEETS_PRIVATE_KEY");
+const sheetsSheetId = defineSecret("SHEETS_SHEET_ID");
+const creatomateApiKey = defineSecret("CREATOMATE_API_KEY");
+const creatomateTemplateId = defineSecret("CREATOMATE_TEMPLATE_ID");
+const publerApiKey = defineSecret("PUBLER_API_KEY");
+const publerProfileIds = defineSecret("PUBLER_PROFILE_IDS");
 
 export const getUsers = onCall({maxInstances: 1}, async (request) => {
   const adminEmail = "gurvinder.singh.sandhu@gmail.com";
@@ -321,5 +331,56 @@ export const valuePlate = onRequest(
     }
 
     response.status(200).json(result);
+  }
+);
+
+const socialSecrets = [
+  sheetsClientEmail,
+  sheetsPrivateKey,
+  sheetsSheetId,
+  valuationApiKey,
+  creatomateApiKey,
+  creatomateTemplateId,
+  publerApiKey,
+  publerProfileIds,
+];
+
+/** Scheduled: runs every hour, processes pending rows in the Google Sheet. */
+export const scheduledSocialPost = onSchedule(
+  {schedule: "every 60 minutes", timeoutSeconds: 540, secrets: socialSecrets},
+  async () => {
+    const result = await processQueue(
+      sheetsClientEmail,
+      sheetsPrivateKey,
+      sheetsSheetId,
+      valuationApiKey,
+      creatomateApiKey,
+      creatomateTemplateId,
+      publerApiKey,
+      publerProfileIds
+    );
+    console.log(`Scheduled run complete. Processed: ${result.processed}`);
+  }
+);
+
+/** Manual trigger: callable from the Angular admin dashboard. */
+export const manualSocialPost = onCall(
+  {timeoutSeconds: 540, secrets: socialSecrets},
+  async (request) => {
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!request.auth || request.auth.token.email !== adminEmail) {
+      throw new HttpsError("permission-denied", "Not authorised");
+    }
+    const result = await processQueue(
+      sheetsClientEmail,
+      sheetsPrivateKey,
+      sheetsSheetId,
+      valuationApiKey,
+      creatomateApiKey,
+      creatomateTemplateId,
+      publerApiKey,
+      publerProfileIds
+    );
+    return {success: true, processed: result.processed};
   }
 );
