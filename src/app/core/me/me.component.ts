@@ -1,16 +1,43 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AutoValuation, PlateSearch, PlateValuationMessage, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
+import { SocialPostService } from '../../services/social-post.service';
 
 @Component({
   selector: 'app-me',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatTableModule, MatExpansionModule],
+  imports: [CommonModule, MatCardModule, MatTableModule, MatExpansionModule, MatButtonModule, MatSnackBarModule],
   template: `
+    <!-- Content Queue (admin only) -->
+    <mat-card class="mb-4 queue-card">
+      <mat-card-header>
+        <mat-card-title>📋 Content Queue</mat-card-title>
+        <mat-card-subtitle>Process pending plates from the Google Sheet</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        @if (queueResult()) {
+          <p class="queue-result" [class.queue-result--success]="!queueError()" [class.queue-result--error]="queueError()">
+            {{ queueResult() }}
+          </p>
+        }
+      </mat-card-content>
+      <mat-card-actions class="px-3 pb-3">
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="isProcessing()"
+          (click)="processQueue()">
+          {{ isProcessing() ? '⏳ Processing...' : '🚀 Process Queue Now' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
     <mat-card class="mb-4">
       <mat-card-header>
         <mat-card-title>My Searches</mat-card-title>
@@ -205,6 +232,33 @@ export class MeComponent {
   plateMessages = input<PlateValuationMessage[]>([]);
 
   private adminsService = inject(AdminsService);
+  private socialPostService = inject(SocialPostService);
+  private snackBar = inject(MatSnackBar);
+
+  isProcessing = signal(false);
+  queueResult = signal<string | null>(null);
+  queueError = signal(false);
+
+  async processQueue(): Promise<void> {
+    this.isProcessing.set(true);
+    this.queueResult.set(null);
+    this.queueError.set(false);
+    try {
+      const res = await this.socialPostService.processQueue();
+      const msg = res.processed === 0
+        ? 'No pending plates found in the sheet.'
+        : `Done! ${res.processed} plate${res.processed === 1 ? '' : 's'} processed and posted.`;
+      this.queueResult.set(msg);
+      this.snackBar.open(msg, 'OK', { duration: 5000 });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Check the function logs.';
+      this.queueResult.set(msg);
+      this.queueError.set(true);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } finally {
+      this.isProcessing.set(false);
+    }
+  }
 
   mySearches = computed(() =>
     this.searches().filter(s => s.userId === this.currentUser()?.uid)
