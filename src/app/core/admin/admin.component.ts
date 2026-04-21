@@ -365,7 +365,9 @@ export class AdminComponent {
   }
 
   nonAdminUsers = computed(() =>
-    this.users().filter(u => !this.adminsService.adminUids().includes(u.uid))
+    this.users()
+      .filter(u => !this.adminsService.adminUids().includes(u.uid))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   );
 
   verifiedUsers = computed(() => this.nonAdminUsers().filter(u => u.emailVerified));
