@@ -8,11 +8,14 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AutoValuation, PlateSearch, PlateValuationMessage, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
 import { SocialPostService } from '../../services/social-post.service';
+import { ClickMetricsService, ButtonMetric } from '../../services/click-metrics.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-me',
   standalone: true,
   imports: [CommonModule, MatCardModule, MatTableModule, MatExpansionModule, MatButtonModule, MatSnackBarModule],
+  // Note: TrackClickDirective can be imported in any component that needs button tracking
   template: `
     <!-- Content Queue (admin only) -->
     <mat-card class="mb-4 queue-card">
@@ -36,6 +39,36 @@ import { SocialPostService } from '../../services/social-post.service';
           {{ isProcessing() ? '⏳ Processing...' : '🚀 Process Queue Now' }}
         </button>
       </mat-card-actions>
+    </mat-card>
+
+    <!-- Button Metrics (admin only) -->
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>📊 Button Metrics</mat-card-title>
+        <mat-card-subtitle>Click counts across the app</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if ((buttonMetrics() ?? []).length === 0) {
+          <p class="text-muted mt-3">No button clicks tracked yet.</p>
+        } @else {
+          <table mat-table [dataSource]="buttonMetrics() ?? []" class="w-100 mt-3">
+            <ng-container matColumnDef="label">
+              <th mat-header-cell *matHeaderCellDef>Button</th>
+              <td mat-cell *matCellDef="let m"><strong>{{ m.label }}</strong></td>
+            </ng-container>
+            <ng-container matColumnDef="count">
+              <th mat-header-cell *matHeaderCellDef>Clicks</th>
+              <td mat-cell *matCellDef="let m">{{ m.count }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lastClickedAt">
+              <th mat-header-cell *matHeaderCellDef>Last Clicked</th>
+              <td mat-cell *matCellDef="let m">{{ m.lastClickedAt?.toDate() | date:'dd/MM/yyyy HH:mm' }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="metricsColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: metricsColumns;"></tr>
+          </table>
+        }
+      </mat-card-content>
     </mat-card>
 
     <mat-card class="mb-4">
@@ -233,7 +266,10 @@ export class MeComponent {
 
   private adminsService = inject(AdminsService);
   private socialPostService = inject(SocialPostService);
+  private clickMetricsService = inject(ClickMetricsService);
   private snackBar = inject(MatSnackBar);
+
+  buttonMetrics = toSignal(this.clickMetricsService.getAll());
 
   isProcessing = signal(false);
   queueResult = signal<string | null>(null);
@@ -276,6 +312,7 @@ export class MeComponent {
     this.plateMessages().filter(m => this.adminsService.adminUids().includes(m.userId ?? ''))
   );
 
+  metricsColumns = ['label', 'count', 'lastClickedAt'];
   searchColumns = ['registration', 'type', 'badge', 'searchedAt', 'price'];
   valuationColumns = ['registration', 'type', 'price', 'minPrice', 'maxPrice', 'savedAt'];
   feedbackColumns = ['registration', 'valuation', 'agreed', 'submittedAt'];
