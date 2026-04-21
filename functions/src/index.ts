@@ -1,4 +1,4 @@
-import {setGlobalOptions} from "firebase-functions";
+import * as functionsV1 from "firebase-functions/v1";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
@@ -7,8 +7,6 @@ import Stripe from "stripe";
 import {valuatePlate} from "./valuation.js";
 import {processQueue} from "./social-post.js";
 
-setGlobalOptions({maxInstances: 10});
-
 admin.initializeApp();
 const db = admin.firestore();
 
@@ -16,14 +14,14 @@ const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
 
-// Social post pipeline secrets
-const sheetsClientEmail = defineSecret("SHEETS_CLIENT_EMAIL");
-const sheetsPrivateKey = defineSecret("SHEETS_PRIVATE_KEY");
-const sheetsSheetId = defineSecret("SHEETS_SHEET_ID");
-const creatomateApiKey = defineSecret("CREATOMATE_API_KEY");
-const creatomateTemplateId = defineSecret("CREATOMATE_TEMPLATE_ID");
-const publerApiKey = defineSecret("PUBLER_API_KEY");
-const publerProfileIds = defineSecret("PUBLER_PROFILE_IDS");
+const socialSecretNames = [
+  "SHEETS_CLIENT_EMAIL",
+  "SHEETS_PRIVATE_KEY",
+  "SHEETS_SHEET_ID",
+  "PROXY_SECRET",
+  "CREATOMATE_TEMPLATE_ID",
+  "BUFFER_API_KEY",
+];
 
 export const getUsers = onCall({maxInstances: 1}, async (request) => {
   const adminEmail = "gurvinder.singh.sandhu@gmail.com";
@@ -53,72 +51,74 @@ export const getUsers = onCall({maxInstances: 1}, async (request) => {
   return {users};
 });
 
-export const weeklyReport = onSchedule("every sunday 08:00", async () => {
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+export const weeklyReport = onSchedule(
+  {schedule: "every sunday 08:00", maxInstances: 10},
+  async () => {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  // ── Plate Searches ────────────────────────────────────────
-  const searchesSnap = await db.collection("plate_searches")
-    .where("searchedAt", ">=", sevenDaysAgo)
-    .get();
+    // ── Plate Searches ────────────────────────────────────────
+    const searchesSnap = await db.collection("plate_searches")
+      .where("searchedAt", ">=", sevenDaysAgo)
+      .get();
 
-  const searches = searchesSnap.docs.map((d) => d.data());
-  const searchRows = searches.length ?
-    searches.map((s) =>
-      `<tr>
+    const searches = searchesSnap.docs.map((d) => d.data());
+    const searchRows = searches.length ?
+      searches.map((s) =>
+        `<tr>
         <td>${s["registration"] ?? "-"}</td>
         <td>${s["type"] ?? "-"}</td>
         <td>${s["badge"] ?? "-"}</td>
         <td>${s["userId"] ? "Logged in" : "Guest"}</td>
       </tr>`
-    ).join("") :
-    "<tr><td colspan='4'>No searches this week</td></tr>";
+      ).join("") :
+      "<tr><td colspan='4'>No searches this week</td></tr>";
 
-  // ── Feature Requests ──────────────────────────────────────
-  const requestsSnap = await db.collection("feature_requests")
-    .where("requestedAt", ">=", sevenDaysAgo)
-    .get();
+    // ── Feature Requests ──────────────────────────────────────
+    const requestsSnap = await db.collection("feature_requests")
+      .where("requestedAt", ">=", sevenDaysAgo)
+      .get();
 
-  const requests = requestsSnap.docs.map((d) => d.data());
-  const requestRows = requests.length ?
-    requests.map((r) =>
-      `<tr>
+    const requests = requestsSnap.docs.map((d) => d.data());
+    const requestRows = requests.length ?
+      requests.map((r) =>
+        `<tr>
         <td>${r["registration"] ?? "-"}</td>
         <td>${r["type"] ?? "-"}</td>
       </tr>`
-    ).join("") :
-    "<tr><td colspan='2'>No feature requests this week</td></tr>";
+      ).join("") :
+      "<tr><td colspan='2'>No feature requests this week</td></tr>";
 
-  // ── Valuation Feedback ────────────────────────────────────
-  const feedbackSnap = await db.collection("valuation_feedback")
-    .where("submittedAt", ">=", sevenDaysAgo)
-    .get();
+    // ── Valuation Feedback ────────────────────────────────────
+    const feedbackSnap = await db.collection("valuation_feedback")
+      .where("submittedAt", ">=", sevenDaysAgo)
+      .get();
 
-  const feedback = feedbackSnap.docs.map((d) => d.data());
-  const agreed = feedback.filter((f) => f["agreed"] === true).length;
-  const disagreed = feedback.filter((f) => f["agreed"] === false).length;
-  const feedbackRows = feedback.length ?
-    feedback.map((f) =>
-      `<tr>
+    const feedback = feedbackSnap.docs.map((d) => d.data());
+    const agreed = feedback.filter((f) => f["agreed"] === true).length;
+    const disagreed = feedback.filter((f) => f["agreed"] === false).length;
+    const feedbackRows = feedback.length ?
+      feedback.map((f) =>
+        `<tr>
         <td>${f["registration"] ?? "-"}</td>
         <td>£${Number(f["valuation"] ?? 0).toFixed(2)}</td>
         <td>${f["popularityMultiplier"] ?? "-"}x</td>
         <td>${f["agreed"] ? "👍 Agree" : "👎 Disagree"}</td>
       </tr>`
-    ).join("") :
-    "<tr><td colspan='4'>No feedback this week</td></tr>";
+      ).join("") :
+      "<tr><td colspan='4'>No feedback this week</td></tr>";
 
-  // ── Build email ───────────────────────────────────────────
-  const from = sevenDaysAgo.toLocaleDateString("en-GB");
-  const to = now.toLocaleDateString("en-GB");
-  const dateRange = `${from} – ${to}`;
+    // ── Build email ───────────────────────────────────────────
+    const from = sevenDaysAgo.toLocaleDateString("en-GB");
+    const to = now.toLocaleDateString("en-GB");
+    const dateRange = `${from} – ${to}`;
 
-  const tableStyle =
+    const tableStyle =
     "border-collapse:collapse;width:100%";
-  const thStyle =
+    const thStyle =
     "background:#003399;color:#fff";
 
-  const html = `
+    const html = `
     <h1>MR Valuations — Weekly Report</h1>
     <p><strong>Period:</strong> ${dateRange}</p>
 
@@ -168,14 +168,14 @@ export const weeklyReport = onSchedule("every sunday 08:00", async () => {
     </p>
   `;
 
-  await db.collection("mail").add({
-    to: ["guv.mr.valuations@gmail.com"],
-    message: {
-      subject: `MR Valuations Weekly Report — ${dateRange}`,
-      html,
-    },
+    await db.collection("mail").add({
+      to: ["guv.mr.valuations@gmail.com"],
+      message: {
+        subject: `MR Valuations Weekly Report — ${dateRange}`,
+        html,
+      },
+    });
   });
-});
 
 export const createCheckoutSession = onCall(
   {maxInstances: 10, secrets: [stripeSecretKey]},
@@ -334,53 +334,39 @@ export const valuePlate = onRequest(
   }
 );
 
-const socialSecrets = [
-  sheetsClientEmail,
-  sheetsPrivateKey,
-  sheetsSheetId,
-  valuationApiKey,
-  creatomateApiKey,
-  creatomateTemplateId,
-  publerApiKey,
-  publerProfileIds,
-];
-
 /** Scheduled: runs every hour, processes pending rows in the Google Sheet. */
-export const scheduledSocialPost = onSchedule(
-  {schedule: "every 60 minutes", timeoutSeconds: 540, secrets: socialSecrets},
-  async () => {
+export const scheduledSocialPost = functionsV1
+  .runWith({secrets: socialSecretNames, timeoutSeconds: 540})
+  .pubsub.schedule("every 60 minutes")
+  .onRun(async () => {
     const result = await processQueue(
-      sheetsClientEmail,
-      sheetsPrivateKey,
-      sheetsSheetId,
-      valuationApiKey,
-      creatomateApiKey,
-      creatomateTemplateId,
-      publerApiKey,
-      publerProfileIds
+      process.env.SHEETS_CLIENT_EMAIL ?? "",
+      process.env.SHEETS_PRIVATE_KEY ?? "",
+      process.env.SHEETS_SHEET_ID ?? "",
+      process.env.PROXY_SECRET ?? "",
+      process.env.CREATOMATE_TEMPLATE_ID ?? "",
+      process.env.BUFFER_API_KEY ?? ""
     );
     console.log(`Scheduled run complete. Processed: ${result.processed}`);
-  }
-);
+  });
 
 /** Manual trigger: callable from the Angular admin dashboard. */
-export const manualSocialPost = onCall(
-  {timeoutSeconds: 540, secrets: socialSecrets},
-  async (request) => {
+export const manualSocialPost = functionsV1
+  .runWith({secrets: socialSecretNames, timeoutSeconds: 540})
+  .https.onCall(async (_data, context) => {
     const adminEmail = "gurvinder.singh.sandhu@gmail.com";
-    if (!request.auth || request.auth.token.email !== adminEmail) {
-      throw new HttpsError("permission-denied", "Not authorised");
+    if (!context.auth || context.auth.token.email !== adminEmail) {
+      throw new functionsV1.https.HttpsError(
+        "permission-denied", "Not authorised"
+      );
     }
     const result = await processQueue(
-      sheetsClientEmail,
-      sheetsPrivateKey,
-      sheetsSheetId,
-      valuationApiKey,
-      creatomateApiKey,
-      creatomateTemplateId,
-      publerApiKey,
-      publerProfileIds
+      process.env.SHEETS_CLIENT_EMAIL ?? "",
+      process.env.SHEETS_PRIVATE_KEY ?? "",
+      process.env.SHEETS_SHEET_ID ?? "",
+      process.env.PROXY_SECRET ?? "",
+      process.env.CREATOMATE_TEMPLATE_ID ?? "",
+      process.env.BUFFER_API_KEY ?? ""
     );
     return {success: true, processed: result.processed};
-  }
-);
+  });

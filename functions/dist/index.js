@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.weeklyReport = exports.getUsers = void 0;
-const firebase_functions_1 = require("firebase-functions");
+const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
@@ -45,20 +45,19 @@ const admin = __importStar(require("firebase-admin"));
 const stripe_1 = __importDefault(require("stripe"));
 const valuation_js_1 = require("./valuation.js");
 const social_post_js_1 = require("./social-post.js");
-(0, firebase_functions_1.setGlobalOptions)({ maxInstances: 10 });
 admin.initializeApp();
 const db = admin.firestore();
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
-// Social post pipeline secrets
-const sheetsClientEmail = (0, params_1.defineSecret)("SHEETS_CLIENT_EMAIL");
-const sheetsPrivateKey = (0, params_1.defineSecret)("SHEETS_PRIVATE_KEY");
-const sheetsSheetId = (0, params_1.defineSecret)("SHEETS_SHEET_ID");
-const creatomateApiKey = (0, params_1.defineSecret)("CREATOMATE_API_KEY");
-const creatomateTemplateId = (0, params_1.defineSecret)("CREATOMATE_TEMPLATE_ID");
-const publerApiKey = (0, params_1.defineSecret)("PUBLER_API_KEY");
-const publerProfileIds = (0, params_1.defineSecret)("PUBLER_PROFILE_IDS");
+const socialSecretNames = [
+    "SHEETS_CLIENT_EMAIL",
+    "SHEETS_PRIVATE_KEY",
+    "SHEETS_SHEET_ID",
+    "PROXY_SECRET",
+    "CREATOMATE_TEMPLATE_ID",
+    "BUFFER_API_KEY",
+];
 exports.getUsers = (0, https_1.onCall)({ maxInstances: 1 }, async (request) => {
     const adminEmail = "gurvinder.singh.sandhu@gmail.com";
     if (!request.auth || request.auth.token.email !== adminEmail) {
@@ -83,7 +82,7 @@ exports.getUsers = (0, https_1.onCall)({ maxInstances: 1 }, async (request) => {
     } while (pageToken);
     return { users };
 });
-exports.weeklyReport = (0, scheduler_1.onSchedule)("every sunday 08:00", async () => {
+exports.weeklyReport = (0, scheduler_1.onSchedule)({ schedule: "every sunday 08:00", maxInstances: 10 }, async () => {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     // ── Plate Searches ────────────────────────────────────────
@@ -302,28 +301,25 @@ exports.valuePlate = (0, https_1.onRequest)({ maxInstances: 10, secrets: [valuat
     }
     response.status(200).json(result);
 });
-const socialSecrets = [
-    sheetsClientEmail,
-    sheetsPrivateKey,
-    sheetsSheetId,
-    valuationApiKey,
-    creatomateApiKey,
-    creatomateTemplateId,
-    publerApiKey,
-    publerProfileIds,
-];
 /** Scheduled: runs every hour, processes pending rows in the Google Sheet. */
-exports.scheduledSocialPost = (0, scheduler_1.onSchedule)({ schedule: "every 60 minutes", timeoutSeconds: 540, secrets: socialSecrets }, async () => {
-    const result = await (0, social_post_js_1.processQueue)(sheetsClientEmail, sheetsPrivateKey, sheetsSheetId, valuationApiKey, creatomateApiKey, creatomateTemplateId, publerApiKey, publerProfileIds);
+exports.scheduledSocialPost = functionsV1
+    .runWith({ secrets: socialSecretNames, timeoutSeconds: 540 })
+    .pubsub.schedule("every 60 minutes")
+    .onRun(async () => {
+    var _a, _b, _c, _d, _e, _f;
+    const result = await (0, social_post_js_1.processQueue)((_a = process.env.SHEETS_CLIENT_EMAIL) !== null && _a !== void 0 ? _a : "", (_b = process.env.SHEETS_PRIVATE_KEY) !== null && _b !== void 0 ? _b : "", (_c = process.env.SHEETS_SHEET_ID) !== null && _c !== void 0 ? _c : "", (_d = process.env.PROXY_SECRET) !== null && _d !== void 0 ? _d : "", (_e = process.env.CREATOMATE_TEMPLATE_ID) !== null && _e !== void 0 ? _e : "", (_f = process.env.BUFFER_API_KEY) !== null && _f !== void 0 ? _f : "");
     console.log(`Scheduled run complete. Processed: ${result.processed}`);
 });
 /** Manual trigger: callable from the Angular admin dashboard. */
-exports.manualSocialPost = (0, https_1.onCall)({ timeoutSeconds: 540, secrets: socialSecrets }, async (request) => {
+exports.manualSocialPost = functionsV1
+    .runWith({ secrets: socialSecretNames, timeoutSeconds: 540 })
+    .https.onCall(async (_data, context) => {
+    var _a, _b, _c, _d, _e, _f;
     const adminEmail = "gurvinder.singh.sandhu@gmail.com";
-    if (!request.auth || request.auth.token.email !== adminEmail) {
-        throw new https_1.HttpsError("permission-denied", "Not authorised");
+    if (!context.auth || context.auth.token.email !== adminEmail) {
+        throw new functionsV1.https.HttpsError("permission-denied", "Not authorised");
     }
-    const result = await (0, social_post_js_1.processQueue)(sheetsClientEmail, sheetsPrivateKey, sheetsSheetId, valuationApiKey, creatomateApiKey, creatomateTemplateId, publerApiKey, publerProfileIds);
+    const result = await (0, social_post_js_1.processQueue)((_a = process.env.SHEETS_CLIENT_EMAIL) !== null && _a !== void 0 ? _a : "", (_b = process.env.SHEETS_PRIVATE_KEY) !== null && _b !== void 0 ? _b : "", (_c = process.env.SHEETS_SHEET_ID) !== null && _c !== void 0 ? _c : "", (_d = process.env.PROXY_SECRET) !== null && _d !== void 0 ? _d : "", (_e = process.env.CREATOMATE_TEMPLATE_ID) !== null && _e !== void 0 ? _e : "", (_f = process.env.BUFFER_API_KEY) !== null && _f !== void 0 ? _f : "");
     return { success: true, processed: result.processed };
 });
 //# sourceMappingURL=index.js.map
