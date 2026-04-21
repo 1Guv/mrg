@@ -27,6 +27,7 @@ import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-
 import { UserDetailsDialogComponent } from '../dialogs/user-details-dialog/user-details-dialog.component';
 import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
+import { TrackClickDirective } from '../../directives/track-click.directive';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
@@ -42,7 +43,8 @@ import { Router } from '@angular/router';
     MatIconModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    MatCardModule
+    MatCardModule,
+    TrackClickDirective
   ],
   templateUrl: './reg-plate-main.component.html',
   styleUrls: ['./reg-plate-main.component.scss']

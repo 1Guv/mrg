@@ -6,7 +6,8 @@
 
     <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="center" animationDuration="200ms">
 
-        <mat-tab label="Sell">
+        <mat-tab>
+            <ng-template mat-tab-label><span appTrackClick="sell-tab">Sell</span></ng-template>
             <div class="tab-content">
                 <app-recently-sold />
 
@@ -38,7 +39,8 @@
             </div>
         </mat-tab>
 
-        <mat-tab label="Buy">
+        <mat-tab>
+            <ng-template mat-tab-label><span appTrackClick="buy-tab">Buy</span></ng-template>
             <div class="tab-content">
 
                 <mat-form-field class="w-100 mt-3" appearance="outline">
@@ -103,7 +105,8 @@
             </div>
         </mat-tab>
 
-        <mat-tab label="Sold">
+        <mat-tab>
+            <ng-template mat-tab-label><span appTrackClick="sold-tab">Sold</span></ng-template>
             <div class="tab-content">
                 @if (soldListings.length === 0) {
                     <div class="d-flex justify-content-center py-5">
