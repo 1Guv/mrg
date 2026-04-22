@@ -3,7 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.fetchAnalytics = fetchAnalytics;
 const data_1 = require("@google-analytics/data");
 const GA4_PROPERTY_ID = "494849507";
-/** Returns the Monday of the ISO week containing `date`. */
+/**
+ * Returns the Monday of the ISO week containing `date`.
+ * @param {Date} date - The reference date.
+ * @return {Date} The Monday of the week.
+ */
 function getMondayOf(date) {
     const d = new Date(date);
     const day = d.getDay(); // 0 = Sunday
@@ -12,7 +16,11 @@ function getMondayOf(date) {
     d.setHours(0, 0, 0, 0);
     return d;
 }
-/** Formats a Date as "YYYY-MM-DD" using local time. */
+/**
+ * Formats a Date as "YYYY-MM-DD" using local time.
+ * @param {Date} d - The date to format.
+ * @return {string} The formatted date string.
+ */
 function toYMD(d) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");

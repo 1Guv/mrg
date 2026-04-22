@@ -6,6 +6,7 @@ import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import {valuatePlate} from "./valuation.js";
 import {processQueue} from "./social-post.js";
+import {fetchAnalytics} from "./analytics.js";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -21,6 +22,11 @@ const socialSecretNames = [
   "PROXY_SECRET",
   "CREATOMATE_TEMPLATE_ID",
   "BUFFER_API_KEY",
+];
+
+const analyticsSecretNames = [
+  "SHEETS_CLIENT_EMAIL",
+  "SHEETS_PRIVATE_KEY",
 ];
 
 export const getUsers = onCall({maxInstances: 1}, async (request) => {
@@ -369,4 +375,25 @@ export const manualSocialPost = functionsV1
       process.env.BUFFER_API_KEY ?? ""
     );
     return {success: true, processed: result.processed};
+  });
+
+/** Returns GA4 analytics data; callable from the Angular admin dashboard. */
+export const getAnalytics = functionsV1
+  .runWith({secrets: analyticsSecretNames, timeoutSeconds: 30})
+  .https.onCall(async (_data, context) => {
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!context.auth || context.auth.token.email !== adminEmail) {
+      throw new functionsV1.https.HttpsError(
+        "permission-denied", "Not authorised"
+      );
+    }
+    try {
+      return await fetchAnalytics(
+        process.env.SHEETS_CLIENT_EMAIL ?? "",
+        process.env.SHEETS_PRIVATE_KEY ?? ""
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      throw new functionsV1.https.HttpsError("internal", msg);
+    }
   });

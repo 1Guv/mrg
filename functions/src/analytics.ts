@@ -3,7 +3,7 @@ import {BetaAnalyticsDataClient} from "@google-analytics/data";
 const GA4_PROPERTY_ID = "494849507";
 
 export interface DailyRow {
-  date: string;       // "YYYY-MM-DD"
+  date: string; // "YYYY-MM-DD"
   sessions: number;
   pageViews: number;
 }
@@ -14,13 +14,17 @@ export interface WeekTotals {
 }
 
 export interface AnalyticsData {
-  daily: DailyRow[];          // last 14 days, newest first
+  daily: DailyRow[]; // last 14 days, newest first
   currentWeek: WeekTotals;
   lastWeek: WeekTotals;
   allTime: WeekTotals;
 }
 
-/** Returns the Monday of the ISO week containing `date`. */
+/**
+ * Returns the Monday of the ISO week containing `date`.
+ * @param {Date} date - The reference date.
+ * @return {Date} The Monday of the week.
+ */
 function getMondayOf(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay(); // 0 = Sunday
@@ -30,7 +34,11 @@ function getMondayOf(date: Date): Date {
   return d;
 }
 
-/** Formats a Date as "YYYY-MM-DD" using local time. */
+/**
+ * Formats a Date as "YYYY-MM-DD" using local time.
+ * @param {Date} d - The date to format.
+ * @return {string} The formatted date string.
+ */
 function toYMD(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -70,7 +78,7 @@ export async function fetchAnalytics(
   });
 
   const daily: DailyRow[] = (dailyResponse.rows ?? []).map((row) => {
-    const raw = row.dimensionValues?.[0]?.value ?? "";        // "YYYYMMDD"
+    const raw = row.dimensionValues?.[0]?.value ?? ""; // "YYYYMMDD"
     const date = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
     return {
       date,

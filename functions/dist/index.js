@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.weeklyReport = exports.getUsers = void 0;
+exports.getAnalytics = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.weeklyReport = exports.getUsers = void 0;
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -45,6 +45,7 @@ const admin = __importStar(require("firebase-admin"));
 const stripe_1 = __importDefault(require("stripe"));
 const valuation_js_1 = require("./valuation.js");
 const social_post_js_1 = require("./social-post.js");
+const analytics_js_1 = require("./analytics.js");
 admin.initializeApp();
 const db = admin.firestore();
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
@@ -57,6 +58,10 @@ const socialSecretNames = [
     "PROXY_SECRET",
     "CREATOMATE_TEMPLATE_ID",
     "BUFFER_API_KEY",
+];
+const analyticsSecretNames = [
+    "SHEETS_CLIENT_EMAIL",
+    "SHEETS_PRIVATE_KEY",
 ];
 exports.getUsers = (0, https_1.onCall)({ maxInstances: 1 }, async (request) => {
     const adminEmail = "gurvinder.singh.sandhu@gmail.com";
@@ -321,5 +326,22 @@ exports.manualSocialPost = functionsV1
     }
     const result = await (0, social_post_js_1.processQueue)((_a = process.env.SHEETS_CLIENT_EMAIL) !== null && _a !== void 0 ? _a : "", (_b = process.env.SHEETS_PRIVATE_KEY) !== null && _b !== void 0 ? _b : "", (_c = process.env.SHEETS_SHEET_ID) !== null && _c !== void 0 ? _c : "", (_d = process.env.PROXY_SECRET) !== null && _d !== void 0 ? _d : "", (_e = process.env.CREATOMATE_TEMPLATE_ID) !== null && _e !== void 0 ? _e : "", (_f = process.env.BUFFER_API_KEY) !== null && _f !== void 0 ? _f : "");
     return { success: true, processed: result.processed };
+});
+/** Returns GA4 analytics data; callable from the Angular admin dashboard. */
+exports.getAnalytics = functionsV1
+    .runWith({ secrets: analyticsSecretNames, timeoutSeconds: 30 })
+    .https.onCall(async (_data, context) => {
+    var _a, _b;
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!context.auth || context.auth.token.email !== adminEmail) {
+        throw new functionsV1.https.HttpsError("permission-denied", "Not authorised");
+    }
+    try {
+        return await (0, analytics_js_1.fetchAnalytics)((_a = process.env.SHEETS_CLIENT_EMAIL) !== null && _a !== void 0 ? _a : "", (_b = process.env.SHEETS_PRIVATE_KEY) !== null && _b !== void 0 ? _b : "");
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        throw new functionsV1.https.HttpsError("internal", msg);
+    }
 });
 //# sourceMappingURL=index.js.map
