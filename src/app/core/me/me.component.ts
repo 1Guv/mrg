@@ -30,39 +30,52 @@ import { toSignal } from '@angular/core/rxjs-interop';
           <p class="text-danger mt-2">{{ analyticsError() }}</p>
         }
         @if (analyticsData(); as data) {
-          <table mat-table [dataSource]="analyticsSummaryRows()" class="w-100 mb-3">
-            <ng-container matColumnDef="period">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let r"><strong>{{ r.period }}</strong></td>
-            </ng-container>
-            <ng-container matColumnDef="sessions">
-              <th mat-header-cell *matHeaderCellDef>Sessions</th>
-              <td mat-cell *matCellDef="let r">{{ r.sessions | number }}</td>
-            </ng-container>
-            <ng-container matColumnDef="pageViews">
-              <th mat-header-cell *matHeaderCellDef>Page views</th>
-              <td mat-cell *matCellDef="let r">{{ r.pageViews | number }}</td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="analyticsColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: analyticsColumns;"></tr>
-          </table>
+          <mat-accordion class="mt-2">
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>Summary</mat-panel-title>
+              </mat-expansion-panel-header>
+              <table mat-table [dataSource]="analyticsSummaryRows()" class="w-100 mt-2">
+                <ng-container matColumnDef="period">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let r"><strong>{{ r.period }}</strong></td>
+                </ng-container>
+                <ng-container matColumnDef="sessions">
+                  <th mat-header-cell *matHeaderCellDef>Sessions</th>
+                  <td mat-cell *matCellDef="let r">{{ r.sessions | number }}</td>
+                </ng-container>
+                <ng-container matColumnDef="pageViews">
+                  <th mat-header-cell *matHeaderCellDef>Page views</th>
+                  <td mat-cell *matCellDef="let r">{{ r.pageViews | number }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="analyticsColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: analyticsColumns;"></tr>
+              </table>
+            </mat-expansion-panel>
 
-          <table mat-table [dataSource]="data.daily" class="w-100">
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let r">{{ r.date | date:'d MMM yyyy' }}</td>
-            </ng-container>
-            <ng-container matColumnDef="sessions">
-              <th mat-header-cell *matHeaderCellDef>Sessions</th>
-              <td mat-cell *matCellDef="let r">{{ r.sessions | number }}</td>
-            </ng-container>
-            <ng-container matColumnDef="pageViews">
-              <th mat-header-cell *matHeaderCellDef>Page views</th>
-              <td mat-cell *matCellDef="let r">{{ r.pageViews | number }}</td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="analyticsDailyColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: analyticsDailyColumns;"></tr>
-          </table>
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>Daily breakdown</mat-panel-title>
+                <mat-panel-description>Last 14 days</mat-panel-description>
+              </mat-expansion-panel-header>
+              <table mat-table [dataSource]="data.daily" class="w-100 mt-2">
+                <ng-container matColumnDef="date">
+                  <th mat-header-cell *matHeaderCellDef>Date</th>
+                  <td mat-cell *matCellDef="let r">{{ r.date | date:'d MMM yyyy' }}</td>
+                </ng-container>
+                <ng-container matColumnDef="sessions">
+                  <th mat-header-cell *matHeaderCellDef>Sessions</th>
+                  <td mat-cell *matCellDef="let r">{{ r.sessions | number }}</td>
+                </ng-container>
+                <ng-container matColumnDef="pageViews">
+                  <th mat-header-cell *matHeaderCellDef>Page views</th>
+                  <td mat-cell *matCellDef="let r">{{ r.pageViews | number }}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="analyticsDailyColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: analyticsDailyColumns;"></tr>
+              </table>
+            </mat-expansion-panel>
+          </mat-accordion>
         }
       </mat-card-content>
       <mat-card-actions class="px-3 pb-3">
