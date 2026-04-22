@@ -9,6 +9,8 @@ import { AutoValuation, PlateSearch, PlateValuationMessage, ValuationFeedback } 
 import { AdminsService } from '../../services/admins.service';
 import { SocialPostService } from '../../services/social-post.service';
 import { ClickMetricsService, ButtonMetric } from '../../services/click-metrics.service';
+import { AnalyticsService } from '../../services/analytics.service';
+import { AnalyticsData } from '../../services/analytics.types';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -17,6 +19,63 @@ import { toSignal } from '@angular/core/rxjs-interop';
   imports: [CommonModule, MatCardModule, MatTableModule, MatExpansionModule, MatButtonModule, MatSnackBarModule],
   // Note: TrackClickDirective can be imported in any component that needs button tracking
   template: `
+    <!-- Site Analytics (admin only) -->
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>📈 Site Analytics</mat-card-title>
+        <mat-card-subtitle>Sessions and page views from Google Analytics</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        @if (analyticsError()) {
+          <p class="text-danger mt-2">{{ analyticsError() }}</p>
+        }
+        @if (analyticsData(); as data) {
+          <table mat-table [dataSource]="analyticsSummaryRows()" class="w-100 mb-3">
+            <ng-container matColumnDef="period">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let r"><strong>{{ r.period }}</strong></td>
+            </ng-container>
+            <ng-container matColumnDef="sessions">
+              <th mat-header-cell *matHeaderCellDef>Sessions</th>
+              <td mat-cell *matCellDef="let r">{{ r.sessions | number }}</td>
+            </ng-container>
+            <ng-container matColumnDef="pageViews">
+              <th mat-header-cell *matHeaderCellDef>Page views</th>
+              <td mat-cell *matCellDef="let r">{{ r.pageViews | number }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="analyticsColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: analyticsColumns;"></tr>
+          </table>
+
+          <table mat-table [dataSource]="data.daily" class="w-100">
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef>Date</th>
+              <td mat-cell *matCellDef="let r">{{ r.date | date:'d MMM yyyy' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="sessions">
+              <th mat-header-cell *matHeaderCellDef>Sessions</th>
+              <td mat-cell *matCellDef="let r">{{ r.sessions | number }}</td>
+            </ng-container>
+            <ng-container matColumnDef="pageViews">
+              <th mat-header-cell *matHeaderCellDef>Page views</th>
+              <td mat-cell *matCellDef="let r">{{ r.pageViews | number }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="analyticsDailyColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: analyticsDailyColumns;"></tr>
+          </table>
+        }
+      </mat-card-content>
+      <mat-card-actions class="px-3 pb-3">
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="analyticsLoading()"
+          (click)="loadAnalytics()">
+          {{ analyticsLoading() ? '⏳ Loading...' : '🔄 Refresh' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
     <!-- Content Queue (admin only) -->
     <mat-card class="mb-4 queue-card">
       <mat-card-header>
@@ -267,9 +326,27 @@ export class MeComponent {
   private adminsService = inject(AdminsService);
   private socialPostService = inject(SocialPostService);
   private clickMetricsService = inject(ClickMetricsService);
+  private analyticsService = inject(AnalyticsService);
   private snackBar = inject(MatSnackBar);
 
   buttonMetrics = toSignal(this.clickMetricsService.getAll());
+
+  analyticsData = signal<AnalyticsData | null>(null);
+  analyticsLoading = signal(false);
+  analyticsError = signal<string | null>(null);
+
+  async loadAnalytics(): Promise<void> {
+    this.analyticsLoading.set(true);
+    this.analyticsError.set(null);
+    try {
+      const data = await this.analyticsService.getAnalytics();
+      this.analyticsData.set(data);
+    } catch (err: unknown) {
+      this.analyticsError.set(err instanceof Error ? err.message : 'Failed to load analytics.');
+    } finally {
+      this.analyticsLoading.set(false);
+    }
+  }
 
   isProcessing = signal(false);
   queueResult = signal<string | null>(null);
@@ -311,6 +388,19 @@ export class MeComponent {
   adminMessages = computed(() =>
     this.plateMessages().filter(m => this.adminsService.adminUids().includes(m.userId ?? ''))
   );
+
+  analyticsColumns = ['period', 'sessions', 'pageViews'];
+  analyticsDailyColumns = ['date', 'sessions', 'pageViews'];
+
+  analyticsSummaryRows = computed(() => {
+    const d = this.analyticsData();
+    if (!d) return [];
+    return [
+      { period: 'This week', sessions: d.currentWeek.sessions, pageViews: d.currentWeek.pageViews },
+      { period: 'Last week', sessions: d.lastWeek.sessions,    pageViews: d.lastWeek.pageViews },
+      { period: 'All time',  sessions: d.allTime.sessions,     pageViews: d.allTime.pageViews },
+    ];
+  });
 
   metricsColumns = ['label', 'count', 'lastClickedAt'];
   searchColumns = ['registration', 'type', 'badge', 'searchedAt', 'price'];
