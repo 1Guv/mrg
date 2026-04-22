@@ -38,7 +38,7 @@ async function fetchAnalytics(clientEmail, privateKey) {
     const analyticsClient = new data_1.BetaAnalyticsDataClient({
         credentials: {
             client_email: clientEmail,
-            private_key: privateKey,
+            private_key: privateKey.replace(/\\n/g, "\n"),
         },
     });
     const property = `properties/${GA4_PROPERTY_ID}`;

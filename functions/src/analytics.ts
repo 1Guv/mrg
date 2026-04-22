@@ -59,7 +59,7 @@ export async function fetchAnalytics(
   const analyticsClient = new BetaAnalyticsDataClient({
     credentials: {
       client_email: clientEmail,
-      private_key: privateKey,
+      private_key: privateKey.replace(/\\n/g, "\n"),
     },
   });
 
