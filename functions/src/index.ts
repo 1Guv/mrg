@@ -24,7 +24,7 @@ const socialSecretNames = [
   "BUFFER_API_KEY",
 ];
 
-// Reuses the Sheets service account credentials — same SA also has GA4 Data API Viewer access.
+// Reuses the Sheets service account — same SA has GA4 Data API Viewer access.
 const analyticsSecretNames = [
   "SHEETS_CLIENT_EMAIL",
   "SHEETS_PRIVATE_KEY",
