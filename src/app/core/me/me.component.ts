@@ -61,7 +61,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
               <table mat-table [dataSource]="data.daily" class="w-100 mt-2">
                 <ng-container matColumnDef="date">
                   <th mat-header-cell *matHeaderCellDef>Date</th>
-                  <td mat-cell *matCellDef="let r">{{ r.date | date:'d MMM yyyy' }}</td>
+                  <td mat-cell *matCellDef="let r">{{ r.date | date:'EEE d MMM yyyy' }}</td>
                 </ng-container>
                 <ng-container matColumnDef="sessions">
                   <th mat-header-cell *matHeaderCellDef>Sessions</th>
