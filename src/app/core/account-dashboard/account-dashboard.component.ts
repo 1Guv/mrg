@@ -9,7 +9,7 @@ import { ReplyToEnquiryDialogComponent } from '../../shared/reply-to-enquiry-dia
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { combineLatest, map, of, Subscription, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, Subscription, switchMap } from 'rxjs';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { PlateListing } from '../../models/plate-listing.model';
 import { toObservable } from '@angular/core/rxjs-interop';
@@ -111,7 +111,9 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     this.subs.add(
       combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
         switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
-          ? this.adminService.getPlateSearches()
+          ? this.adminService.getPlateSearches().pipe(
+              catchError((err) => { console.error('Firestore error loading plate searches:', err); return of([] as PlateSearch[]); })
+            )
           : of([] as PlateSearch[]))
       ).subscribe((searches) => this.plateSearches$.set(searches))
     );
@@ -119,7 +121,9 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     this.subs.add(
       combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
         switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
-          ? this.adminService.getAutoValuations()
+          ? this.adminService.getAutoValuations().pipe(
+              catchError((err) => { console.error('Firestore error loading auto valuations:', err); return of([] as AutoValuation[]); })
+            )
           : of([] as AutoValuation[]))
       ).subscribe((valuations) => this.autoValuations$.set(valuations))
     );
@@ -127,7 +131,9 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     this.subs.add(
       combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
         switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
-          ? this.adminService.getFeedback()
+          ? this.adminService.getFeedback().pipe(
+              catchError((err) => { console.error('Firestore error loading feedback:', err); return of([] as ValuationFeedback[]); })
+            )
           : of([] as ValuationFeedback[]))
       ).subscribe((feedback) => this.feedback$.set(feedback))
     );
@@ -135,7 +141,9 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     this.subs.add(
       combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
         switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
-          ? this.adminService.getPlateValuationMessages()
+          ? this.adminService.getPlateValuationMessages().pipe(
+              catchError((err) => { console.error('Firestore error loading plate messages:', err); return of([] as PlateValuationMessage[]); })
+            )
           : of([] as PlateValuationMessage[]))
       ).subscribe((messages) => this.plateMessages$.set(messages))
     );

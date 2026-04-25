@@ -115,7 +115,7 @@ export class ValuationService {
               <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
             `
           }
-        });
+        }).catch(() => {});
         return addDoc(ref, payload);
       })
     );
@@ -170,7 +170,7 @@ export class ValuationService {
               <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
             `
           }
-        });
+        }).catch(() => {}); // guests have no auth; mail write may fail — ignore silently
         return addDoc(ref, payload);
       })
     );
@@ -235,7 +235,7 @@ export class ValuationService {
                 <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
               `
             }
-          });
+          }).catch(() => {});
         }
         return addDoc(searchesRef, payload);
       })
