@@ -27,7 +27,7 @@ export class ClickMetricsService {
       label,
       count: increment(1),
       lastClickedAt: serverTimestamp(),
-    }, { merge: true });
+    }, { merge: true }).catch(() => {});
   }
 
   getAll(): Observable<ButtonMetric[]> {
