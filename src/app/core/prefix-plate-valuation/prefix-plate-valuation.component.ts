@@ -15,6 +15,7 @@ import { DictionaryService } from '../../services/dictionary.service';
 import { ValuationService } from '../../services/valuation.service';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
+import { PostValuationPromptService } from '../../services/post-valuation-prompt.service';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
 import { ValuationFeedbackComponent } from '../../shared/valuation-feedback/valuation-feedback.component';
@@ -61,6 +62,7 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private valuationService = inject(ValuationService);
   private router = inject(Router);
+  private postValuationPrompt = inject(PostValuationPromptService);
   private subs = new Subscription();
 
   registration: string | null = null;
@@ -422,6 +424,8 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
       this.minPrice,
       this.maxPrice
     ).subscribe();
+
+    this.postValuationPrompt.promptIfNeeded();
 
     this.subs.add(
       this.valuationService.addValuation(this.buildValuation()).pipe(

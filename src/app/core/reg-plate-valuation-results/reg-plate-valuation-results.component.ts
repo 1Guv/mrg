@@ -21,6 +21,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { catchError, map, of, pipe, Subscription } from 'rxjs';
 import { ValuationService } from '../../services/valuation.service';
 import { AuthService } from '../../services/auth.service';
+import { PostValuationPromptService } from '../../services/post-valuation-prompt.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
@@ -126,6 +127,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
 
   private valuationService = inject(ValuationService);
   private authService = inject(AuthService);
+  private postValuationPrompt = inject(PostValuationPromptService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
 
@@ -159,6 +161,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
             this.minPrice,
             this.maxPrice
           ).subscribe();
+          this.postValuationPrompt.promptIfNeeded();
         }
       })
     );

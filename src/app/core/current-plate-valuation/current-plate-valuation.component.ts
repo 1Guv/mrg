@@ -24,6 +24,7 @@ import { DictionaryService } from '../../services/dictionary.service';
 import { forkJoin, Observable, of } from 'rxjs';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
+import { PostValuationPromptService } from '../../services/post-valuation-prompt.service';
 import { AGE_IDENTIFIER_MATCH, AGE_IDENTIFIER_NO_MATCH, CurrentReg, CurrentRegYearMultiplier, DICTIONARY_WORD_BONUS, FIRST_CHAR_NOT_X_PENALTY, FIRST_CHAR_X_BONUS, NON_LEGAL_SPACING_PENALTY, ONE_WORD_DICTIONARY_MATCH, ONE_WORD_DICTIONARY_NO_MATCH, PLATE_ALPHABET, POPULAR_NAMES, POPULAR_SURNAMES, SPECIAL_COMBINATIONS, THREE_WORD_PENALTY, TWO_WORD_LEGAL_SPACING_BONUS, VALID_TWO_LETTER_COMBINATIONS, WORD_DICT_MATCH_BONUS, WORD_DICT_NO_MATCH_PENALTY } from '../../formulas/current-formula';
 
 const LETTERS = 'ABCDEFGHJKLMNOPQRSTUVWXY'.split(''); // A-Z excluding I and Z
@@ -68,6 +69,7 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private valuationService = inject(ValuationService);
   private router = inject(Router);
+  private postValuationPrompt = inject(PostValuationPromptService);
   private subs = new Subscription();
 
   registration: string | null = null;
@@ -504,6 +506,8 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
         this.maxPrice
       ).subscribe()
     );
+
+    this.postValuationPrompt.promptIfNeeded();
 
     // Save to user's valuations
     this.subs.add(
