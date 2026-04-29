@@ -24,11 +24,11 @@ export interface NumberPlateTypeObj {
 }
 
 export interface UserDetails {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
-  city: string;
-  plateMeaning: string;
+  city?: string;
+  plateMeaning?: string;
 }
 
 export interface RegValuation {
