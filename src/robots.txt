@@ -3,4 +3,4 @@ Allow: /
 Disallow: /account-dashboard
 Disallow: /list-plate/success
 
-Sitemap: https://www.mrvaluations.co.uk/sitemap.xml
+Sitemap: https://mrvaluations.co.uk/sitemap.xml
