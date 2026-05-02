@@ -1,22 +1,29 @@
 import { Component, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Title, Meta } from '@angular/platform-browser';
 import { BehaviorSubject, switchMap } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
 import { ArticleService } from '../../services/article.service';
 import { ArticleCategory } from '../../models/article.model';
 
 @Component({
   selector: 'app-news-listing',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, TitleCasePipe, RouterLink, MatButtonModule, MatIconModule, MatChipsModule],
+  imports: [AsyncPipe, DatePipe, TitleCasePipe, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './news-listing.component.html',
   styleUrl: './news-listing.component.scss',
 })
 export class NewsListingComponent {
   private articleService = inject(ArticleService);
+  private titleService = inject(Title);
+  private metaService = inject(Meta);
+
+  constructor() {
+    this.titleService.setTitle('Latest News — MRG Plates');
+    this.metaService.updateTag({ name: 'description', content: 'Guides, tips and market insights for UK number plate owners.' });
+  }
 
   readonly filters: Array<{ label: string; value: ArticleCategory | undefined }> = [
     { label: 'All', value: undefined },

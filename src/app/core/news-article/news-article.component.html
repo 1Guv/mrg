@@ -16,7 +16,7 @@
 
       <h1 class="article-title">{{ article.title }}</h1>
 
-      <div class="article-content" [innerHTML]="safeContent(article.content)"></div>
+      <div class="article-content" [innerHTML]="article.safeContent"></div>
     </article>
 
     <aside class="article-sidebar">
@@ -54,7 +54,9 @@
     </aside>
   </div>
 } @else {
-  <div class="article-loading">
-    <p>Loading article...</p>
+  <div class="article-not-found">
+    <h2>Article not found</h2>
+    <p>The article you're looking for doesn't exist or may have been removed.</p>
+    <a routerLink="/news">← Back to Latest News</a>
   </div>
 }

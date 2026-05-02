@@ -2,11 +2,15 @@ import { Component, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml, Title, Meta } from '@angular/platform-browser';
-import { Observable, of, switchMap, map, tap } from 'rxjs';
+import { Observable, of, switchMap, map, tap, shareReplay } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ArticleService } from '../../services/article.service';
 import { Article } from '../../models/article.model';
+
+interface ArticleView extends Article {
+  safeContent: SafeHtml;
+}
 
 @Component({
   selector: 'app-news-article',
@@ -22,11 +26,16 @@ export class NewsArticleComponent {
   private titleService = inject(Title);
   private metaService = inject(Meta);
 
-  article$: Observable<Article | null> = this.route.paramMap.pipe(
+  article$: Observable<ArticleView | null> = this.route.paramMap.pipe(
     switchMap(params => {
       const slug = params.get('slug') ?? '';
       return this.articleService.getArticleBySlug(slug).pipe(
-        map(articles => articles[0] ?? null),
+        map(articles => {
+          const a = articles[0] ?? null;
+          if (!a) return null;
+          // Content is from our own Cloud Function — safe to trust.
+          return { ...a, safeContent: this.sanitizer.bypassSecurityTrustHtml(a.content) };
+        }),
         tap(article => {
           if (article) {
             this.titleService.setTitle(article.metaTitle);
@@ -34,7 +43,8 @@ export class NewsArticleComponent {
           }
         })
       );
-    })
+    }),
+    shareReplay(1)
   );
 
   relatedArticles$ = this.article$.pipe(
@@ -45,9 +55,4 @@ export class NewsArticleComponent {
       );
     })
   );
-
-  safeContent(html: string): SafeHtml {
-    // Content is from our own Cloud Function — safe to trust.
-    return this.sanitizer.bypassSecurityTrustHtml(html);
-  }
 }
