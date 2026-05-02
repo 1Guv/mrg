@@ -1,0 +1,48 @@
+<div class="news-listing-container">
+  <div class="news-header">
+    <h1 class="news-title">Latest News</h1>
+    <p class="news-subtitle">Guides, tips and market insights for UK number plate owners.</p>
+  </div>
+
+  <div class="filter-tabs">
+    @for (filter of filters; track filter.label) {
+      <button
+        class="filter-btn"
+        [class.active]="isSelected(filter.value)"
+        (click)="selectCategory(filter.value)">
+        {{ filter.label }}
+      </button>
+    }
+  </div>
+
+  @if (articles$ | async; as articles) {
+    @if (articles.length === 0) {
+      <div class="empty-state">
+        <mat-icon>newspaper</mat-icon>
+        <p>No articles yet — check back soon.</p>
+      </div>
+    } @else {
+      <div class="article-grid">
+        @for (article of articles; track article.id) {
+          <a class="article-card" [routerLink]="['/news', article.slug]">
+            <div class="card-category-bar" [attr.data-category]="article.category">
+              {{ article.category | titlecase }}
+            </div>
+            <div class="card-body">
+              <h2 class="card-title">{{ article.title }}</h2>
+              <p class="card-meta">
+                {{ estimateReadTime(article.readTimeMinutes) }}
+                &nbsp;·&nbsp;
+                {{ article.publishedAt.toDate() | date:'MMM d, y' }}
+              </p>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  } @else {
+    <div class="loading-state">
+      <p>Loading articles...</p>
+    </div>
+  }
+</div>
