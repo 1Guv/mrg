@@ -2,11 +2,11 @@ import {google} from "googleapis";
 import axios from "axios";
 import * as admin from "firebase-admin";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────────────────
 
 const GSC_SITE_URL = "https://mrvaluations.co.uk/";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────
 
 type ArticleCategory = "valuations" | "plates" | "cars";
 
@@ -38,7 +38,7 @@ interface GscRow {
   position: number;
 }
 
-// ── Date helpers ──────────────────────────────────────────────────────────────
+// ── Date helpers ─────────────────────────────────────────────────────────────
 
 /**
  * Format a Date as "YYYY-MM-DD".
@@ -52,10 +52,10 @@ function toYMD(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-// ── GSC fetch ─────────────────────────────────────────────────────────────────
+// ── GSC fetch ────────────────────────────────────────────────────────────────
 
 /**
- * Fetch search analytics rows from Google Search Console for the last 90 days.
+ * Fetch search analytics rows from Google Search Console for last 90 days.
  * @param {string} clientId - OAuth2 client ID.
  * @param {string} clientSecret - OAuth2 client secret.
  * @param {string} refreshToken - OAuth2 refresh token.
@@ -94,18 +94,18 @@ async function fetchGscRows(
   return rows
     .filter((r) => r.keys && r.keys.length > 0)
     .map((r) => ({
-      query: r.keys![0],
+      query: (r.keys as string[])[0],
       clicks: r.clicks ?? 0,
       impressions: r.impressions ?? 0,
       position: r.position ?? 0,
     }));
 }
 
-// ── Keyword categorisation ────────────────────────────────────────────────────
+// ── Keyword categorisation ───────────────────────────────────────────────────
 
 /**
  * Categorise GSC rows into keyword candidates, sorted by impressions desc.
- * Priority: Quick Wins (position 5–40, impressions >= 2) + Untapped
+ * Priority: Quick Wins (position 5-40, impressions >= 2) + Untapped
  * (impressions >= 2, clicks === 0). Both lists are combined, deduped,
  * and sorted by impressions descending.
  * @param {GscRow[]} rows - GSC query rows.
@@ -137,7 +137,7 @@ function categoriseKeywords(rows: GscRow[]): string[] {
   return deduped.map((r) => r.query);
 }
 
-// ── Gemini call ───────────────────────────────────────────────────────────────
+// ── Gemini call ──────────────────────────────────────────────────────────────
 
 /**
  * Call Gemini 2.5 Flash to generate a full SEO article for the given keyword.
@@ -149,9 +149,10 @@ async function callGemini(
   geminiApiKey: string,
   keyword: string
 ): Promise<GeminiArticlePayload> {
+  /* eslint-disable max-len */
   const prompt = `You are an expert SEO content writer for the UK number plate market. Write a complete, well-structured SEO blog article targeting the keyword: "${keyword}".
 
-The article is for the website mrvaluations.co.uk, which offers free number plate valuations and a marketplace to list plates for sale.
+The article is for mrvaluations.co.uk — free number plate valuations and a marketplace to list plates for sale.
 
 Requirements:
 - Tone: helpful, authoritative, aimed at UK car owners
@@ -171,10 +172,11 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   "category": "valuations or plates or cars",
   "content": "<article>...full HTML content here...</article>"
 }`;
+  /* eslint-enable max-len */
 
   const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/` +
-    `gemini-2.5-flash:generateContent`;
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    "gemini-2.5-flash:generateContent";
 
   const response = await axios.post(
     url,
@@ -189,7 +191,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   let rawText = candidate?.content?.parts?.[0]?.text;
   if (typeof rawText !== "string" || rawText.trim() === "") {
     throw new Error(
-      `article-generator: Gemini returned no usable text. ` +
+      "article-generator: Gemini returned no usable text. " +
       `finishReason=${candidate?.finishReason ?? "unknown"}`
     );
   }
@@ -206,7 +208,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     parsed = JSON.parse(rawText);
   } catch {
     throw new Error(
-      `article-generator: Gemini response was not valid JSON. ` +
+      "article-generator: Gemini response was not valid JSON. " +
       `Preview: ${rawText.slice(0, 200)}`
     );
   }
@@ -215,7 +217,9 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     ["slug", "title", "metaTitle", "metaDescription", "category", "content"];
   for (const key of requiredKeys) {
     if (!parsed[key]) {
-      throw new Error(`article-generator: Gemini payload missing field "${key}"`);
+      throw new Error(
+        `article-generator: Gemini payload missing field "${key}"`
+      );
     }
   }
 
@@ -229,7 +233,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   return parsed;
 }
 
-// ── Read time ─────────────────────────────────────────────────────────────────
+// ── Read time ────────────────────────────────────────────────────────────────
 
 /**
  * Calculate estimated read time in minutes from HTML content.
@@ -239,11 +243,12 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
  */
 function calcReadTime(html: string): number {
   const text = html.replace(/<[^>]+>/g, " ");
-  const wordCount = text.trim().split(/\s+/).filter((w) => w.length > 0).length;
+  const wordCount =
+    text.trim().split(/\s+/).filter((w) => w.length > 0).length;
   return Math.max(1, Math.ceil(wordCount / 200));
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
+// ── Main export ──────────────────────────────────────────────────────────────
 
 /**
  * Pull keyword opportunities from Google Search Console, pick the best unused
@@ -264,7 +269,9 @@ export async function runGenerateDailyArticle(
 
   // 1. Fetch GSC data
   console.log("article-generator: fetching GSC data...");
-  const gscRows = await fetchGscRows(gscClientId, gscClientSecret, gscRefreshToken);
+  const gscRows = await fetchGscRows(
+    gscClientId, gscClientSecret, gscRefreshToken
+  );
   console.log(`article-generator: received ${gscRows.length} GSC rows`);
 
   // 2. Categorise into candidates
@@ -273,9 +280,9 @@ export async function runGenerateDailyArticle(
 
   // 3. Check used keywords
   const usedDoc = await db.collection("meta").doc("usedKeywords").get();
-  const usedKeywords: string[] = usedDoc.exists
-    ? ((usedDoc.data()?.["keywords"] as string[]) ?? [])
-    : [];
+  const usedKeywords: string[] = usedDoc.exists ?
+    ((usedDoc.data()?.["keywords"] as string[]) ?? []) :
+    [];
 
   // 4. Filter out already-used keywords
   const usedSet = new Set(usedKeywords);
@@ -289,15 +296,11 @@ export async function runGenerateDailyArticle(
     console.log(
       "article-generator: all candidates used — resetting used keywords list"
     );
-    await db
-      .collection("meta")
-      .doc("usedKeywords")
-      .set({keywords: []});
+    await db.collection("meta").doc("usedKeywords").set({keywords: []});
 
-    // Fall back to full candidate list; if somehow empty, use first GSC row
-    filtered = candidates.length > 0
-      ? candidates
-      : gscRows.map((r) => r.query);
+    filtered = candidates.length > 0 ?
+      candidates :
+      gscRows.map((r) => r.query);
 
     if (filtered.length === 0) {
       throw new Error("article-generator: no keywords available from GSC");

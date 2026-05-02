@@ -404,7 +404,30 @@ export const getAnalytics = functionsV1
     }
   });
 
-/** Daily SEO article generation: picks best GSC keyword, calls Gemini, writes to Firestore. */
+/** Manual trigger: POST to fire article generation immediately (admin use). */
+export const triggerArticleGeneration = onRequest(
+  {
+    maxInstances: 1,
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+  },
+  async (request, response) => {
+    try {
+      await runGenerateDailyArticle(
+        geminiApiKey.value(),
+        gscRefreshToken.value(),
+        gscClientId.value(),
+        gscClientSecret.value()
+      );
+      response.status(200).json({success: true});
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      response.status(500).json({error: msg});
+    }
+  }
+);
+
+/** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
 export const generateDailyArticle = onSchedule(
   {
     schedule: "0 8 * * *",
