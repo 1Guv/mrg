@@ -32,8 +32,8 @@ export class ArticleService {
     return collectionData(q, { idField: 'id' }) as Observable<Article[]>;
   }
 
-  /** Returns up to 3 articles in the same category, excluding the given id. */
-  getRelated(category: ArticleCategory, excludeId: string): Observable<Article[]> {
+  /** Returns up to 4 articles in the same category (caller filters out the current article client-side). */
+  getRelated(category: ArticleCategory): Observable<Article[]> {
     const ref = collection(this.firestore, this.COLLECTION);
     const q = query(
       ref,
