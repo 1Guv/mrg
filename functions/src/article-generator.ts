@@ -2,6 +2,10 @@ import {google} from "googleapis";
 import axios from "axios";
 import * as admin from "firebase-admin";
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const GSC_SITE_URL = "https://mrvaluations.co.uk/";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ArticleCategory = "valuations" | "plates" | "cars";
@@ -76,7 +80,7 @@ async function fetchGscRows(
   startDate.setDate(startDate.getDate() - 90);
 
   const res = await sc.searchanalytics.query({
-    siteUrl: "https://mrvaluations.co.uk/",
+    siteUrl: GSC_SITE_URL,
     requestBody: {
       startDate: toYMD(startDate),
       endDate: toYMD(endDate),
@@ -170,15 +174,25 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
 
   const url =
     `https://generativelanguage.googleapis.com/v1beta/models/` +
-    `gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+    `gemini-2.5-flash:generateContent`;
 
-  const response = await axios.post(url, {
-    contents: [{parts: [{text: prompt}]}],
-    generationConfig: {responseMimeType: "application/json"},
-  });
+  const response = await axios.post(
+    url,
+    {
+      contents: [{parts: [{text: prompt}]}],
+      generationConfig: {responseMimeType: "application/json"},
+    },
+    {headers: {"x-goog-api-key": geminiApiKey}}
+  );
 
-  let rawText: string =
-    response.data.candidates[0].content.parts[0].text as string;
+  const candidate = response.data?.candidates?.[0];
+  let rawText = candidate?.content?.parts?.[0]?.text;
+  if (typeof rawText !== "string" || rawText.trim() === "") {
+    throw new Error(
+      `article-generator: Gemini returned no usable text. ` +
+      `finishReason=${candidate?.finishReason ?? "unknown"}`
+    );
+  }
 
   // Strip markdown code fences if present
   if (rawText.trimStart().startsWith("```")) {
@@ -187,7 +201,31 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
       .replace(/\s*```\s*$/, "");
   }
 
-  const parsed = JSON.parse(rawText) as GeminiArticlePayload;
+  let parsed: GeminiArticlePayload;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    throw new Error(
+      `article-generator: Gemini response was not valid JSON. ` +
+      `Preview: ${rawText.slice(0, 200)}`
+    );
+  }
+
+  const requiredKeys: (keyof GeminiArticlePayload)[] =
+    ["slug", "title", "metaTitle", "metaDescription", "category", "content"];
+  for (const key of requiredKeys) {
+    if (!parsed[key]) {
+      throw new Error(`article-generator: Gemini payload missing field "${key}"`);
+    }
+  }
+
+  const validCategories: ArticleCategory[] = ["valuations", "plates", "cars"];
+  if (!validCategories.includes(parsed.category)) {
+    throw new Error(
+      `article-generator: unexpected category "${parsed.category}"`
+    );
+  }
+
   return parsed;
 }
 
@@ -240,7 +278,8 @@ export async function runGenerateDailyArticle(
     : [];
 
   // 4. Filter out already-used keywords
-  let filtered = candidates.filter((kw) => !usedKeywords.includes(kw));
+  const usedSet = new Set(usedKeywords);
+  let filtered = candidates.filter((kw) => !usedSet.has(kw));
 
   // 5. Pick target keyword; if all used, reset and pick from full list
   let targetKeyword: string;
