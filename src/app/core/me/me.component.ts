@@ -113,6 +113,30 @@ import { toSignal } from '@angular/core/rxjs-interop';
       </mat-card-actions>
     </mat-card>
 
+    <!-- SEO Articles (admin only) -->
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>📝 SEO Articles</mat-card-title>
+        <mat-card-subtitle>Generate an article now from the best available GSC keyword</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        @if (generateResult()) {
+          <p class="queue-result" [class.queue-result--success]="!generateError()" [class.queue-result--error]="generateError()">
+            {{ generateResult() }}
+          </p>
+        }
+      </mat-card-content>
+      <mat-card-actions class="px-3 pb-3">
+        <button
+          mat-raised-button
+          color="accent"
+          [disabled]="isGenerating()"
+          (click)="generateArticle()">
+          {{ isGenerating() ? '⏳ Generating...' : '✍️ Generate Article Now' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
     <!-- Button Metrics (admin only) -->
     <mat-card class="mb-4">
       <mat-card-header>
@@ -365,6 +389,10 @@ export class MeComponent {
   queueResult = signal<string | null>(null);
   queueError = signal(false);
 
+  isGenerating = signal(false);
+  generateResult = signal<string | null>(null);
+  generateError = signal(false);
+
   async processQueue(): Promise<void> {
     this.isProcessing.set(true);
     this.queueResult.set(null);
@@ -383,6 +411,32 @@ export class MeComponent {
       this.snackBar.open(msg, 'OK', { duration: 6000 });
     } finally {
       this.isProcessing.set(false);
+    }
+  }
+
+  async generateArticle(): Promise<void> {
+    this.isGenerating.set(true);
+    this.generateResult.set(null);
+    this.generateError.set(false);
+    try {
+      const res = await fetch(
+        'https://us-central1-code-g-b8b6f.cloudfunctions.net/triggerArticleGeneration',
+        { method: 'POST' }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as any).error ?? `HTTP ${res.status}`);
+      }
+      const msg = 'Article generated! Check /news to see it.';
+      this.generateResult.set(msg);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong.';
+      this.generateResult.set(msg);
+      this.generateError.set(true);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } finally {
+      this.isGenerating.set(false);
     }
   }
 
