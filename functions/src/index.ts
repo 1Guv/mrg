@@ -7,6 +7,7 @@ import Stripe from "stripe";
 import {valuatePlate} from "./valuation.js";
 import {processQueue} from "./social-post.js";
 import {fetchAnalytics} from "./analytics.js";
+import {runGenerateDailyArticle} from "./article-generator.js";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -14,6 +15,10 @@ const db = admin.firestore();
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
+const gscRefreshToken = defineSecret("GSC_REFRESH_TOKEN");
+const gscClientId = defineSecret("GSC_CLIENT_ID");
+const gscClientSecret = defineSecret("GSC_CLIENT_SECRET");
 
 const socialSecretNames = [
   "SHEETS_CLIENT_EMAIL",
@@ -398,3 +403,21 @@ export const getAnalytics = functionsV1
       throw new functionsV1.https.HttpsError("internal", msg);
     }
   });
+
+/** Daily SEO article generation: picks best GSC keyword, calls Gemini, writes to Firestore. */
+export const generateDailyArticle = onSchedule(
+  {
+    schedule: "0 8 * * *",
+    timeZone: "Europe/London",
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+  },
+  async () => {
+    await runGenerateDailyArticle(
+      geminiApiKey.value(),
+      gscRefreshToken.value(),
+      gscClientId.value(),
+      gscClientSecret.value()
+    );
+  }
+);
