@@ -94,5 +94,16 @@ service cloud.firestore {
       );
       allow create, delete: if false;
     }
+
+    // Articles — publicly readable; written only by Cloud Function (admin SDK bypasses rules)
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Meta (used keywords, generation log) — Cloud Function only (admin SDK)
+    match /meta/{docId} {
+      allow read, write: if false;
+    }
   }
 }
