@@ -113,6 +113,30 @@ import { toSignal } from '@angular/core/rxjs-interop';
       </mat-card-actions>
     </mat-card>
 
+    <!-- Full Videos Queue (admin only) -->
+    <mat-card class="mb-4 queue-card">
+      <mat-card-header>
+        <mat-card-title>🎬 Full Videos Queue</mat-card-title>
+        <mat-card-subtitle>Process pending plates using full-screen video format</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        @if (queueFullResult()) {
+          <p class="queue-result" [class.queue-result--success]="!queueFullError()" [class.queue-result--error]="queueFullError()">
+            {{ queueFullResult() }}
+          </p>
+        }
+      </mat-card-content>
+      <mat-card-actions class="px-3 pb-3">
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="isProcessingFull()"
+          (click)="processQueueFull()">
+          {{ isProcessingFull() ? '⏳ Processing...' : '🎬 Process Full Videos Now' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
     <!-- SEO Articles (admin only) -->
     <mat-card class="mb-4">
       <mat-card-header>
@@ -389,6 +413,10 @@ export class MeComponent {
   queueResult = signal<string | null>(null);
   queueError = signal(false);
 
+  isProcessingFull = signal(false);
+  queueFullResult = signal<string | null>(null);
+  queueFullError = signal(false);
+
   isGenerating = signal(false);
   generateResult = signal<string | null>(null);
   generateError = signal(false);
@@ -411,6 +439,27 @@ export class MeComponent {
       this.snackBar.open(msg, 'OK', { duration: 6000 });
     } finally {
       this.isProcessing.set(false);
+    }
+  }
+
+  async processQueueFull(): Promise<void> {
+    this.isProcessingFull.set(true);
+    this.queueFullResult.set(null);
+    this.queueFullError.set(false);
+    try {
+      const res = await this.socialPostService.processQueueFullVideos();
+      const msg = res.processed === 0
+        ? 'No pending plates found in the sheet.'
+        : `Done! ${res.processed} plate${res.processed === 1 ? '' : 's'} processed with full video.`;
+      this.queueFullResult.set(msg);
+      this.snackBar.open(msg, 'OK', { duration: 5000 });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Check the function logs.';
+      this.queueFullResult.set(msg);
+      this.queueFullError.set(true);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } finally {
+      this.isProcessingFull.set(false);
     }
   }
 

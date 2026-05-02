@@ -18,4 +18,13 @@ export class SocialPostService {
     const result = await fn();
     return result.data;
   }
+
+  async processQueueFullVideos(): Promise<ManualSocialPostResult> {
+    const fn = httpsCallable<void, ManualSocialPostResult>(
+      this.functions,
+      'manualSocialPostFullVideos'
+    );
+    const result = await fn();
+    return result.data;
+  }
 }
