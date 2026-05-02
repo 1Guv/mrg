@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp } from '@angular/fire/firestore';
 
 export type ArticleCategory = 'valuations' | 'plates' | 'cars';
 
