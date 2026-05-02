@@ -8,6 +8,8 @@ import { ForgotPasswordComponent } from './core/forgot-password/forgot-password.
 import { PlatesForSaleComponent } from './core/plates-for-sale/plates-for-sale.component';
 import { ListPlateComponent } from './core/list-plate/list-plate.component';
 import { ListPlateSuccessComponent } from './core/list-plate-success/list-plate-success.component';
+import { NewsListingComponent } from './core/news-listing/news-listing.component';
+import { NewsArticleComponent } from './core/news-article/news-article.component';
 
 export const routes: Routes = [
     { path: '', component: MainSectionComponent },
@@ -22,4 +24,6 @@ export const routes: Routes = [
     { path: 'plates-for-sale', component: PlatesForSaleComponent },
     { path: 'list-plate', component: ListPlateComponent },
     { path: 'list-plate/success', component: ListPlateSuccessComponent },
+    { path: 'news', component: NewsListingComponent },
+    { path: 'news/:slug', component: NewsArticleComponent },
 ];
