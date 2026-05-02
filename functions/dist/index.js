@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAnalytics = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.weeklyReport = exports.getUsers = void 0;
+exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.weeklyReport = exports.getUsers = void 0;
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -46,17 +46,30 @@ const stripe_1 = __importDefault(require("stripe"));
 const valuation_js_1 = require("./valuation.js");
 const social_post_js_1 = require("./social-post.js");
 const analytics_js_1 = require("./analytics.js");
+const article_generator_js_1 = require("./article-generator.js");
 admin.initializeApp();
 const db = admin.firestore();
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
+const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
+const gscRefreshToken = (0, params_1.defineSecret)("GSC_REFRESH_TOKEN");
+const gscClientId = (0, params_1.defineSecret)("GSC_CLIENT_ID");
+const gscClientSecret = (0, params_1.defineSecret)("GSC_CLIENT_SECRET");
 const socialSecretNames = [
     "SHEETS_CLIENT_EMAIL",
     "SHEETS_PRIVATE_KEY",
     "SHEETS_SHEET_ID",
     "PROXY_SECRET",
     "CREATOMATE_TEMPLATE_ID",
+    "BUFFER_API_KEY",
+];
+const fullVideoSecretNames = [
+    "SHEETS_CLIENT_EMAIL",
+    "SHEETS_PRIVATE_KEY",
+    "SHEETS_SHEET_ID",
+    "PROXY_SECRET",
+    "CREATOMATE_FULL_VIDEO_TEMPLATE_ID",
     "BUFFER_API_KEY",
 ];
 // Reuses the Sheets service account — same SA has GA4 Data API Viewer access.
@@ -328,6 +341,18 @@ exports.manualSocialPost = functionsV1
     const result = await (0, social_post_js_1.processQueue)((_a = process.env.SHEETS_CLIENT_EMAIL) !== null && _a !== void 0 ? _a : "", (_b = process.env.SHEETS_PRIVATE_KEY) !== null && _b !== void 0 ? _b : "", (_c = process.env.SHEETS_SHEET_ID) !== null && _c !== void 0 ? _c : "", (_d = process.env.PROXY_SECRET) !== null && _d !== void 0 ? _d : "", (_e = process.env.CREATOMATE_TEMPLATE_ID) !== null && _e !== void 0 ? _e : "", (_f = process.env.BUFFER_API_KEY) !== null && _f !== void 0 ? _f : "");
     return { success: true, processed: result.processed };
 });
+/** Manual trigger: process full-video queue from the "Full Videos" tab. */
+exports.manualSocialPostFullVideos = functionsV1
+    .runWith({ secrets: fullVideoSecretNames, timeoutSeconds: 540 })
+    .https.onCall(async (_data, context) => {
+    var _a, _b, _c, _d, _e, _f;
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!context.auth || context.auth.token.email !== adminEmail) {
+        throw new functionsV1.https.HttpsError("permission-denied", "Not authorised");
+    }
+    const result = await (0, social_post_js_1.processQueueFullVideos)((_a = process.env.SHEETS_CLIENT_EMAIL) !== null && _a !== void 0 ? _a : "", (_b = process.env.SHEETS_PRIVATE_KEY) !== null && _b !== void 0 ? _b : "", (_c = process.env.SHEETS_SHEET_ID) !== null && _c !== void 0 ? _c : "", (_d = process.env.PROXY_SECRET) !== null && _d !== void 0 ? _d : "", (_e = process.env.CREATOMATE_FULL_VIDEO_TEMPLATE_ID) !== null && _e !== void 0 ? _e : "", (_f = process.env.BUFFER_API_KEY) !== null && _f !== void 0 ? _f : "");
+    return { success: true, processed: result.processed };
+});
 /** Returns GA4 analytics data; callable from the Angular admin dashboard. */
 exports.getAnalytics = functionsV1
     .runWith({ secrets: analyticsSecretNames, timeoutSeconds: 30 })
@@ -344,5 +369,29 @@ exports.getAnalytics = functionsV1
         const msg = err instanceof Error ? err.message : "Unknown error";
         throw new functionsV1.https.HttpsError("internal", msg);
     }
+});
+/** Manual trigger: POST to fire article generation immediately (admin use). */
+exports.triggerArticleGeneration = (0, https_1.onRequest)({
+    maxInstances: 1,
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+}, async (request, response) => {
+    try {
+        await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
+        response.status(200).json({ success: true });
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        response.status(500).json({ error: msg });
+    }
+});
+/** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
+exports.generateDailyArticle = (0, scheduler_1.onSchedule)({
+    schedule: "0 8 * * *",
+    timeZone: "Europe/London",
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+}, async () => {
+    await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
 });
 //# sourceMappingURL=index.js.map

@@ -357,3 +357,309 @@ export async function processQueue(
 
   return {processed};
 }
+
+/**
+ * Process all rows with status "pending" using the Full Videos sheet tab.
+ * For each: valuate the plate, render a full-screen video, post to social
+ * media, then mark the row as "done" (or "error" on failure).
+ * @param {string} sheetsClientEmail - Service account email.
+ * @param {string} sheetsPrivateKey - Service account private key.
+ * @param {string} sheetsSheetId - Google Sheet ID.
+ * @param {string} proxySecret - Cloudflare proxy shared secret.
+ * @param {string} fullVideoTemplateId - Creatomate full-video template ID.
+ * @param {string} bufferApiKey - Buffer access token.
+ * @return {Promise<{processed: number}>} Count of processed rows.
+ */
+export async function processQueueFullVideos(
+  sheetsClientEmail: string,
+  sheetsPrivateKey: string,
+  sheetsSheetId: string,
+  proxySecret: string,
+  fullVideoTemplateId: string,
+  bufferApiKey: string
+): Promise<{processed: number}> {
+  const sheets = await getSheetsClient(sheetsClientEmail, sheetsPrivateKey);
+  const sheetId = sheetsSheetId;
+
+  // ── Read video URLs from Full Videos sheet ─────────────────────
+  console.log("DEBUG: Reading Full Videos sheet...");
+  const videosRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: "Full Videos!B2:B", // Column B = URLs, skip header
+  });
+  const videoUrls = (videosRes.data.values ?? [])
+    .map((row) => row[0] as string)
+    .filter(Boolean);
+
+  console.log(`DEBUG: Found ${videoUrls.length} full video URLs`);
+
+  if (videoUrls.length < 1) {
+    throw new Error(
+      "Need at least 1 video URL in the Full Videos sheet"
+    );
+  }
+
+  // ── Read music URLs from Music sheet ───────────────────────────
+  const musicRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: "Music!B2:B", // Column B = URLs, skip header
+  });
+  const musicUrls = (musicRes.data.values ?? [])
+    .map((row) => row[0] as string)
+    .filter(Boolean);
+
+  if (musicUrls.length === 0) {
+    throw new Error("Need at least 1 music URL in the Music sheet");
+  }
+
+  /**
+   * Pick n random unique items from an array.
+   * @param {string[]} arr - Source array to pick from.
+   * @param {number} n - Number of items to pick.
+   * @return {string[]} Array of n randomly selected unique items.
+   */
+  function pickRandom(arr: string[], n: number): string[] {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, n);
+  }
+
+  // ── Read pending rows from Sheet1 ──────────────────────────────
+  console.log("DEBUG: Reading Sheet1...");
+  const readRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: "Sheet1!A:G",
+  });
+
+  const rows = readRes.data.values ?? [];
+  console.log(`DEBUG: Total rows (inc header): ${rows.length}`);
+  const dataRows = rows.slice(1);
+
+  const pending = dataRows
+    .map((row, i) => ({
+      rowIndex: i + 2,
+      plate: (row[0] ?? "") as string,
+      status: (row[1] ?? "") as string,
+      // Column G: optional scheduled datetime (ISO 8601)
+      publishAt: (row[6] ?? "") as string,
+    }))
+    .filter((r) => r.status.toLowerCase() === "pending");
+
+  console.log(`DEBUG: Pending rows found: ${pending.length}`);
+
+  if (pending.length === 0) {
+    console.log("No pending plates found.");
+    return {processed: 0};
+  }
+
+  let processed = 0;
+
+  for (const row of pending) {
+    try {
+      console.log(`Processing plate: ${row.plate}`);
+
+      // 1. Valuate the plate
+      const valuationResult = valuatePlate(row.plate);
+      if (!valuationResult) {
+        throw new Error(`Unrecognised plate: ${row.plate}`);
+      }
+      const {minPrice, maxPrice, midPrice} = valuationResult;
+      const valuation = fmtRange(minPrice, maxPrice);
+
+      // 2. Pick 1 random full video and 1 random music track
+      const [fullVideo] = pickRandom(videoUrls, 1);
+      const [audioTrack] = pickRandom(musicUrls, 1);
+      console.log("DEBUG: audio track selected:", audioTrack);
+
+      // 3. Render video with Creatomate
+      const proxyBase =
+        "https://creatomate-proxy.guv-mr-valuations.workers.dev";
+      const proxyHeaders = {
+        "X-Proxy-Secret": proxySecret,
+        "Content-Type": "application/json",
+      };
+      const renderFetchRes = await fetch(
+        `${proxyBase}/renders`,
+        {
+          method: "POST",
+          headers: proxyHeaders,
+          body: JSON.stringify({
+            template_id: fullVideoTemplateId,
+            modifications: {
+              plate_text: row.plate,
+              valuation: fmt(midPrice),
+              full_video: fullVideo,
+              audio_track: audioTrack,
+            },
+          }),
+        }
+      );
+      if (!renderFetchRes.ok) {
+        const errBody = await renderFetchRes.text();
+        console.error("❌ Proxy /renders response:", errBody);
+        throw new Error(
+          `Creatomate render failed: ${renderFetchRes.status}`
+        );
+      }
+      const renderData =
+        await renderFetchRes.json() as Array<{id: string}>;
+      const renderId = renderData[0].id;
+      console.log("DEBUG: render submitted, id:", renderId);
+
+      // 4. Poll until render completes (max ~2 min, 5s intervals)
+      let videoUrl: string | null = null;
+      for (let i = 0; i < 24; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const statusFetchRes = await fetch(
+          `${proxyBase}/renders/${renderId}`,
+          {headers: proxyHeaders}
+        );
+        const statusData =
+          await statusFetchRes.json() as {status: string; url: string};
+        console.log(`DEBUG: poll ${i + 1} status:`, statusData.status);
+        if (statusData.status === "succeeded") {
+          videoUrl = statusData.url;
+          break;
+        }
+      }
+      if (!videoUrl) throw new Error("Creatomate render timed out");
+      console.log("DEBUG: render done, videoUrl:", videoUrl);
+
+      // 5. Post to social media via Buffer GraphQL API
+      const caption =
+        "🔥 " + row.plate + " — valued at " + fmt(midPrice) + ". " +
+        "Find out what YOUR plate is worth for FREE 👇\n" +
+        "mrvaluations.co.uk\n" +
+        "#privateplate #numberplate #ukplates #registration";
+
+      // Get organization ID
+      const orgData = await bufferGraphQL(
+        bufferApiKey,
+        "query { account { organizations { id name } } }"
+      ) as {
+        data: {
+          account: {organizations: Array<{id: string; name: string}>};
+        };
+      };
+      const orgId = orgData.data.account.organizations[0]?.id;
+      if (!orgId) throw new Error("No Buffer organization found");
+
+      // Get all connected channels
+      type BufChannel = {id: string; name: string; service: string};
+      const channelsData = await bufferGraphQL(
+        bufferApiKey,
+        `query {
+          channels(input: { organizationId: "${orgId}" }) {
+            id name service
+          }
+        }`
+      ) as {data: {channels: BufChannel[]}};
+
+      const channels = channelsData.data.channels;
+      console.log(
+        `DEBUG: Buffer channels: ${channels.map((c) => c.service).join(", ")}`
+      );
+      if (channels.length === 0) {
+        throw new Error("No Buffer channels found");
+      }
+
+      // Create a post on each channel
+      const useScheduled = row.publishAt.trim().length > 0;
+      for (const channel of channels) {
+        type PostInput = {
+          text: string;
+          channelId: string;
+          schedulingType: string;
+          mode: string;
+          dueAt?: string;
+          assets: {videos: Array<{url: string}>};
+          metadata?: {
+            instagram?: {type: string; shouldShareToFeed: boolean};
+            facebook?: {type: string};
+          };
+        };
+        const postInput: PostInput = {
+          text: caption,
+          channelId: channel.id,
+          schedulingType: "automatic",
+          mode: useScheduled ? "customScheduled" : "addToQueue",
+          assets: {videos: [{url: videoUrl}]},
+        };
+        if (useScheduled) postInput.dueAt = row.publishAt.trim();
+        if (channel.service === "instagram") {
+          postInput.metadata = {
+            instagram: {type: "reel", shouldShareToFeed: true},
+          };
+        }
+        if (channel.service === "facebook") {
+          postInput.metadata = {facebook: {type: "reel"}};
+        }
+
+        const postData = await bufferGraphQL(
+          bufferApiKey,
+          `mutation CreatePost($input: CreatePostInput!) {
+            createPost(input: $input) {
+              ... on PostActionSuccess { post { id } }
+              ... on MutationError { message }
+            }
+          }`,
+          {input: postInput}
+        ) as {
+          data: {createPost: {post?: {id: string}; message?: string}};
+        };
+
+        const postResult = postData.data.createPost;
+        if (postResult.message) {
+          console.error(
+            `❌ Buffer error for ${channel.service}: ${postResult.message}`
+          );
+        } else {
+          console.log(
+            `✅ Posted to ${channel.service}: ${postResult.post?.id}`
+          );
+        }
+      }
+
+      // 6. Update sheet row → done
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `Sheet1!B${row.rowIndex}:J${row.rowIndex}`,
+        valueInputOption: "RAW",
+        requestBody: {
+          values: [[
+            "done",
+            fmt(midPrice),
+            caption,
+            videoUrl,
+            valuation,
+            row.publishAt,
+            audioTrack,
+            fullVideo,
+            "",
+          ]],
+        },
+      });
+
+      processed++;
+      console.log(`✅ Done: ${row.plate} → ${valuation}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const axiosErr = err as {response?: {data?: unknown}};
+      if (axiosErr?.response?.data) {
+        console.error(
+          "❌ Creatomate response:",
+          JSON.stringify(axiosErr.response.data)
+        );
+      }
+      console.error(`❌ Failed for plate ${row.plate}:`, msg);
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `Sheet1!B${row.rowIndex}`,
+        valueInputOption: "RAW",
+        requestBody: {values: [["error"]]},
+      });
+    }
+  }
+
+  return {processed};
+}

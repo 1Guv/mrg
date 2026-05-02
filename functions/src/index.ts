@@ -5,7 +5,7 @@ import {defineSecret} from "firebase-functions/params";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 import {valuatePlate} from "./valuation.js";
-import {processQueue} from "./social-post.js";
+import {processQueue, processQueueFullVideos} from "./social-post.js";
 import {fetchAnalytics} from "./analytics.js";
 import {runGenerateDailyArticle} from "./article-generator.js";
 
@@ -26,6 +26,15 @@ const socialSecretNames = [
   "SHEETS_SHEET_ID",
   "PROXY_SECRET",
   "CREATOMATE_TEMPLATE_ID",
+  "BUFFER_API_KEY",
+];
+
+const fullVideoSecretNames = [
+  "SHEETS_CLIENT_EMAIL",
+  "SHEETS_PRIVATE_KEY",
+  "SHEETS_SHEET_ID",
+  "PROXY_SECRET",
+  "CREATOMATE_FULL_VIDEO_TEMPLATE_ID",
   "BUFFER_API_KEY",
 ];
 
@@ -378,6 +387,27 @@ export const manualSocialPost = functionsV1
       process.env.SHEETS_SHEET_ID ?? "",
       process.env.PROXY_SECRET ?? "",
       process.env.CREATOMATE_TEMPLATE_ID ?? "",
+      process.env.BUFFER_API_KEY ?? ""
+    );
+    return {success: true, processed: result.processed};
+  });
+
+/** Manual trigger: process full-video queue from the "Full Videos" tab. */
+export const manualSocialPostFullVideos = functionsV1
+  .runWith({secrets: fullVideoSecretNames, timeoutSeconds: 540})
+  .https.onCall(async (_data, context) => {
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!context.auth || context.auth.token.email !== adminEmail) {
+      throw new functionsV1.https.HttpsError(
+        "permission-denied", "Not authorised"
+      );
+    }
+    const result = await processQueueFullVideos(
+      process.env.SHEETS_CLIENT_EMAIL ?? "",
+      process.env.SHEETS_PRIVATE_KEY ?? "",
+      process.env.SHEETS_SHEET_ID ?? "",
+      process.env.PROXY_SECRET ?? "",
+      process.env.CREATOMATE_FULL_VIDEO_TEMPLATE_ID ?? "",
       process.env.BUFFER_API_KEY ?? ""
     );
     return {success: true, processed: result.processed};
