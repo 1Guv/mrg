@@ -41,6 +41,12 @@
           "icon": "directions_car",
           "url": "/cars",
           "toolTip": "cars"
+        },
+        {
+          "name": "Latest News",
+          "icon": "newspaper",
+          "url": "/news",
+          "toolTip": "Latest News"
         }
       ]
     },
