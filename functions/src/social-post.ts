@@ -215,15 +215,21 @@ export async function processQueue(
           `${proxyBase}/renders/${renderId}`,
           {headers: proxyHeaders}
         );
-        const statusData =
-          await statusFetchRes.json() as {status: string; url: string};
-        console.log(`DEBUG: poll ${i + 1} status:`, statusData.status);
+        const statusData = await statusFetchRes.json() as {
+          status: string; url: string; error_message?: string;
+        };
+        console.log(
+          `DEBUG: poll ${i + 1} status: ${statusData.status}` +
+          (statusData.error_message ?
+            ` — ${statusData.error_message}` : "")
+        );
         if (statusData.status === "succeeded") {
           videoUrl = statusData.url;
           break;
         }
+        if (statusData.status === "failed") break;
       }
-      if (!videoUrl) throw new Error("Creatomate render timed out");
+      if (!videoUrl) throw new Error("Creatomate render failed");
       console.log("DEBUG: render done, videoUrl:", videoUrl);
 
       // 5. Post to social media via Buffer GraphQL API
@@ -381,6 +387,20 @@ export async function processQueueFullVideos(
   const sheets = await getSheetsClient(sheetsClientEmail, sheetsPrivateKey);
   const sheetId = sheetsSheetId;
 
+  /**
+   * Convert a Google Drive sharing URL to a direct download URL.
+   * Non-Drive URLs are returned unchanged.
+   * @param {string} url - Input URL.
+   * @return {string} Direct download URL.
+   */
+  function toDriveDirectUrl(url: string): string {
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    return url;
+  }
+
   // ── Read video URLs from Full Videos sheet ─────────────────────
   console.log("DEBUG: Reading Full Videos sheet...");
   const videosRes = await sheets.spreadsheets.values.get({
@@ -388,7 +408,7 @@ export async function processQueueFullVideos(
     range: "Full Videos!B2:B", // Column B = URLs, skip header
   });
   const videoUrls = (videosRes.data.values ?? [])
-    .map((row) => row[0] as string)
+    .map((row) => toDriveDirectUrl(row[0] as string))
     .filter(Boolean);
 
   console.log(`DEBUG: Found ${videoUrls.length} full video URLs`);
@@ -399,29 +419,10 @@ export async function processQueueFullVideos(
     );
   }
 
-  // ── Read music URLs from Music sheet ───────────────────────────
-  const musicRes = await sheets.spreadsheets.values.get({
-    spreadsheetId: sheetId,
-    range: "Music!B2:B", // Column B = URLs, skip header
-  });
-  const musicUrls = (musicRes.data.values ?? [])
-    .map((row) => row[0] as string)
-    .filter(Boolean);
-
-  if (musicUrls.length === 0) {
-    throw new Error("Need at least 1 music URL in the Music sheet");
-  }
-
-  /**
-   * Pick n random unique items from an array.
-   * @param {string[]} arr - Source array to pick from.
-   * @param {number} n - Number of items to pick.
-   * @return {string[]} Array of n randomly selected unique items.
-   */
-  function pickRandom(arr: string[], n: number): string[] {
-    const shuffled = [...arr].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, n);
-  }
+  // Shuffle video URLs once so each plate gets a unique video
+  const shuffledVideos =
+    [...videoUrls].sort(() => Math.random() - 0.5);
+  let videoIndex = 0;
 
   // ── Read pending rows from Sheet1 ──────────────────────────────
   console.log("DEBUG: Reading Sheet1...");
@@ -434,6 +435,11 @@ export async function processQueueFullVideos(
   console.log(`DEBUG: Total rows (inc header): ${rows.length}`);
   const dataRows = rows.slice(1);
 
+  const uniqueStatuses = [
+    ...new Set(dataRows.map((r) => JSON.stringify(r[1] ?? ""))),
+  ];
+  console.log(`DEBUG: Unique status values: ${uniqueStatuses.join(", ")}`);
+
   const pending = dataRows
     .map((row, i) => ({
       rowIndex: i + 2,
@@ -442,7 +448,7 @@ export async function processQueueFullVideos(
       // Column G: optional scheduled datetime (ISO 8601)
       publishAt: (row[6] ?? "") as string,
     }))
-    .filter((r) => r.status.toLowerCase() === "pending");
+    .filter((r) => r.status.toLowerCase().trim() === "pending");
 
   console.log(`DEBUG: Pending rows found: ${pending.length}`);
 
@@ -465,10 +471,11 @@ export async function processQueueFullVideos(
       const {minPrice, maxPrice, midPrice} = valuationResult;
       const valuation = fmtRange(minPrice, maxPrice);
 
-      // 2. Pick 1 random full video and 1 random music track
-      const [fullVideo] = pickRandom(videoUrls, 1);
-      const [audioTrack] = pickRandom(musicUrls, 1);
-      console.log("DEBUG: audio track selected:", audioTrack);
+      // 2. Pick next unique full video from pre-shuffled list
+      const fullVideo =
+        shuffledVideos[videoIndex % shuffledVideos.length];
+      videoIndex++;
+      console.log("DEBUG: full video selected:", fullVideo);
 
       // 3. Render video with Creatomate
       const proxyBase =
@@ -488,7 +495,7 @@ export async function processQueueFullVideos(
               plate_text: row.plate,
               valuation: fmt(midPrice),
               full_video: fullVideo,
-              audio_track: audioTrack,
+              audio_track: "",
             },
           }),
         }
@@ -513,15 +520,21 @@ export async function processQueueFullVideos(
           `${proxyBase}/renders/${renderId}`,
           {headers: proxyHeaders}
         );
-        const statusData =
-          await statusFetchRes.json() as {status: string; url: string};
-        console.log(`DEBUG: poll ${i + 1} status:`, statusData.status);
+        const statusData = await statusFetchRes.json() as {
+          status: string; url: string; error_message?: string;
+        };
+        console.log(
+          `DEBUG: poll ${i + 1} status: ${statusData.status}` +
+          (statusData.error_message ?
+            ` — ${statusData.error_message}` : "")
+        );
         if (statusData.status === "succeeded") {
           videoUrl = statusData.url;
           break;
         }
+        if (statusData.status === "failed") break;
       }
-      if (!videoUrl) throw new Error("Creatomate render timed out");
+      if (!videoUrl) throw new Error("Creatomate render failed");
       console.log("DEBUG: render done, videoUrl:", videoUrl);
 
       // 5. Post to social media via Buffer GraphQL API
@@ -632,7 +645,7 @@ export async function processQueueFullVideos(
             videoUrl,
             valuation,
             row.publishAt,
-            audioTrack,
+            "",
             fullVideo,
             "",
           ]],

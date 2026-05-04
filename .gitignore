@@ -40,5 +40,11 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Superpowers brainstorm sessions
+.superpowers/
 .env
 scripts/service-account.json
+scripts/gsc-credentials.json
+scripts/gsc-token.json
+scripts/gsc-data.json

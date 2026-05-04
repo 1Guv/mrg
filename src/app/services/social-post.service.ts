@@ -22,7 +22,8 @@ export class SocialPostService {
   async processQueueFullVideos(): Promise<ManualSocialPostResult> {
     const fn = httpsCallable<void, ManualSocialPostResult>(
       this.functions,
-      'manualSocialPostFullVideos'
+      'manualSocialPostFullVideos',
+      { timeout: 600000 }
     );
     const result = await fn();
     return result.data;

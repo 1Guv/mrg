@@ -84,11 +84,36 @@
   padding: 16px;
 }
 
+.card-body-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
 .card-title {
+  flex: 1;
   font-size: 1rem;
   font-weight: 600;
-  margin: 0 0 8px;
+  margin: 0;
   line-height: 1.4;
+}
+
+.card-category-pill {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  color: white;
+  white-space: nowrap;
+  margin-top: 2px;
+
+  &[data-category='valuations'] { background: #4caf50; }
+  &[data-category='plates'] { background: #7c6af7; }
+  &[data-category='cars'] { background: #2196f3; }
 }
 
 .card-meta {

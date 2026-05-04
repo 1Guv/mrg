@@ -25,11 +25,14 @@
       <div class="article-grid">
         @for (article of articles; track article.id) {
           <a class="article-card" [routerLink]="['/news', article.slug]">
-            <div class="card-category-bar" [attr.data-category]="article.category">
-              {{ article.category | titlecase }}
-            </div>
+            <div class="card-category-bar" [attr.data-category]="article.category"></div>
             <div class="card-body">
-              <h2 class="card-title">{{ article.title }}</h2>
+              <div class="card-body-top">
+                <h2 class="card-title">{{ article.title }}</h2>
+                <span class="card-category-pill" [attr.data-category]="article.category">
+                  {{ article.category | titlecase }}
+                </span>
+              </div>
               <p class="card-meta">
                 {{ estimateReadTime(article.readTimeMinutes) }}
                 &nbsp;·&nbsp;

@@ -181,14 +181,18 @@ async function processQueue(sheetsClientEmail, sheetsPrivateKey, sheetsSheetId, 
                 await new Promise((resolve) => setTimeout(resolve, 5000));
                 const statusFetchRes = await fetch(`${proxyBase}/renders/${renderId}`, { headers: proxyHeaders });
                 const statusData = await statusFetchRes.json();
-                console.log(`DEBUG: poll ${i + 1} status:`, statusData.status);
+                console.log(`DEBUG: poll ${i + 1} status: ${statusData.status}` +
+                    (statusData.error_message ?
+                        ` — ${statusData.error_message}` : ""));
                 if (statusData.status === "succeeded") {
                     videoUrl = statusData.url;
                     break;
                 }
+                if (statusData.status === "failed")
+                    break;
             }
             if (!videoUrl)
-                throw new Error("Creatomate render timed out");
+                throw new Error("Creatomate render failed");
             console.log("DEBUG: render done, videoUrl:", videoUrl);
             // 5. Post to social media via Buffer GraphQL API
             const caption = `This plate — ${row.plate} — is valued at ` +
@@ -293,9 +297,22 @@ async function processQueue(sheetsClientEmail, sheetsPrivateKey, sheetsSheetId, 
  * @return {Promise<{processed: number}>} Count of processed rows.
  */
 async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheetsSheetId, proxySecret, fullVideoTemplateId, bufferApiKey) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e;
     const sheets = await getSheetsClient(sheetsClientEmail, sheetsPrivateKey);
     const sheetId = sheetsSheetId;
+    /**
+     * Convert a Google Drive sharing URL to a direct download URL.
+     * Non-Drive URLs are returned unchanged.
+     * @param {string} url - Input URL.
+     * @return {string} Direct download URL.
+     */
+    function toDriveDirectUrl(url) {
+        const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match) {
+            return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+        }
+        return url;
+    }
     // ── Read video URLs from Full Videos sheet ─────────────────────
     console.log("DEBUG: Reading Full Videos sheet...");
     const videosRes = await sheets.spreadsheets.values.get({
@@ -303,42 +320,28 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
         range: "Full Videos!B2:B", // Column B = URLs, skip header
     });
     const videoUrls = ((_a = videosRes.data.values) !== null && _a !== void 0 ? _a : [])
-        .map((row) => row[0])
+        .map((row) => toDriveDirectUrl(row[0]))
         .filter(Boolean);
     console.log(`DEBUG: Found ${videoUrls.length} full video URLs`);
     if (videoUrls.length < 1) {
         throw new Error("Need at least 1 video URL in the Full Videos sheet");
     }
-    // ── Read music URLs from Music sheet ───────────────────────────
-    const musicRes = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: "Music!B2:B", // Column B = URLs, skip header
-    });
-    const musicUrls = ((_b = musicRes.data.values) !== null && _b !== void 0 ? _b : [])
-        .map((row) => row[0])
-        .filter(Boolean);
-    if (musicUrls.length === 0) {
-        throw new Error("Need at least 1 music URL in the Music sheet");
-    }
-    /**
-     * Pick n random unique items from an array.
-     * @param {string[]} arr - Source array to pick from.
-     * @param {number} n - Number of items to pick.
-     * @return {string[]} Array of n randomly selected unique items.
-     */
-    function pickRandom(arr, n) {
-        const shuffled = [...arr].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, n);
-    }
+    // Shuffle video URLs once so each plate gets a unique video
+    const shuffledVideos = [...videoUrls].sort(() => Math.random() - 0.5);
+    let videoIndex = 0;
     // ── Read pending rows from Sheet1 ──────────────────────────────
     console.log("DEBUG: Reading Sheet1...");
     const readRes = await sheets.spreadsheets.values.get({
         spreadsheetId: sheetId,
         range: "Sheet1!A:G",
     });
-    const rows = (_c = readRes.data.values) !== null && _c !== void 0 ? _c : [];
+    const rows = (_b = readRes.data.values) !== null && _b !== void 0 ? _b : [];
     console.log(`DEBUG: Total rows (inc header): ${rows.length}`);
     const dataRows = rows.slice(1);
+    const uniqueStatuses = [
+        ...new Set(dataRows.map((r) => { var _a; return JSON.stringify((_a = r[1]) !== null && _a !== void 0 ? _a : ""); })),
+    ];
+    console.log(`DEBUG: Unique status values: ${uniqueStatuses.join(", ")}`);
     const pending = dataRows
         .map((row, i) => {
         var _a, _b, _c;
@@ -350,7 +353,7 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
             publishAt: ((_c = row[6]) !== null && _c !== void 0 ? _c : ""),
         });
     })
-        .filter((r) => r.status.toLowerCase() === "pending");
+        .filter((r) => r.status.toLowerCase().trim() === "pending");
     console.log(`DEBUG: Pending rows found: ${pending.length}`);
     if (pending.length === 0) {
         console.log("No pending plates found.");
@@ -367,10 +370,10 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
             }
             const { minPrice, maxPrice, midPrice } = valuationResult;
             const valuation = fmtRange(minPrice, maxPrice);
-            // 2. Pick 1 random full video and 1 random music track
-            const [fullVideo] = pickRandom(videoUrls, 1);
-            const [audioTrack] = pickRandom(musicUrls, 1);
-            console.log("DEBUG: audio track selected:", audioTrack);
+            // 2. Pick next unique full video from pre-shuffled list
+            const fullVideo = shuffledVideos[videoIndex % shuffledVideos.length];
+            videoIndex++;
+            console.log("DEBUG: full video selected:", fullVideo);
             // 3. Render video with Creatomate
             const proxyBase = "https://creatomate-proxy.guv-mr-valuations.workers.dev";
             const proxyHeaders = {
@@ -386,7 +389,7 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
                         plate_text: row.plate,
                         valuation: fmt(midPrice),
                         full_video: fullVideo,
-                        audio_track: audioTrack,
+                        audio_track: "",
                     },
                 }),
             });
@@ -404,14 +407,18 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
                 await new Promise((resolve) => setTimeout(resolve, 5000));
                 const statusFetchRes = await fetch(`${proxyBase}/renders/${renderId}`, { headers: proxyHeaders });
                 const statusData = await statusFetchRes.json();
-                console.log(`DEBUG: poll ${i + 1} status:`, statusData.status);
+                console.log(`DEBUG: poll ${i + 1} status: ${statusData.status}` +
+                    (statusData.error_message ?
+                        ` — ${statusData.error_message}` : ""));
                 if (statusData.status === "succeeded") {
                     videoUrl = statusData.url;
                     break;
                 }
+                if (statusData.status === "failed")
+                    break;
             }
             if (!videoUrl)
-                throw new Error("Creatomate render timed out");
+                throw new Error("Creatomate render failed");
             console.log("DEBUG: render done, videoUrl:", videoUrl);
             // 5. Post to social media via Buffer GraphQL API
             const caption = "🔥 " + row.plate + " — valued at " + fmt(midPrice) + ". " +
@@ -420,7 +427,7 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
                 "#privateplate #numberplate #ukplates #registration";
             // Get organization ID
             const orgData = await bufferGraphQL(bufferApiKey, "query { account { organizations { id name } } }");
-            const orgId = (_d = orgData.data.account.organizations[0]) === null || _d === void 0 ? void 0 : _d.id;
+            const orgId = (_c = orgData.data.account.organizations[0]) === null || _c === void 0 ? void 0 : _c.id;
             if (!orgId)
                 throw new Error("No Buffer organization found");
             const channelsData = await bufferGraphQL(bufferApiKey, `query {
@@ -464,7 +471,7 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
                     console.error(`❌ Buffer error for ${channel.service}: ${postResult.message}`);
                 }
                 else {
-                    console.log(`✅ Posted to ${channel.service}: ${(_e = postResult.post) === null || _e === void 0 ? void 0 : _e.id}`);
+                    console.log(`✅ Posted to ${channel.service}: ${(_d = postResult.post) === null || _d === void 0 ? void 0 : _d.id}`);
                 }
             }
             // 6. Update sheet row → done
@@ -480,7 +487,7 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
                             videoUrl,
                             valuation,
                             row.publishAt,
-                            audioTrack,
+                            "",
                             fullVideo,
                             "",
                         ]],
@@ -492,7 +499,7 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
         catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             const axiosErr = err;
-            if ((_f = axiosErr === null || axiosErr === void 0 ? void 0 : axiosErr.response) === null || _f === void 0 ? void 0 : _f.data) {
+            if ((_e = axiosErr === null || axiosErr === void 0 ? void 0 : axiosErr.response) === null || _e === void 0 ? void 0 : _e.data) {
                 console.error("❌ Creatomate response:", JSON.stringify(axiosErr.response.data));
             }
             console.error(`❌ Failed for plate ${row.plate}:`, msg);
