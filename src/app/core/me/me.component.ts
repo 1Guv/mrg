@@ -468,14 +468,7 @@ export class MeComponent {
     this.generateResult.set(null);
     this.generateError.set(false);
     try {
-      const res = await fetch(
-        'https://us-central1-code-g-b8b6f.cloudfunctions.net/triggerArticleGeneration',
-        { method: 'POST' }
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body as any).error ?? `HTTP ${res.status}`);
-      }
+      await this.socialPostService.generateArticle();
       const msg = 'Article generated! Check /news to see it.';
       this.generateResult.set(msg);
       this.snackBar.open(msg, 'OK', { duration: 6000 });

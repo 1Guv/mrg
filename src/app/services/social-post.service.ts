@@ -28,4 +28,14 @@ export class SocialPostService {
     const result = await fn();
     return result.data;
   }
+
+  async generateArticle(): Promise<{ success: boolean }> {
+    const fn = httpsCallable<void, { success: boolean }>(
+      this.functions,
+      'triggerArticleGeneration',
+      { timeout: 360000 }
+    );
+    const result = await fn();
+    return result.data;
+  }
 }

@@ -370,20 +370,18 @@ exports.getAnalytics = functionsV1
         throw new functionsV1.https.HttpsError("internal", msg);
     }
 });
-/** Manual trigger: POST to fire article generation immediately (admin use). */
-exports.triggerArticleGeneration = (0, https_1.onRequest)({
+/** Manual trigger: admin callable to fire article generation on demand. */
+exports.triggerArticleGeneration = (0, https_1.onCall)({
     maxInstances: 1,
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
-}, async (request, response) => {
-    try {
-        await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
-        response.status(200).json({ success: true });
+}, async (request) => {
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!request.auth || request.auth.token.email !== adminEmail) {
+        throw new https_1.HttpsError("permission-denied", "Not authorised");
     }
-    catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        response.status(500).json({ error: msg });
-    }
+    await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
+    return { success: true };
 });
 /** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
 exports.generateDailyArticle = (0, scheduler_1.onSchedule)({

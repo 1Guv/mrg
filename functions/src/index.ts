@@ -434,26 +434,25 @@ export const getAnalytics = functionsV1
     }
   });
 
-/** Manual trigger: POST to fire article generation immediately (admin use). */
-export const triggerArticleGeneration = onRequest(
+/** Manual trigger: admin callable to fire article generation on demand. */
+export const triggerArticleGeneration = onCall(
   {
     maxInstances: 1,
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
   },
-  async (request, response) => {
-    try {
-      await runGenerateDailyArticle(
-        geminiApiKey.value(),
-        gscRefreshToken.value(),
-        gscClientId.value(),
-        gscClientSecret.value()
-      );
-      response.status(200).json({success: true});
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      response.status(500).json({error: msg});
+  async (request) => {
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!request.auth || request.auth.token.email !== adminEmail) {
+      throw new HttpsError("permission-denied", "Not authorised");
     }
+    await runGenerateDailyArticle(
+      geminiApiKey.value(),
+      gscRefreshToken.value(),
+      gscClientId.value(),
+      gscClientSecret.value()
+    );
+    return {success: true};
   }
 );
 
