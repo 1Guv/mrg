@@ -434,25 +434,61 @@ export const getAnalytics = functionsV1
     }
   });
 
-/** Manual trigger: admin callable to fire article generation on demand. */
-export const triggerArticleGeneration = onCall(
+/** Manual trigger: admin HTTP endpoint to fire article generation on demand. */
+export const triggerArticleGeneration = onRequest(
   {
     maxInstances: 1,
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
   },
-  async (request) => {
-    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
-    if (!request.auth || request.auth.token.email !== adminEmail) {
-      throw new HttpsError("permission-denied", "Not authorised");
-    }
-    await runGenerateDailyArticle(
-      geminiApiKey.value(),
-      gscRefreshToken.value(),
-      gscClientId.value(),
-      gscClientSecret.value()
+  async (request, response) => {
+    // CORS — allow the hosted app to call this endpoint
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set(
+      "Access-Control-Allow-Headers",
+      "Authorization, Content-Type"
     );
-    return {success: true};
+    if (request.method === "OPTIONS") {
+      response.status(204).send("");
+      return;
+    }
+
+    // Auth — verify Firebase ID token
+    const authHeader = request.headers.authorization ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      response.status(401).json({error: "Unauthorized"});
+      return;
+    }
+    let email: string;
+    try {
+      const decoded = await admin
+        .auth()
+        .verifyIdToken(authHeader.slice(7));
+      email = decoded.email ?? "";
+    } catch {
+      response.status(401).json({error: "Invalid token"});
+      return;
+    }
+
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (email !== adminEmail) {
+      response.status(403).json({error: "Not authorised"});
+      return;
+    }
+
+    try {
+      await runGenerateDailyArticle(
+        geminiApiKey.value(),
+        gscRefreshToken.value(),
+        gscClientId.value(),
+        gscClientSecret.value()
+      );
+      response.status(200).json({success: true});
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error("triggerArticleGeneration error:", msg);
+      response.status(500).json({error: msg});
+    }
   }
 );
 

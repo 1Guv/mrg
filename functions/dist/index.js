@@ -370,18 +370,51 @@ exports.getAnalytics = functionsV1
         throw new functionsV1.https.HttpsError("internal", msg);
     }
 });
-/** Manual trigger: admin callable to fire article generation on demand. */
-exports.triggerArticleGeneration = (0, https_1.onCall)({
+/** Manual trigger: admin HTTP endpoint to fire article generation on demand. */
+exports.triggerArticleGeneration = (0, https_1.onRequest)({
     maxInstances: 1,
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
-}, async (request) => {
-    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
-    if (!request.auth || request.auth.token.email !== adminEmail) {
-        throw new https_1.HttpsError("permission-denied", "Not authorised");
+}, async (request, response) => {
+    var _a, _b;
+    // CORS — allow the hosted app to call this endpoint
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    if (request.method === "OPTIONS") {
+        response.status(204).send("");
+        return;
     }
-    await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
-    return { success: true };
+    // Auth — verify Firebase ID token
+    const authHeader = (_a = request.headers.authorization) !== null && _a !== void 0 ? _a : "";
+    if (!authHeader.startsWith("Bearer ")) {
+        response.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+    let email;
+    try {
+        const decoded = await admin
+            .auth()
+            .verifyIdToken(authHeader.slice(7));
+        email = (_b = decoded.email) !== null && _b !== void 0 ? _b : "";
+    }
+    catch (_c) {
+        response.status(401).json({ error: "Invalid token" });
+        return;
+    }
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (email !== adminEmail) {
+        response.status(403).json({ error: "Not authorised" });
+        return;
+    }
+    try {
+        await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
+        response.status(200).json({ success: true });
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("triggerArticleGeneration error:", msg);
+        response.status(500).json({ error: msg });
+    }
 });
 /** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
 exports.generateDailyArticle = (0, scheduler_1.onSchedule)({
