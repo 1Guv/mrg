@@ -154,10 +154,22 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     /* eslint-enable max-len */
     const url = "https://generativelanguage.googleapis.com/v1beta/models/" +
         "gemini-2.5-flash:generateContent";
-    const response = await axios_1.default.post(url, {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" },
-    }, { headers: { "x-goog-api-key": geminiApiKey } });
+    let response;
+    try {
+        response = await axios_1.default.post(url, {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json" },
+        }, { headers: { "x-goog-api-key": geminiApiKey }, timeout: 240000 });
+    }
+    catch (axiosErr) {
+        // Re-throw with the full response body so the caller can log it
+        if (axios_1.default.isAxiosError(axiosErr) &&
+            axiosErr.response) {
+            throw new Error(`Gemini API ${axiosErr.response.status}: ` +
+                JSON.stringify(axiosErr.response.data));
+        }
+        throw axiosErr;
+    }
     const candidate = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.candidates) === null || _b === void 0 ? void 0 : _b[0];
     let rawText = (_e = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
     if (typeof rawText !== "string" || rawText.trim() === "") {

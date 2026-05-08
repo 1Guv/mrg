@@ -178,14 +178,29 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     "https://generativelanguage.googleapis.com/v1beta/models/" +
     "gemini-2.5-flash:generateContent";
 
-  const response = await axios.post(
-    url,
-    {
-      contents: [{parts: [{text: prompt}]}],
-      generationConfig: {responseMimeType: "application/json"},
-    },
-    {headers: {"x-goog-api-key": geminiApiKey}}
-  );
+  let response;
+  try {
+    response = await axios.post(
+      url,
+      {
+        contents: [{parts: [{text: prompt}]}],
+        generationConfig: {responseMimeType: "application/json"},
+      },
+      {headers: {"x-goog-api-key": geminiApiKey}, timeout: 240000}
+    );
+  } catch (axiosErr) {
+    // Re-throw with the full response body so the caller can log it
+    if (
+      axios.isAxiosError(axiosErr) &&
+      axiosErr.response
+    ) {
+      throw new Error(
+        `Gemini API ${axiosErr.response.status}: ` +
+        JSON.stringify(axiosErr.response.data)
+      );
+    }
+    throw axiosErr;
+  }
 
   const candidate = response.data?.candidates?.[0];
   let rawText = candidate?.content?.parts?.[0]?.text;
