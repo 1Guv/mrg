@@ -72,131 +72,184 @@ export const getUsers = onCall({maxInstances: 1}, async (request) => {
   return {users};
 });
 
+// ── Shared weekly report logic ─────────────────────────────────────────────
+
+/**
+ * Fetches weekly stats from Firestore and writes a mail document.
+ * @return {Promise<string>} The Firestore document ID of the mail doc.
+ */
+async function runWeeklyReport(): Promise<string> {
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  console.log("weeklyReport: starting run");
+
+  // ── Plate Searches ────────────────────────────────────────
+  console.log("weeklyReport: fetching plate_searches...");
+  const searchesSnap = await db.collection("plate_searches")
+    .where("searchedAt", ">=", sevenDaysAgo)
+    .get();
+  console.log(`weeklyReport: plate_searches count = ${searchesSnap.size}`);
+
+  const searches = searchesSnap.docs.map((d) => d.data());
+  const searchRows = searches.length ?
+    searches.map((s) =>
+      `<tr>
+      <td>${s["registration"] ?? "-"}</td>
+      <td>${s["type"] ?? "-"}</td>
+      <td>${s["badge"] ?? "-"}</td>
+      <td>${s["userId"] ? "Logged in" : "Guest"}</td>
+    </tr>`
+    ).join("") :
+    "<tr><td colspan='4'>No searches this week</td></tr>";
+
+  // ── Feature Requests ──────────────────────────────────────
+  console.log("weeklyReport: fetching feature_requests...");
+  const requestsSnap = await db.collection("feature_requests")
+    .where("requestedAt", ">=", sevenDaysAgo)
+    .get();
+  console.log(`weeklyReport: feature_requests count = ${requestsSnap.size}`);
+
+  const requests = requestsSnap.docs.map((d) => d.data());
+  const requestRows = requests.length ?
+    requests.map((r) =>
+      `<tr>
+      <td>${r["registration"] ?? "-"}</td>
+      <td>${r["type"] ?? "-"}</td>
+    </tr>`
+    ).join("") :
+    "<tr><td colspan='2'>No feature requests this week</td></tr>";
+
+  // ── Valuation Feedback ────────────────────────────────────
+  console.log("weeklyReport: fetching valuation_feedback...");
+  const feedbackSnap = await db.collection("valuation_feedback")
+    .where("submittedAt", ">=", sevenDaysAgo)
+    .get();
+  console.log(`weeklyReport: valuation_feedback count = ${feedbackSnap.size}`);
+
+  const feedback = feedbackSnap.docs.map((d) => d.data());
+  const agreed = feedback.filter((f) => f["agreed"] === true).length;
+  const disagreed = feedback.filter((f) => f["agreed"] === false).length;
+  const feedbackRows = feedback.length ?
+    feedback.map((f) =>
+      `<tr>
+      <td>${f["registration"] ?? "-"}</td>
+      <td>£${Number(f["valuation"] ?? 0).toFixed(2)}</td>
+      <td>${f["popularityMultiplier"] ?? "-"}x</td>
+      <td>${f["agreed"] ? "👍 Agree" : "👎 Disagree"}</td>
+    </tr>`
+    ).join("") :
+    "<tr><td colspan='4'>No feedback this week</td></tr>";
+
+  // ── Build email ───────────────────────────────────────────
+  const from = sevenDaysAgo.toLocaleDateString("en-GB");
+  const to = now.toLocaleDateString("en-GB");
+  const dateRange = `${from} – ${to}`;
+
+  /* eslint-disable max-len */
+  const tableStyle = "border-collapse:collapse;width:100%";
+  const thStyle = "background:#003399;color:#fff";
+  /* eslint-enable max-len */
+
+  const html = `
+  <h1>MR Valuations — Weekly Report</h1>
+  <p><strong>Period:</strong> ${dateRange}</p>
+
+  <h2>🔍 Plate Searches (${searches.length})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr><th>Plate</th><th>Type</th><th>Badge</th><th>User</th></tr>
+    </thead>
+    <tbody>${searchRows}</tbody>
+  </table>
+
+  <h2>🚀 Feature Requests (${requests.length})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr><th>Plate</th><th>Type Requested</th></tr>
+    </thead>
+    <tbody>${requestRows}</tbody>
+  </table>
+
+  <h2>💬 Feedback (${feedback.length} — 👍 ${agreed}, 👎 ${disagreed})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr>
+        <th>Plate</th><th>Valuation</th>
+        <th>Popularity</th><th>Verdict</th>
+      </tr>
+    </thead>
+    <tbody>${feedbackRows}</tbody>
+  </table>
+
+  <br>
+  <p style="color:#999;font-size:12px">
+    MR Valuations automated weekly report
+  </p>
+`;
+
+  console.log("weeklyReport: writing to mail collection...");
+  const mailRef = await db.collection("mail").add({
+    to: ["guv.mr.valuations@gmail.com"],
+    message: {
+      subject: `MR Valuations Weekly Report — ${dateRange}`,
+      html,
+    },
+  });
+  console.log(`weeklyReport: mail doc written — ID: ${mailRef.id}`);
+  return mailRef.id;
+}
+
 export const weeklyReport = onSchedule(
   {schedule: "every sunday 08:00", maxInstances: 10},
   async () => {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    try {
+      await runWeeklyReport();
+      console.log("weeklyReport: done");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`weeklyReport: FAILED — ${msg}`);
+      throw err;
+    }
+  }
+);
 
-    // ── Plate Searches ────────────────────────────────────────
-    const searchesSnap = await db.collection("plate_searches")
-      .where("searchedAt", ">=", sevenDaysAgo)
-      .get();
-
-    const searches = searchesSnap.docs.map((d) => d.data());
-    const searchRows = searches.length ?
-      searches.map((s) =>
-        `<tr>
-        <td>${s["registration"] ?? "-"}</td>
-        <td>${s["type"] ?? "-"}</td>
-        <td>${s["badge"] ?? "-"}</td>
-        <td>${s["userId"] ? "Logged in" : "Guest"}</td>
-      </tr>`
-      ).join("") :
-      "<tr><td colspan='4'>No searches this week</td></tr>";
-
-    // ── Feature Requests ──────────────────────────────────────
-    const requestsSnap = await db.collection("feature_requests")
-      .where("requestedAt", ">=", sevenDaysAgo)
-      .get();
-
-    const requests = requestsSnap.docs.map((d) => d.data());
-    const requestRows = requests.length ?
-      requests.map((r) =>
-        `<tr>
-        <td>${r["registration"] ?? "-"}</td>
-        <td>${r["type"] ?? "-"}</td>
-      </tr>`
-      ).join("") :
-      "<tr><td colspan='2'>No feature requests this week</td></tr>";
-
-    // ── Valuation Feedback ────────────────────────────────────
-    const feedbackSnap = await db.collection("valuation_feedback")
-      .where("submittedAt", ">=", sevenDaysAgo)
-      .get();
-
-    const feedback = feedbackSnap.docs.map((d) => d.data());
-    const agreed = feedback.filter((f) => f["agreed"] === true).length;
-    const disagreed = feedback.filter((f) => f["agreed"] === false).length;
-    const feedbackRows = feedback.length ?
-      feedback.map((f) =>
-        `<tr>
-        <td>${f["registration"] ?? "-"}</td>
-        <td>£${Number(f["valuation"] ?? 0).toFixed(2)}</td>
-        <td>${f["popularityMultiplier"] ?? "-"}x</td>
-        <td>${f["agreed"] ? "👍 Agree" : "👎 Disagree"}</td>
-      </tr>`
-      ).join("") :
-      "<tr><td colspan='4'>No feedback this week</td></tr>";
-
-    // ── Build email ───────────────────────────────────────────
-    const from = sevenDaysAgo.toLocaleDateString("en-GB");
-    const to = now.toLocaleDateString("en-GB");
-    const dateRange = `${from} – ${to}`;
-
-    const tableStyle =
-    "border-collapse:collapse;width:100%";
-    const thStyle =
-    "background:#003399;color:#fff";
-
-    const html = `
-    <h1>MR Valuations — Weekly Report</h1>
-    <p><strong>Period:</strong> ${dateRange}</p>
-
-    <h2>🔍 Plate Searches (${searches.length})</h2>
-    <table border="1" cellpadding="6" cellspacing="0"
-      style="${tableStyle}">
-      <thead style="${thStyle}">
-        <tr>
-          <th>Plate</th>
-          <th>Type</th>
-          <th>Badge</th>
-          <th>User</th>
-        </tr>
-      </thead>
-      <tbody>${searchRows}</tbody>
-    </table>
-
-    <h2>🚀 Feature Requests (${requests.length})</h2>
-    <table border="1" cellpadding="6" cellspacing="0"
-      style="${tableStyle}">
-      <thead style="${thStyle}">
-        <tr>
-          <th>Plate</th>
-          <th>Type Requested</th>
-        </tr>
-      </thead>
-      <tbody>${requestRows}</tbody>
-    </table>
-
-    <h2>💬 Feedback (${feedback.length} — 👍 ${agreed}, 👎 ${disagreed})</h2>
-    <table border="1" cellpadding="6" cellspacing="0"
-      style="${tableStyle}">
-      <thead style="${thStyle}">
-        <tr>
-          <th>Plate</th>
-          <th>Valuation</th>
-          <th>Popularity</th>
-          <th>Verdict</th>
-        </tr>
-      </thead>
-      <tbody>${feedbackRows}</tbody>
-    </table>
-
-    <br>
-    <p style="color:#999;font-size:12px">
-      MR Valuations automated weekly report
-    </p>
-  `;
-
-    await db.collection("mail").add({
-      to: ["guv.mr.valuations@gmail.com"],
-      message: {
-        subject: `MR Valuations Weekly Report — ${dateRange}`,
-        html,
-      },
-    });
-  });
+/** Admin-only HTTP trigger to manually run the weekly report for testing. */
+export const triggerWeeklyReport = onRequest(
+  {maxInstances: 1},
+  async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    if (request.method === "OPTIONS") {
+      response.status(204).send("");
+      return;
+    }
+    const authHeader = request.headers.authorization ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      response.status(401).json({error: "Unauthorized"});
+      return;
+    }
+    let email: string;
+    try {
+      const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+      email = decoded.email ?? "";
+    } catch {
+      response.status(401).json({error: "Invalid token"});
+      return;
+    }
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (email !== adminEmail) {
+      response.status(403).json({error: "Not authorised"});
+      return;
+    }
+    try {
+      const mailId = await runWeeklyReport();
+      response.status(200).json({success: true, mailDocId: mailId});
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      response.status(500).json({error: msg});
+    }
+  }
+);
 
 export const createCheckoutSession = onCall(
   {maxInstances: 10, secrets: [stripeSecretKey]},

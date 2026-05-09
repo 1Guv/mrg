@@ -161,6 +161,30 @@ import { toSignal } from '@angular/core/rxjs-interop';
       </mat-card-actions>
     </mat-card>
 
+    <!-- Weekly Report (admin only) -->
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>📧 Weekly Report</mat-card-title>
+        <mat-card-subtitle>Manually send the weekly stats report email</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        @if (reportResult()) {
+          <p class="queue-result" [class.queue-result--success]="!reportError()" [class.queue-result--error]="reportError()">
+            {{ reportResult() }}
+          </p>
+        }
+      </mat-card-content>
+      <mat-card-actions class="px-3 pb-3">
+        <button
+          mat-raised-button
+          color="accent"
+          [disabled]="isSendingReport()"
+          (click)="sendWeeklyReport()">
+          {{ isSendingReport() ? '⏳ Sending...' : '📧 Send Weekly Report Now' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
     <!-- Button Metrics (admin only) -->
     <mat-card class="mb-4">
       <mat-card-header>
@@ -421,6 +445,10 @@ export class MeComponent {
   generateResult = signal<string | null>(null);
   generateError = signal(false);
 
+  isSendingReport = signal(false);
+  reportResult = signal<string | null>(null);
+  reportError = signal(false);
+
   async processQueue(): Promise<void> {
     this.isProcessing.set(true);
     this.queueResult.set(null);
@@ -479,6 +507,25 @@ export class MeComponent {
       this.snackBar.open(msg, 'OK', { duration: 6000 });
     } finally {
       this.isGenerating.set(false);
+    }
+  }
+
+  async sendWeeklyReport(): Promise<void> {
+    this.isSendingReport.set(true);
+    this.reportResult.set(null);
+    this.reportError.set(false);
+    try {
+      await this.socialPostService.triggerWeeklyReport();
+      const msg = 'Weekly report sent! Check guv.mr.valuations@gmail.com.';
+      this.reportResult.set(msg);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong.';
+      this.reportResult.set(msg);
+      this.reportError.set(true);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } finally {
+      this.isSendingReport.set(false);
     }
   }
 

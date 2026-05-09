@@ -10,6 +10,9 @@ interface ManualSocialPostResult {
 const ARTICLE_GEN_URL =
   'https://us-central1-code-g-b8b6f.cloudfunctions.net/triggerArticleGeneration';
 
+const WEEKLY_REPORT_URL =
+  'https://us-central1-code-g-b8b6f.cloudfunctions.net/triggerWeeklyReport';
+
 @Injectable({ providedIn: 'root' })
 export class SocialPostService {
   private functions = inject(Functions);
@@ -53,5 +56,26 @@ export class SocialPostService {
     }
 
     return res.json() as Promise<{ success: boolean }>;
+  }
+
+  async triggerWeeklyReport(): Promise<{ success: boolean; mailDocId: string }> {
+    const user = this.auth.currentUser;
+    if (!user) throw new Error('Not authenticated');
+    const token = await user.getIdToken();
+
+    const res = await fetch(WEEKLY_REPORT_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      throw new Error(body.error ?? `HTTP ${res.status}`);
+    }
+
+    return res.json() as Promise<{ success: boolean; mailDocId: string }>;
   }
 }

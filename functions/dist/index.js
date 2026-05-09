@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.weeklyReport = exports.getUsers = void 0;
+exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.weeklyReport = exports.getUsers = void 0;
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -101,43 +101,55 @@ exports.getUsers = (0, https_1.onCall)({ maxInstances: 1 }, async (request) => {
     } while (pageToken);
     return { users };
 });
-exports.weeklyReport = (0, scheduler_1.onSchedule)({ schedule: "every sunday 08:00", maxInstances: 10 }, async () => {
+// ── Shared weekly report logic ─────────────────────────────────────────────
+/**
+ * Fetches weekly stats from Firestore and writes a mail document.
+ * @return {Promise<string>} The Firestore document ID of the mail doc.
+ */
+async function runWeeklyReport() {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    console.log("weeklyReport: starting run");
     // ── Plate Searches ────────────────────────────────────────
+    console.log("weeklyReport: fetching plate_searches...");
     const searchesSnap = await db.collection("plate_searches")
         .where("searchedAt", ">=", sevenDaysAgo)
         .get();
+    console.log(`weeklyReport: plate_searches count = ${searchesSnap.size}`);
     const searches = searchesSnap.docs.map((d) => d.data());
     const searchRows = searches.length ?
         searches.map((s) => {
             var _a, _b, _c;
             return `<tr>
-        <td>${(_a = s["registration"]) !== null && _a !== void 0 ? _a : "-"}</td>
-        <td>${(_b = s["type"]) !== null && _b !== void 0 ? _b : "-"}</td>
-        <td>${(_c = s["badge"]) !== null && _c !== void 0 ? _c : "-"}</td>
-        <td>${s["userId"] ? "Logged in" : "Guest"}</td>
-      </tr>`;
+      <td>${(_a = s["registration"]) !== null && _a !== void 0 ? _a : "-"}</td>
+      <td>${(_b = s["type"]) !== null && _b !== void 0 ? _b : "-"}</td>
+      <td>${(_c = s["badge"]) !== null && _c !== void 0 ? _c : "-"}</td>
+      <td>${s["userId"] ? "Logged in" : "Guest"}</td>
+    </tr>`;
         }).join("") :
         "<tr><td colspan='4'>No searches this week</td></tr>";
     // ── Feature Requests ──────────────────────────────────────
+    console.log("weeklyReport: fetching feature_requests...");
     const requestsSnap = await db.collection("feature_requests")
         .where("requestedAt", ">=", sevenDaysAgo)
         .get();
+    console.log(`weeklyReport: feature_requests count = ${requestsSnap.size}`);
     const requests = requestsSnap.docs.map((d) => d.data());
     const requestRows = requests.length ?
         requests.map((r) => {
             var _a, _b;
             return `<tr>
-        <td>${(_a = r["registration"]) !== null && _a !== void 0 ? _a : "-"}</td>
-        <td>${(_b = r["type"]) !== null && _b !== void 0 ? _b : "-"}</td>
-      </tr>`;
+      <td>${(_a = r["registration"]) !== null && _a !== void 0 ? _a : "-"}</td>
+      <td>${(_b = r["type"]) !== null && _b !== void 0 ? _b : "-"}</td>
+    </tr>`;
         }).join("") :
         "<tr><td colspan='2'>No feature requests this week</td></tr>";
     // ── Valuation Feedback ────────────────────────────────────
+    console.log("weeklyReport: fetching valuation_feedback...");
     const feedbackSnap = await db.collection("valuation_feedback")
         .where("submittedAt", ">=", sevenDaysAgo)
         .get();
+    console.log(`weeklyReport: valuation_feedback count = ${feedbackSnap.size}`);
     const feedback = feedbackSnap.docs.map((d) => d.data());
     const agreed = feedback.filter((f) => f["agreed"] === true).length;
     const disagreed = feedback.filter((f) => f["agreed"] === false).length;
@@ -145,75 +157,115 @@ exports.weeklyReport = (0, scheduler_1.onSchedule)({ schedule: "every sunday 08:
         feedback.map((f) => {
             var _a, _b, _c;
             return `<tr>
-        <td>${(_a = f["registration"]) !== null && _a !== void 0 ? _a : "-"}</td>
-        <td>£${Number((_b = f["valuation"]) !== null && _b !== void 0 ? _b : 0).toFixed(2)}</td>
-        <td>${(_c = f["popularityMultiplier"]) !== null && _c !== void 0 ? _c : "-"}x</td>
-        <td>${f["agreed"] ? "👍 Agree" : "👎 Disagree"}</td>
-      </tr>`;
+      <td>${(_a = f["registration"]) !== null && _a !== void 0 ? _a : "-"}</td>
+      <td>£${Number((_b = f["valuation"]) !== null && _b !== void 0 ? _b : 0).toFixed(2)}</td>
+      <td>${(_c = f["popularityMultiplier"]) !== null && _c !== void 0 ? _c : "-"}x</td>
+      <td>${f["agreed"] ? "👍 Agree" : "👎 Disagree"}</td>
+    </tr>`;
         }).join("") :
         "<tr><td colspan='4'>No feedback this week</td></tr>";
     // ── Build email ───────────────────────────────────────────
     const from = sevenDaysAgo.toLocaleDateString("en-GB");
     const to = now.toLocaleDateString("en-GB");
     const dateRange = `${from} – ${to}`;
+    /* eslint-disable max-len */
     const tableStyle = "border-collapse:collapse;width:100%";
     const thStyle = "background:#003399;color:#fff";
+    /* eslint-enable max-len */
     const html = `
-    <h1>MR Valuations — Weekly Report</h1>
-    <p><strong>Period:</strong> ${dateRange}</p>
+  <h1>MR Valuations — Weekly Report</h1>
+  <p><strong>Period:</strong> ${dateRange}</p>
 
-    <h2>🔍 Plate Searches (${searches.length})</h2>
-    <table border="1" cellpadding="6" cellspacing="0"
-      style="${tableStyle}">
-      <thead style="${thStyle}">
-        <tr>
-          <th>Plate</th>
-          <th>Type</th>
-          <th>Badge</th>
-          <th>User</th>
-        </tr>
-      </thead>
-      <tbody>${searchRows}</tbody>
-    </table>
+  <h2>🔍 Plate Searches (${searches.length})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr><th>Plate</th><th>Type</th><th>Badge</th><th>User</th></tr>
+    </thead>
+    <tbody>${searchRows}</tbody>
+  </table>
 
-    <h2>🚀 Feature Requests (${requests.length})</h2>
-    <table border="1" cellpadding="6" cellspacing="0"
-      style="${tableStyle}">
-      <thead style="${thStyle}">
-        <tr>
-          <th>Plate</th>
-          <th>Type Requested</th>
-        </tr>
-      </thead>
-      <tbody>${requestRows}</tbody>
-    </table>
+  <h2>🚀 Feature Requests (${requests.length})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr><th>Plate</th><th>Type Requested</th></tr>
+    </thead>
+    <tbody>${requestRows}</tbody>
+  </table>
 
-    <h2>💬 Feedback (${feedback.length} — 👍 ${agreed}, 👎 ${disagreed})</h2>
-    <table border="1" cellpadding="6" cellspacing="0"
-      style="${tableStyle}">
-      <thead style="${thStyle}">
-        <tr>
-          <th>Plate</th>
-          <th>Valuation</th>
-          <th>Popularity</th>
-          <th>Verdict</th>
-        </tr>
-      </thead>
-      <tbody>${feedbackRows}</tbody>
-    </table>
+  <h2>💬 Feedback (${feedback.length} — 👍 ${agreed}, 👎 ${disagreed})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr>
+        <th>Plate</th><th>Valuation</th>
+        <th>Popularity</th><th>Verdict</th>
+      </tr>
+    </thead>
+    <tbody>${feedbackRows}</tbody>
+  </table>
 
-    <br>
-    <p style="color:#999;font-size:12px">
-      MR Valuations automated weekly report
-    </p>
-  `;
-    await db.collection("mail").add({
+  <br>
+  <p style="color:#999;font-size:12px">
+    MR Valuations automated weekly report
+  </p>
+`;
+    console.log("weeklyReport: writing to mail collection...");
+    const mailRef = await db.collection("mail").add({
         to: ["guv.mr.valuations@gmail.com"],
         message: {
             subject: `MR Valuations Weekly Report — ${dateRange}`,
             html,
         },
     });
+    console.log(`weeklyReport: mail doc written — ID: ${mailRef.id}`);
+    return mailRef.id;
+}
+exports.weeklyReport = (0, scheduler_1.onSchedule)({ schedule: "every sunday 08:00", maxInstances: 10 }, async () => {
+    try {
+        await runWeeklyReport();
+        console.log("weeklyReport: done");
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`weeklyReport: FAILED — ${msg}`);
+        throw err;
+    }
+});
+/** Admin-only HTTP trigger to manually run the weekly report for testing. */
+exports.triggerWeeklyReport = (0, https_1.onRequest)({ maxInstances: 1 }, async (request, response) => {
+    var _a, _b;
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    if (request.method === "OPTIONS") {
+        response.status(204).send("");
+        return;
+    }
+    const authHeader = (_a = request.headers.authorization) !== null && _a !== void 0 ? _a : "";
+    if (!authHeader.startsWith("Bearer ")) {
+        response.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+    let email;
+    try {
+        const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+        email = (_b = decoded.email) !== null && _b !== void 0 ? _b : "";
+    }
+    catch (_c) {
+        response.status(401).json({ error: "Invalid token" });
+        return;
+    }
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (email !== adminEmail) {
+        response.status(403).json({ error: "Not authorised" });
+        return;
+    }
+    try {
+        const mailId = await runWeeklyReport();
+        response.status(200).json({ success: true, mailDocId: mailId });
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        response.status(500).json({ error: msg });
+    }
 });
 exports.createCheckoutSession = (0, https_1.onCall)({ maxInstances: 10, secrets: [stripeSecretKey] }, async (request) => {
     if (!request.auth) {
