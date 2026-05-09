@@ -129,23 +129,41 @@ function categoriseKeywords(rows) {
 async function callGemini(geminiApiKey, keyword) {
     var _a, _b, _c, _d, _e, _f;
     /* eslint-disable max-len */
-    const prompt = `You are an expert SEO content writer for the UK number plate market. Write a complete, well-structured SEO blog article targeting the keyword: "${keyword}".
+    const prompt = `You are an expert SEO content writer for the UK number plate market. Write a short, punchy, visually rich SEO blog article targeting the keyword: "${keyword}".
 
 The article is for mrvaluations.co.uk — free number plate valuations and a marketplace to list plates for sale.
 
 Requirements:
-- Tone: helpful, authoritative, aimed at UK car owners
-- At least 600 words of body content
+- Tone: fun, helpful, authoritative — aimed at UK car owners
+- Maximum 300 words of body content (not counting HTML markup or attributes)
 - Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
+- Sprinkle relevant emojis naturally into headings and body text (e.g. 🚗 🔢 💰 ✨ 🏆)
+- Use emoji as inline icons where appropriate (e.g. ✅ for list items, 👉 for CTAs)
+- Include 1–2 relevant inline images using picsum.photos:
+  <img src="https://picsum.photos/seed/{topic-word}/800/400" alt="{descriptive alt}" style="width:100%;border-radius:12px;margin:24px 0">
+  — pick seed words related to the article topic (e.g. "car", "plates", "road", "luxury", "racing")
 - Include at least 2 internal CTAs woven naturally into the content:
   1. One linking to / (e.g. <a href="/">get a free valuation</a>)
   2. One linking to /list-plate (e.g. <a href="/list-plate">list your plate for sale</a>)
+- At the very end of the article, include an "expert author" callout using this exact HTML structure (fill in the placeholders):
+  <div style="display:flex;align-items:center;gap:16px;padding:20px;background:#f9fafb;border-radius:12px;margin-top:40px;border:1px solid #e5e7eb">
+    <img src="https://images.unsplash.com/photo-{PHOTO_ID}?w=120&h=120&fit=crop&crop=face" alt="{Name}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #e5e7eb">
+    <div>
+      <p style="font-weight:700;margin:0 0 2px;font-size:15px">{Full Name}</p>
+      <p style="color:#6b7280;margin:0;font-size:13px">{Fancy Job Title}</p>
+    </div>
+  </div>
+  — For PHOTO_ID, pick ONE of these real Unsplash photo IDs of people with sunglasses (choose randomly, male or female):
+    Male options: 1506794778202-cad84cf45f1d, 1507003211169-0a1dd7228f2d, 1500648767791-00dcc994a43e
+    Female options: 1529626455594-4ff0802cfb7e, 1488426862026-3ee34a7d66df, 1531746020798-e6953c6e8e04
+  — Invent a glamorous-sounding full name (e.g. "Sebastian Hartley-Cross", "Camille Dubois-Laurent")
+  — Invent a very fancy made-up job title (e.g. "Chief Plate Intelligence Officer", "Head of Automotive Prestige Strategy", "Director of Vehicular Identity")
 - The content field must be a complete self-contained HTML article wrapped in <article> tags
 
 Respond ONLY with valid JSON in this exact shape (no markdown fences):
 {
   "slug": "url-friendly-slug-matching-keyword",
-  "title": "Engaging Article Title",
+  "title": "Engaging Article Title with an emoji",
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "Compelling meta description under 155 chars",
   "category": "valuations or plates or cars",
@@ -202,6 +220,116 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     }
     return parsed;
 }
+// ── Grounded Gemini call (news fallback) ─────────────────────────────────────
+const GROUNDED_TOPICS = [
+    {
+        search: "latest UK private number plate auction results record prices 2025",
+        category: "plates",
+    },
+    {
+        // eslint-disable-next-line max-len
+        search: "trending personalised number plates UK most valuable registrations",
+        category: "valuations",
+    },
+    {
+        search: "latest UK car news new model launches registrations 2025",
+        category: "cars",
+    },
+];
+/**
+ * Call Gemini 2.5 Flash with Google Search grounding to write a news article
+ * on one of the rotating fallback topics.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @param {number} topicIndex - Index into GROUNDED_TOPICS (cycles 0→1→2→0).
+ * @return {Promise<GeminiArticlePayload>} Parsed article payload.
+ */
+async function callGeminiGrounded(geminiApiKey, topicIndex) {
+    var _a, _b, _c, _d, _e, _f;
+    const idx = topicIndex % GROUNDED_TOPICS.length;
+    const { search, category } = GROUNDED_TOPICS[idx];
+    /* eslint-disable max-len */
+    const prompt = `Search the web for the most recent and interesting news about: "${search}".
+
+Write a short, punchy, visually rich news blog article about what you find for mrvaluations.co.uk — a UK site offering free number plate valuations and a marketplace to list plates for sale.
+
+Requirements:
+- Tone: fun, helpful, authoritative — aimed at UK car owners
+- Maximum 300 words of body content (not counting HTML markup or attributes)
+- Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
+- Sprinkle relevant emojis naturally into headings and body text (e.g. 🚗 🔢 💰 ✨ 🏆)
+- Use emoji as inline icons where appropriate (e.g. ✅ for list items, 👉 for CTAs)
+- Include 1–2 relevant inline images using picsum.photos:
+  <img src="https://picsum.photos/seed/{topic-word}/800/400" alt="{descriptive alt}" style="width:100%;border-radius:12px;margin:24px 0">
+  — pick seed words related to the article topic (e.g. "car", "plates", "road", "luxury", "racing")
+- Include at least 2 internal CTAs woven naturally into the content:
+  1. One linking to / (e.g. <a href="/">get a free valuation</a>)
+  2. One linking to /list-plate (e.g. <a href="/list-plate">list your plate for sale</a>)
+- At the very end of the article, include an "expert author" callout using this exact HTML structure:
+  <div style="display:flex;align-items:center;gap:16px;padding:20px;background:#f9fafb;border-radius:12px;margin-top:40px;border:1px solid #e5e7eb">
+    <img src="https://images.unsplash.com/photo-{PHOTO_ID}?w=120&h=120&fit=crop&crop=face" alt="{Name}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #e5e7eb">
+    <div>
+      <p style="font-weight:700;margin:0 0 2px;font-size:15px">{Full Name}</p>
+      <p style="color:#6b7280;margin:0;font-size:13px">{Fancy Job Title}</p>
+    </div>
+  </div>
+  — For PHOTO_ID, pick ONE of these real Unsplash photo IDs of people with sunglasses (choose randomly, male or female):
+    Male options: 1506794778202-cad84cf45f1d, 1507003211169-0a1dd7228f2d, 1500648767791-00dcc994a43e
+    Female options: 1529626455594-4ff0802cfb7e, 1488426862026-3ee34a7d66df, 1531746020798-e6953c6e8e04
+  — Invent a glamorous-sounding full name (e.g. "Sebastian Hartley-Cross", "Camille Dubois-Laurent")
+  — Invent a very fancy made-up job title (e.g. "Chief Plate Intelligence Officer", "Head of Automotive Prestige Strategy")
+- The category for this article is: "${category}"
+- The content field must be a complete self-contained HTML article wrapped in <article> tags
+
+Respond ONLY with valid JSON in this exact shape (no markdown fences):
+{
+  "slug": "url-friendly-slug-based-on-topic",
+  "title": "Engaging News Article Title with an emoji",
+  "metaTitle": "SEO title under 60 chars",
+  "metaDescription": "Compelling meta description under 155 chars",
+  "category": "${category}",
+  "content": "<article>...full HTML content here...</article>"
+}`;
+    /* eslint-enable max-len */
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+        "gemini-2.5-flash:generateContent";
+    let response;
+    try {
+        response = await axios_1.default.post(url, {
+            contents: [{ parts: [{ text: prompt }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { responseMimeType: "application/json" },
+        }, { headers: { "x-goog-api-key": geminiApiKey }, timeout: 240000 });
+    }
+    catch (axiosErr) {
+        if (axios_1.default.isAxiosError(axiosErr) && axiosErr.response) {
+            throw new Error(`Gemini grounded API ${axiosErr.response.status}: ` +
+                JSON.stringify(axiosErr.response.data));
+        }
+        throw axiosErr;
+    }
+    const candidate = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.candidates) === null || _b === void 0 ? void 0 : _b[0];
+    let rawText = (_e = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
+    if (typeof rawText !== "string" || rawText.trim() === "") {
+        throw new Error("article-generator: Gemini grounded call returned no usable text. " +
+            `finishReason=${(_f = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _f !== void 0 ? _f : "unknown"}`);
+    }
+    if (rawText.trimStart().startsWith("```")) {
+        rawText = rawText
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```\s*$/, "");
+    }
+    let parsed;
+    try {
+        parsed = JSON.parse(rawText);
+    }
+    catch (_g) {
+        throw new Error("article-generator: Gemini grounded response was not valid JSON. " +
+            `Preview: ${rawText.slice(0, 200)}`);
+    }
+    // Force the category to match the topic we searched for
+    parsed.category = category;
+    return parsed;
+}
 // ── Read time ────────────────────────────────────────────────────────────────
 /**
  * Calculate estimated read time in minutes from HTML content.
@@ -225,7 +353,7 @@ function calcReadTime(html) {
  * @return {Promise<void>}
  */
 async function runGenerateDailyArticle(geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     const db = admin.firestore();
     // 1. Fetch GSC data
     console.log("article-generator: fetching GSC data...");
@@ -241,27 +369,31 @@ async function runGenerateDailyArticle(geminiApiKey, gscRefreshToken, gscClientI
         [];
     // 4. Filter out already-used keywords
     const usedSet = new Set(usedKeywords);
-    let filtered = candidates.filter((kw) => !usedSet.has(kw));
-    // 5. Pick target keyword; if all used, reset and pick from full list
-    let targetKeyword;
+    const filtered = candidates.filter((kw) => !usedSet.has(kw));
+    // 5. Pick keyword or fall back to grounded news search
+    let targetKeyword = null;
+    let payload;
     if (filtered.length > 0) {
         targetKeyword = filtered[0];
+        console.log(`article-generator: selected keyword "${targetKeyword}"`);
+        // 6a. GSC keyword path — call Gemini normally
+        console.log("article-generator: calling Gemini (keyword)...");
+        payload = await callGemini(geminiApiKey, targetKeyword);
     }
     else {
-        console.log("article-generator: all candidates used — resetting used keywords list");
-        await db.collection("meta").doc("usedKeywords").set({ keywords: [] });
-        filtered = candidates.length > 0 ?
-            candidates :
-            gscRows.map((r) => r.query);
-        if (filtered.length === 0) {
-            throw new Error("article-generator: no keywords available from GSC");
-        }
-        targetKeyword = filtered[0];
+        // 6b. No unused keywords — use Gemini with Google Search grounding
+        console.log("article-generator: all GSC keywords used — " +
+            "falling back to grounded news search");
+        const topicDoc = await db
+            .collection("meta").doc("groundedTopicIndex").get();
+        const topicIndex = topicDoc.exists ?
+            ((_d = (_c = topicDoc.data()) === null || _c === void 0 ? void 0 : _c["index"]) !== null && _d !== void 0 ? _d : 0) :
+            0;
+        console.log(`article-generator: grounded topic index ${topicIndex}`);
+        payload = await callGeminiGrounded(geminiApiKey, topicIndex);
+        // Advance the topic index so next fallback uses a different topic
+        await db.collection("meta").doc("groundedTopicIndex").set({ index: (topicIndex + 1) % GROUNDED_TOPICS.length });
     }
-    console.log(`article-generator: selected keyword "${targetKeyword}"`);
-    // 6. Call Gemini
-    console.log("article-generator: calling Gemini...");
-    const payload = await callGemini(geminiApiKey, targetKeyword);
     console.log(`article-generator: Gemini response received — title: "${payload.title}"`);
     // 7. Calculate read time
     const readTimeMinutes = calcReadTime(payload.content);
@@ -272,18 +404,23 @@ async function runGenerateDailyArticle(geminiApiKey, gscRefreshToken, gscClientI
         metaTitle: payload.metaTitle,
         metaDescription: payload.metaDescription,
         category: payload.category,
-        targetKeyword,
+        targetKeyword: targetKeyword !== null && targetKeyword !== void 0 ? targetKeyword : `grounded:${payload.category}`,
         content: payload.content,
         readTimeMinutes,
         publishedAt: admin.firestore.Timestamp.now(),
     };
     const docRef = await db.collection("articles").add(articleData);
     console.log(`article-generator: article written — doc ID: ${docRef.id}`);
-    // 9. Upsert used keywords
-    await db
-        .collection("meta")
-        .doc("usedKeywords")
-        .set({ keywords: admin.firestore.FieldValue.arrayUnion(targetKeyword) }, { merge: true });
-    console.log(`article-generator: done — keyword "${targetKeyword}" marked as used`);
+    // 9. Mark keyword as used (only for GSC keywords, not grounded fallbacks)
+    if (targetKeyword) {
+        await db
+            .collection("meta")
+            .doc("usedKeywords")
+            .set({ keywords: admin.firestore.FieldValue.arrayUnion(targetKeyword) }, { merge: true });
+        console.log(`article-generator: done — keyword "${targetKeyword}" marked as used`);
+    }
+    else {
+        console.log("article-generator: done — grounded news article, no keyword to mark");
+    }
 }
 //# sourceMappingURL=article-generator.js.map

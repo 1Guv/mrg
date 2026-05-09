@@ -320,14 +320,16 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
         range: "Full Videos!B2:B", // Column B = URLs, skip header
     });
     const videoUrls = ((_a = videosRes.data.values) !== null && _a !== void 0 ? _a : [])
-        .map((row) => toDriveDirectUrl(row[0]))
+        .map((row) => { var _a; return toDriveDirectUrl(((_a = row[0]) !== null && _a !== void 0 ? _a : "")); })
         .filter(Boolean);
     console.log(`DEBUG: Found ${videoUrls.length} full video URLs`);
+    videoUrls.forEach((u, i) => console.log(`DEBUG: video[${i}]: ${u}`));
     if (videoUrls.length < 1) {
         throw new Error("Need at least 1 video URL in the Full Videos sheet");
     }
     // Shuffle video URLs once so each plate gets a unique video
     const shuffledVideos = [...videoUrls].sort(() => Math.random() - 0.5);
+    console.log("DEBUG: shuffled order:", shuffledVideos.map((u) => { var _a; return (_a = u.split("/").pop()) === null || _a === void 0 ? void 0 : _a.split("?")[0]; }).join(", "));
     let videoIndex = 0;
     // ── Read pending rows from Sheet1 ──────────────────────────────
     console.log("DEBUG: Reading Sheet1...");
@@ -388,7 +390,7 @@ async function processQueueFullVideos(sheetsClientEmail, sheetsPrivateKey, sheet
                     modifications: {
                         plate_text: row.plate,
                         valuation: fmt(midPrice),
-                        full_video: fullVideo,
+                        video_full: fullVideo,
                         audio_track: "",
                     },
                 }),

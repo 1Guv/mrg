@@ -418,7 +418,7 @@ exports.triggerArticleGeneration = (0, https_1.onRequest)({
 });
 /** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
 exports.generateDailyArticle = (0, scheduler_1.onSchedule)({
-    schedule: "0 8 * * *",
+    schedule: "0 8,14,21 * * *",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],

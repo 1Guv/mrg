@@ -495,7 +495,7 @@ export const triggerArticleGeneration = onRequest(
 /** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
 export const generateDailyArticle = onSchedule(
   {
-    schedule: "0 8 * * *",
+    schedule: "0 8,14,21 * * *",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],

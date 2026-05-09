@@ -408,10 +408,13 @@ export async function processQueueFullVideos(
     range: "Full Videos!B2:B", // Column B = URLs, skip header
   });
   const videoUrls = (videosRes.data.values ?? [])
-    .map((row) => toDriveDirectUrl(row[0] as string))
+    .map((row) => toDriveDirectUrl((row[0] ?? "") as string))
     .filter(Boolean);
 
   console.log(`DEBUG: Found ${videoUrls.length} full video URLs`);
+  videoUrls.forEach((u, i) =>
+    console.log(`DEBUG: video[${i}]: ${u}`)
+  );
 
   if (videoUrls.length < 1) {
     throw new Error(
@@ -422,6 +425,9 @@ export async function processQueueFullVideos(
   // Shuffle video URLs once so each plate gets a unique video
   const shuffledVideos =
     [...videoUrls].sort(() => Math.random() - 0.5);
+  console.log("DEBUG: shuffled order:",
+    shuffledVideos.map((u) => u.split("/").pop()?.split("?")[0]).join(", ")
+  );
   let videoIndex = 0;
 
   // ── Read pending rows from Sheet1 ──────────────────────────────
@@ -494,7 +500,7 @@ export async function processQueueFullVideos(
             modifications: {
               plate_text: row.plate,
               valuation: fmt(midPrice),
-              full_video: fullVideo,
+              video_full: fullVideo,
               audio_track: "",
             },
           }),

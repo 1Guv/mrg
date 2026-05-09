@@ -1,58 +1,48 @@
 @if (article$ | async; as article) {
-  <div class="article-page">
-    <article class="article-body">
-      <div class="article-breadcrumb">
-        <a routerLink="/news">← Latest News</a>
-        <span>&nbsp;/&nbsp;{{ article.category | titlecase }}</span>
-      </div>
 
+  <!-- Hero header — #f2f8f3 bg, centred title (matches Monzo block style) -->
+  <div class="article-hero">
+    <div class="article-hero-inner">
       <div class="article-meta">
         <span class="category-tag" [attr.data-category]="article.category">
           {{ article.category | titlecase }}
         </span>
-        <span class="read-time">{{ article.readTimeMinutes }} min read</span>
-        <span class="publish-date">{{ article.publishedAt.toDate() | date:'d MMMM y' }}</span>
+        <span class="meta-sep">·</span>
+        <span>{{ article.readTimeMinutes }} min read</span>
+        <span class="meta-sep">·</span>
+        <span>{{ article.publishedAt.toDate() | date:'d MMMM y, h:mm a' }}</span>
       </div>
-
       <h1 class="article-title">{{ article.title }}</h1>
+    </div>
+  </div>
 
+  <!-- Article body -->
+  <div class="article-page">
+    <div class="article-breadcrumb">
+      <a routerLink="/news">← Latest News</a>
+      <span>&nbsp;/&nbsp;{{ article.category | titlecase }}</span>
+    </div>
+
+    <article class="article-body">
       <div class="article-content" [innerHTML]="article.safeContent"></div>
     </article>
 
-    <aside class="article-sidebar">
-      <div class="sidebar-widget valuation-widget">
-        <mat-icon>search</mat-icon>
-        <h3>Free Plate Valuation</h3>
-        <p>Find out what your number plate is worth — free and instant.</p>
-        <a routerLink="/" mat-raised-button color="primary" class="sidebar-cta-btn">
-          Get free valuation →
-        </a>
+    <div class="article-ctas">
+      <div class="cta-card">
+        <p class="cta-label">Free tool</p>
+        <h3>What's your plate worth?</h3>
+        <p>Get an instant free valuation — no sign-up needed.</p>
+        <a routerLink="/" mat-raised-button color="primary">Get free valuation →</a>
       </div>
-
-      <div class="sidebar-widget list-widget">
-        <mat-icon>sell</mat-icon>
-        <h3>List Your Plate</h3>
-        <p>Reach thousands of buyers. Free to list, no subscription.</p>
-        <a routerLink="/list-plate" mat-stroked-button class="sidebar-cta-btn">
-          List for free →
-        </a>
+      <div class="cta-card">
+        <p class="cta-label">Marketplace</p>
+        <h3>Ready to sell?</h3>
+        <p>List your plate in minutes. Free to list, no subscription.</p>
+        <a routerLink="/list-plate" mat-stroked-button>List your plate →</a>
       </div>
-
-      @if (relatedArticles$ | async; as related) {
-        @if (related.length > 0) {
-          <div class="sidebar-widget related-widget">
-            <h3>Related Articles</h3>
-            @for (rel of related; track rel.id) {
-              <a class="related-link" [routerLink]="['/news', rel.slug]">
-                <span class="related-category" [attr.data-category]="rel.category"></span>
-                {{ rel.title }}
-              </a>
-            }
-          </div>
-        }
-      }
-    </aside>
+    </div>
   </div>
+
 } @else {
   <div class="article-not-found">
     <h2>Article not found</h2>
