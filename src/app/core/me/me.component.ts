@@ -161,6 +161,30 @@ import { toSignal } from '@angular/core/rxjs-interop';
       </mat-card-actions>
     </mat-card>
 
+    <!-- Celebrity Article (admin only) -->
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>⭐ Celebrity Article</mat-card-title>
+        <mat-card-subtitle>Generate a celebrity plate article with real-time valuations</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        @if (celebrityResult()) {
+          <p class="queue-result" [class.queue-result--success]="!celebrityError()" [class.queue-result--error]="celebrityError()">
+            {{ celebrityResult() }}
+          </p>
+        }
+      </mat-card-content>
+      <mat-card-actions class="px-3 pb-3">
+        <button
+          mat-raised-button
+          color="accent"
+          [disabled]="isGeneratingCelebrity()"
+          (click)="generateCelebrityArticle()">
+          {{ isGeneratingCelebrity() ? '⏳ Generating...' : '⭐ Generate Celebrity Article Now' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
     <!-- Weekly Report (admin only) -->
     <mat-card class="mb-4">
       <mat-card-header>
@@ -449,6 +473,10 @@ export class MeComponent {
   reportResult = signal<string | null>(null);
   reportError = signal(false);
 
+  isGeneratingCelebrity = signal(false);
+  celebrityResult = signal<string | null>(null);
+  celebrityError = signal(false);
+
   async processQueue(): Promise<void> {
     this.isProcessing.set(true);
     this.queueResult.set(null);
@@ -507,6 +535,25 @@ export class MeComponent {
       this.snackBar.open(msg, 'OK', { duration: 6000 });
     } finally {
       this.isGenerating.set(false);
+    }
+  }
+
+  async generateCelebrityArticle(): Promise<void> {
+    this.isGeneratingCelebrity.set(true);
+    this.celebrityResult.set(null);
+    this.celebrityError.set(false);
+    try {
+      await this.socialPostService.generateCelebrityArticle();
+      const msg = 'Celebrity article generated! Check /news → Celebrities.';
+      this.celebrityResult.set(msg);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong.';
+      this.celebrityResult.set(msg);
+      this.celebrityError.set(true);
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } finally {
+      this.isGeneratingCelebrity.set(false);
     }
   }
 

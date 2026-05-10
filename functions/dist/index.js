@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.weeklyReport = exports.getUsers = void 0;
+exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -228,6 +228,48 @@ exports.weeklyReport = (0, scheduler_1.onSchedule)({ schedule: "every sunday 08:
         const msg = err instanceof Error ? err.message : String(err);
         console.error(`weeklyReport: FAILED — ${msg}`);
         throw err;
+    }
+});
+/** Admin-only HTTP trigger to manually fire a celebrity article on demand. */
+exports.triggerCelebrityArticleGeneration = (0, https_1.onRequest)({
+    maxInstances: 1,
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey],
+}, async (request, response) => {
+    var _a, _b;
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    if (request.method === "OPTIONS") {
+        response.status(204).send("");
+        return;
+    }
+    const authHeader = (_a = request.headers.authorization) !== null && _a !== void 0 ? _a : "";
+    if (!authHeader.startsWith("Bearer ")) {
+        response.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+    let email;
+    try {
+        const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+        email = (_b = decoded.email) !== null && _b !== void 0 ? _b : "";
+    }
+    catch (_c) {
+        response.status(401).json({ error: "Invalid token" });
+        return;
+    }
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (email !== adminEmail) {
+        response.status(403).json({ error: "Not authorised" });
+        return;
+    }
+    try {
+        await (0, article_generator_js_1.runGenerateCelebrityArticle)(geminiApiKey.value());
+        response.status(200).json({ success: true });
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("triggerCelebrityArticleGeneration error:", msg);
+        response.status(500).json({ error: msg });
     }
 });
 /** Admin-only HTTP trigger to manually run the weekly report for testing. */

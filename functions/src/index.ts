@@ -216,6 +216,52 @@ export const weeklyReport = onSchedule(
   }
 );
 
+/** Admin-only HTTP trigger to manually fire a celebrity article on demand. */
+export const triggerCelebrityArticleGeneration = onRequest(
+  {
+    maxInstances: 1,
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey],
+  },
+  async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+    response.set(
+      "Access-Control-Allow-Headers",
+      "Authorization, Content-Type"
+    );
+    if (request.method === "OPTIONS") {
+      response.status(204).send("");
+      return;
+    }
+    const authHeader = request.headers.authorization ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      response.status(401).json({error: "Unauthorized"});
+      return;
+    }
+    let email: string;
+    try {
+      const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+      email = decoded.email ?? "";
+    } catch {
+      response.status(401).json({error: "Invalid token"});
+      return;
+    }
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (email !== adminEmail) {
+      response.status(403).json({error: "Not authorised"});
+      return;
+    }
+    try {
+      await runGenerateCelebrityArticle(geminiApiKey.value());
+      response.status(200).json({success: true});
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error("triggerCelebrityArticleGeneration error:", msg);
+      response.status(500).json({error: msg});
+    }
+  }
+);
+
 /** Admin-only HTTP trigger to manually run the weekly report for testing. */
 export const triggerWeeklyReport = onRequest(
   {maxInstances: 1},
