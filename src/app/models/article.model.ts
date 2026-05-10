@@ -1,6 +1,6 @@
 import { Timestamp } from '@angular/fire/firestore';
 
-export type ArticleCategory = 'valuations' | 'plates' | 'cars';
+export type ArticleCategory = 'valuations' | 'plates' | 'cars' | 'celebrities';
 
 export interface Article {
   id: string;

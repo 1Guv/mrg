@@ -30,6 +30,7 @@ export class NewsListingComponent {
     { label: 'Valuations', value: 'valuations' },
     { label: 'Plates', value: 'plates' },
     { label: 'Cars', value: 'cars' },
+    { label: '⭐ Celebrities', value: 'celebrities' },
   ];
 
   selectedCategory$ = new BehaviorSubject<ArticleCategory | undefined>(undefined);

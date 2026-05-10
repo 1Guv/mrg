@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.weeklyReport = exports.getUsers = void 0;
+exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.weeklyReport = exports.getUsers = void 0;
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -470,11 +470,20 @@ exports.triggerArticleGeneration = (0, https_1.onRequest)({
 });
 /** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
 exports.generateDailyArticle = (0, scheduler_1.onSchedule)({
-    schedule: "0 8,14,21 * * *",
+    schedule: "0 8,14 * * *",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
 }, async () => {
     await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
+});
+/** Nightly celebrity article: grounded Gemini search + real-time valuations. */
+exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({
+    schedule: "0 21 * * *",
+    timeZone: "Europe/London",
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey],
+}, async () => {
+    await (0, article_generator_js_1.runGenerateCelebrityArticle)(geminiApiKey.value());
 });
 //# sourceMappingURL=index.js.map

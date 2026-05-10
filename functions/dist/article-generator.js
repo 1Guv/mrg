@@ -36,10 +36,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.runGenerateCelebrityArticle = runGenerateCelebrityArticle;
 exports.runGenerateDailyArticle = runGenerateDailyArticle;
 const googleapis_1 = require("googleapis");
 const axios_1 = __importDefault(require("axios"));
 const admin = __importStar(require("firebase-admin"));
+const valuation_js_1 = require("./valuation.js");
 // ── Constants ────────────────────────────────────────────────────────────────
 const GSC_SITE_URL = "https://mrvaluations.co.uk/";
 // ── Date helpers ─────────────────────────────────────────────────────────────
@@ -137,6 +139,12 @@ Requirements:
 - Tone: fun, helpful, authoritative — aimed at UK car owners
 - Maximum 300 words of body content (not counting HTML markup or attributes)
 - Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
+- When giving number plate examples, ONLY use realistic UK plate formats:
+  - Current (2001–present): two letters, two digits, three letters — e.g. AB12 CDE
+  - Prefix (1983–2001): one letter, one to three digits, three letters — e.g. A123 BCD
+  - Suffix (1963–1983): three letters, one to three digits, one letter — e.g. ABC 123D
+  - Dateless: any combination of 1–4 digits and 1–3 letters — e.g. 1 AB, 123 ABC
+  - Never invent formats that don't match one of the above
 - Sprinkle relevant emojis naturally into headings and body text (e.g. 🚗 🔢 💰 ✨ 🏆)
 - Use emoji as inline icons where appropriate (e.g. ✅ for list items, 👉 for CTAs)
 - Include 1–2 relevant inline images using picsum.photos:
@@ -214,7 +222,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
             throw new Error(`article-generator: Gemini payload missing field "${key}"`);
         }
     }
-    const validCategories = ["valuations", "plates", "cars"];
+    const validCategories = ["valuations", "plates", "cars", "celebrities"];
     if (!validCategories.includes(parsed.category)) {
         throw new Error(`article-generator: unexpected category "${parsed.category}"`);
     }
@@ -256,6 +264,12 @@ Requirements:
 - Tone: fun, helpful, authoritative — aimed at UK car owners
 - Maximum 300 words of body content (not counting HTML markup or attributes)
 - Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
+- When giving number plate examples, ONLY use realistic UK plate formats:
+  - Current (2001–present): two letters, two digits, three letters — e.g. AB12 CDE
+  - Prefix (1983–2001): one letter, one to three digits, three letters — e.g. A123 BCD
+  - Suffix (1963–1983): three letters, one to three digits, one letter — e.g. ABC 123D
+  - Dateless: any combination of 1–4 digits and 1–3 letters — e.g. 1 AB, 123 ABC
+  - Never invent formats that don't match one of the above
 - Sprinkle relevant emojis naturally into headings and body text (e.g. 🚗 🔢 💰 ✨ 🏆)
 - Use emoji as inline icons where appropriate (e.g. ✅ for list items, 👉 for CTAs)
 - Include 1–2 relevant inline images using picsum.photos:
@@ -329,6 +343,183 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     // Force the category to match the topic we searched for
     parsed.category = category;
     return parsed;
+}
+// ── Celebrity Gemini call ─────────────────────────────────────────────────
+/**
+ * Call Gemini 2.5 Flash with Google Search grounding to find a trending
+ * celebrity and write a fun personalised-plate article about them.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity article payload.
+ */
+async function callGeminiCelebrity(geminiApiKey) {
+    var _a, _b, _c, _d, _e, _f;
+    /* eslint-disable max-len */
+    const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well.
+
+Write a fun, witty, light-hearted blog article for mrvaluations.co.uk about what personalised UK number plate that celebrity should have. The site offers free number plate valuations and a marketplace to list plates for sale.
+
+Tone: like a celebrity gossip column meets car culture — playful, tongue-in-cheek, engaging.
+
+Requirements:
+- Maximum 300 words of body content (not counting HTML markup or attributes)
+- Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
+- Sprinkle relevant emojis throughout (⭐ 🚗 💰 🏆 📸 🎬 ⚽)
+- Mention what cars the celebrity is known for driving (if known), then pivot to plates
+- Suggest exactly 4 personalised plate ideas for the celebrity — one in each UK format:
+  - Current (2001–present): two letters + two digits + three letters — e.g. DB07 ECK (use initials + year + name-related letters)
+  - Prefix (1983–2001): one letter + 1–3 digits + three letters — e.g. D1 VID or B3CKS
+  - Suffix (1963–1983): three letters + 1–3 digits + one letter — e.g. DAV 1D or BEK 5S
+  - Dateless: 1–4 digits + 1–3 letters OR 1–3 letters + 1–4 digits — e.g. DB 1 or 1 DB
+- For each plate explain the connection to their name, nickname, or something they are famous for
+- Include a "Could you own it?" note for each plate — comment on rarity and roughly what it might fetch at auction
+- Include at least 2 internal CTAs:
+  1. One linking to / (e.g. <a href="/">get a free valuation</a>) — use naturally in context
+  2. One linking to /list-plate (e.g. <a href="/list-plate">list your plate for sale</a>)
+- Include 1 inline image using picsum.photos:
+  <img src="https://picsum.photos/seed/{celebrity-related-word}/800/400" alt="{alt}" style="width:100%;border-radius:12px;margin:24px 0">
+- At the very end include the expert author callout:
+  <div style="display:flex;align-items:center;gap:16px;padding:20px;background:#f9fafb;border-radius:12px;margin-top:40px;border:1px solid #e5e7eb">
+    <img src="https://images.unsplash.com/photo-{PHOTO_ID}?w=120&h=120&fit=crop&crop=face" alt="{Name}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #e5e7eb">
+    <div>
+      <p style="font-weight:700;margin:0 0 2px;font-size:15px">{Full Name}</p>
+      <p style="color:#6b7280;margin:0;font-size:13px">{Fancy Job Title}</p>
+    </div>
+  </div>
+  Male photo IDs: 1506794778202-cad84cf45f1d, 1507003211169-0a1dd7228f2d, 1500648767791-00dcc994a43e
+  Female photo IDs: 1529626455594-4ff0802cfb7e, 1488426862026-3ee34a7d66df, 1531746020798-e6953c6e8e04
+  Invent a glamorous full name and fancy job title.
+- The content field must be a complete self-contained HTML article wrapped in <article> tags
+- DO NOT include plate valuations in the content — a valuation section will be injected automatically
+
+Respond ONLY with valid JSON (no markdown fences):
+{
+  "slug": "url-friendly-slug-celebrity-name-number-plate",
+  "title": "Fun article title with celebrity name and an emoji",
+  "metaTitle": "SEO title under 60 chars",
+  "metaDescription": "Compelling meta description under 155 chars",
+  "celebrity": "Full Celebrity Name",
+  "suggestedPlates": ["AB12 CDE", "A123 BCD", "ABC 123D", "AB 1"],
+  "content": "<article>...full HTML content here...</article>"
+}`;
+    /* eslint-enable max-len */
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+        "gemini-2.5-flash:generateContent";
+    let response;
+    try {
+        response = await axios_1.default.post(url, {
+            contents: [{ parts: [{ text: prompt }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { responseMimeType: "application/json" },
+        }, { headers: { "x-goog-api-key": geminiApiKey }, timeout: 240000 });
+    }
+    catch (axiosErr) {
+        if (axios_1.default.isAxiosError(axiosErr) && axiosErr.response) {
+            throw new Error(`Gemini celebrity API ${axiosErr.response.status}: ` +
+                JSON.stringify(axiosErr.response.data));
+        }
+        throw axiosErr;
+    }
+    const candidate = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.candidates) === null || _b === void 0 ? void 0 : _b[0];
+    let rawText = (_e = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
+    if (typeof rawText !== "string" || rawText.trim() === "") {
+        throw new Error("article-generator: Gemini celebrity call returned no text. " +
+            `finishReason=${(_f = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _f !== void 0 ? _f : "unknown"}`);
+    }
+    if (rawText.trimStart().startsWith("```")) {
+        rawText = rawText
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/\s*```\s*$/, "");
+    }
+    let parsed;
+    try {
+        parsed = JSON.parse(rawText);
+    }
+    catch (_g) {
+        throw new Error("article-generator: celebrity response was not valid JSON. " +
+            `Preview: ${rawText.slice(0, 200)}`);
+    }
+    const requiredKeys = ["slug", "title", "metaTitle", "metaDescription",
+        "celebrity", "suggestedPlates", "content"];
+    for (const key of requiredKeys) {
+        if (!parsed[key]) {
+            throw new Error(`article-generator: celebrity payload missing field "${key}"`);
+        }
+    }
+    return parsed;
+}
+/**
+ * Build a styled HTML valuation section for the suggested celebrity plates.
+ * @param {string[]} plates - Array of plate strings to valuate.
+ * @return {string} HTML string for the valuation section.
+ */
+function buildValuationSection(plates) {
+    const cards = plates.map((plate) => {
+        const result = (0, valuation_js_1.valuatePlate)(plate);
+        if (!result)
+            return "";
+        const fmt = (n) => `£${Math.round(n).toLocaleString("en-GB")}`;
+        // eslint-disable-next-line max-len
+        const divStyle = "border:1px solid #e5e7eb;border-radius:10px;padding:16px;background:#fff";
+        return `
+      <div style="${divStyle}">
+        <p style="font-family:monospace;font-size:1.1rem;font-weight:700;
+          letter-spacing:2px;margin:0 0 8px;color:#1f2937">${plate}</p>
+        <p style="font-size:13px;color:#6b7280;margin:0 0 4px;
+          text-transform:uppercase;letter-spacing:0.5px">${result.type}</p>
+        <p style="margin:0;font-size:15px">
+          <strong style="color:#1f2937">${fmt(result.midPrice)}</strong>
+          <span style="color:#6b7280;font-size:13px">
+            &nbsp;(${fmt(result.minPrice)} – ${fmt(result.maxPrice)})
+          </span>
+        </p>
+      </div>`;
+    }).filter(Boolean).join("");
+    return `
+    <div style="margin:32px 0">
+      <h2 style="font-size:1.1rem;font-weight:700;margin:0 0 16px;
+        color:#1f2937">💰 Real-Time Plate Valuations</h2>
+      <p style="font-size:14px;color:#6b7280;margin:0 0 16px">
+        Curious what these plates are actually worth?
+        Our valuation engine has the answer — instantly and for free.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);
+        gap:12px">${cards}</div>
+      <p style="font-size:13px;color:#6b7280;margin:16px 0 0">
+        👉 Want to check a plate you own?
+        <a href="/" style="color:#5c6bc0">Get your free valuation here</a>.
+      </p>
+    </div>`;
+}
+/**
+ * Find a trending celebrity via Gemini Search grounding, generate a fun
+ * personalised-plate article, inject real-time valuations, and store in
+ * Firestore.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @return {Promise<void>}
+ */
+async function runGenerateCelebrityArticle(geminiApiKey) {
+    const db = admin.firestore();
+    console.log("article-generator (celebrity): calling Gemini...");
+    const payload = await callGeminiCelebrity(geminiApiKey);
+    console.log(`article-generator (celebrity): celebrity = "${payload.celebrity}", ` +
+        `plates = ${JSON.stringify(payload.suggestedPlates)}`);
+    // Inject valuation section before the closing </article> tag
+    const valuationHtml = buildValuationSection(payload.suggestedPlates);
+    const content = payload.content.replace(/<\/article>\s*$/i, `${valuationHtml}</article>`);
+    const readTimeMinutes = calcReadTime(content);
+    const articleData = {
+        slug: payload.slug,
+        title: payload.title,
+        metaTitle: payload.metaTitle,
+        metaDescription: payload.metaDescription,
+        category: "celebrities",
+        targetKeyword: `celebrity:${payload.celebrity}`,
+        content,
+        readTimeMinutes,
+        publishedAt: admin.firestore.Timestamp.now(),
+    };
+    const docRef = await db.collection("articles").add(articleData);
+    console.log(`article-generator (celebrity): article written — doc ID: ${docRef.id}`);
 }
 // ── Read time ────────────────────────────────────────────────────────────────
 /**

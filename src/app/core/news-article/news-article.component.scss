@@ -50,9 +50,10 @@ $accent-car:  #1e88e5;
   color: white;
   background: $accent-plt;
 
-  &[data-category='valuations'] { background: $accent-val; }
-  &[data-category='plates']     { background: $accent-plt; }
-  &[data-category='cars']       { background: $accent-car; }
+  &[data-category='valuations']  { background: $accent-val; }
+  &[data-category='plates']      { background: $accent-plt; }
+  &[data-category='cars']        { background: $accent-car; }
+  &[data-category='celebrities'] { background: #f59e0b; }
 }
 
 .article-title {

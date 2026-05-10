@@ -7,7 +7,10 @@ import Stripe from "stripe";
 import {valuatePlate} from "./valuation.js";
 import {processQueue, processQueueFullVideos} from "./social-post.js";
 import {fetchAnalytics} from "./analytics.js";
-import {runGenerateDailyArticle} from "./article-generator.js";
+import {
+  runGenerateDailyArticle,
+  runGenerateCelebrityArticle,
+} from "./article-generator.js";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -548,7 +551,7 @@ export const triggerArticleGeneration = onRequest(
 /** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
 export const generateDailyArticle = onSchedule(
   {
-    schedule: "0 8,14,21 * * *",
+    schedule: "0 8,14 * * *",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
@@ -560,5 +563,18 @@ export const generateDailyArticle = onSchedule(
       gscClientId.value(),
       gscClientSecret.value()
     );
+  }
+);
+
+/** Nightly celebrity article: grounded Gemini search + real-time valuations. */
+export const generateCelebrityArticle = onSchedule(
+  {
+    schedule: "0 21 * * *",
+    timeZone: "Europe/London",
+    timeoutSeconds: 300,
+    secrets: [geminiApiKey],
+  },
+  async () => {
+    await runGenerateCelebrityArticle(geminiApiKey.value());
   }
 );
