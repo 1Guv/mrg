@@ -252,7 +252,7 @@ const GROUNDED_TOPICS = [
  * @return {Promise<GeminiArticlePayload>} Parsed article payload.
  */
 async function callGeminiGrounded(geminiApiKey, topicIndex) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e;
     const idx = topicIndex % GROUNDED_TOPICS.length;
     const { search, category } = GROUNDED_TOPICS[idx];
     /* eslint-disable max-len */
@@ -321,10 +321,12 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
         throw axiosErr;
     }
     const candidate = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.candidates) === null || _b === void 0 ? void 0 : _b[0];
-    let rawText = (_e = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
+    const gParts = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) !== null && _d !== void 0 ? _d : [];
+    const gTextPart = gParts.find((p) => typeof p.text === "string" && p.text.trim() !== "");
+    let rawText = gTextPart === null || gTextPart === void 0 ? void 0 : gTextPart.text;
     if (typeof rawText !== "string" || rawText.trim() === "") {
         throw new Error("article-generator: Gemini grounded call returned no usable text. " +
-            `finishReason=${(_f = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _f !== void 0 ? _f : "unknown"}`);
+            `finishReason=${(_e = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _e !== void 0 ? _e : "unknown"}`);
     }
     if (rawText.trimStart().startsWith("```")) {
         rawText = rawText
@@ -335,7 +337,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     try {
         parsed = JSON.parse(rawText);
     }
-    catch (_g) {
+    catch (_f) {
         throw new Error("article-generator: Gemini grounded response was not valid JSON. " +
             `Preview: ${rawText.slice(0, 200)}`);
     }
@@ -351,7 +353,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
  * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity article payload.
  */
 async function callGeminiCelebrity(geminiApiKey) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e;
     /* eslint-disable max-len */
     const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well.
 
@@ -418,10 +420,21 @@ Respond ONLY with valid JSON (no markdown fences):
         throw axiosErr;
     }
     const candidate = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.candidates) === null || _b === void 0 ? void 0 : _b[0];
-    let rawText = (_e = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
+    const parts = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) !== null && _d !== void 0 ? _d : [];
+    console.log("celebrity candidate parts count:", parts.length, "finishReason:", candidate === null || candidate === void 0 ? void 0 : candidate.finishReason, "parts preview:", JSON.stringify(parts.map((p) => {
+        var _a, _b;
+        return ({
+            hasText: typeof p.text === "string",
+            len: (_b = (_a = p.text) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0,
+        });
+    })));
+    // With grounding enabled, text may appear in any part — find the first one
+    const textPart = parts.find((p) => typeof p.text === "string" && p.text.trim() !== "");
+    let rawText = textPart === null || textPart === void 0 ? void 0 : textPart.text;
     if (typeof rawText !== "string" || rawText.trim() === "") {
         throw new Error("article-generator: Gemini celebrity call returned no text. " +
-            `finishReason=${(_f = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _f !== void 0 ? _f : "unknown"}`);
+            `finishReason=${(_e = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _e !== void 0 ? _e : "unknown"}, ` +
+            `parts=${JSON.stringify(parts).slice(0, 300)}`);
     }
     if (rawText.trimStart().startsWith("```")) {
         rawText = rawText
@@ -432,7 +445,7 @@ Respond ONLY with valid JSON (no markdown fences):
     try {
         parsed = JSON.parse(rawText);
     }
-    catch (_g) {
+    catch (_f) {
         throw new Error("article-generator: celebrity response was not valid JSON. " +
             `Preview: ${rawText.slice(0, 200)}`);
     }

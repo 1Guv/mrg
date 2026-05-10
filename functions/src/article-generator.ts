@@ -391,7 +391,12 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   }
 
   const candidate = response.data?.candidates?.[0];
-  let rawText = candidate?.content?.parts?.[0]?.text;
+  const gParts: Array<{text?: string}> =
+    candidate?.content?.parts ?? [];
+  const gTextPart = gParts.find(
+    (p) => typeof p.text === "string" && p.text.trim() !== ""
+  );
+  let rawText = gTextPart?.text;
   if (typeof rawText !== "string" || rawText.trim() === "") {
     throw new Error(
       "article-generator: Gemini grounded call returned no usable text. " +
@@ -507,11 +512,26 @@ Respond ONLY with valid JSON (no markdown fences):
   }
 
   const candidate = response.data?.candidates?.[0];
-  let rawText = candidate?.content?.parts?.[0]?.text;
+  const parts: Array<{text?: string}> =
+    candidate?.content?.parts ?? [];
+  console.log(
+    "celebrity candidate parts count:", parts.length,
+    "finishReason:", candidate?.finishReason,
+    "parts preview:", JSON.stringify(parts.map((p) => ({
+      hasText: typeof p.text === "string",
+      len: p.text?.length ?? 0,
+    })))
+  );
+  // With grounding enabled, text may appear in any part — find the first one
+  const textPart = parts.find(
+    (p) => typeof p.text === "string" && p.text.trim() !== ""
+  );
+  let rawText = textPart?.text;
   if (typeof rawText !== "string" || rawText.trim() === "") {
     throw new Error(
       "article-generator: Gemini celebrity call returned no text. " +
-      `finishReason=${candidate?.finishReason ?? "unknown"}`
+      `finishReason=${candidate?.finishReason ?? "unknown"}, ` +
+      `parts=${JSON.stringify(parts).slice(0, 300)}`
     );
   }
 
