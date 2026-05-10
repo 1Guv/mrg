@@ -311,7 +311,6 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
         response = await axios_1.default.post(url, {
             contents: [{ parts: [{ text: prompt }] }],
             tools: [{ google_search: {} }],
-            generationConfig: { responseMimeType: "application/json" },
         }, { headers: { "x-goog-api-key": geminiApiKey }, timeout: 240000 });
     }
     catch (axiosErr) {
@@ -409,7 +408,6 @@ Respond ONLY with valid JSON (no markdown fences):
         response = await axios_1.default.post(url, {
             contents: [{ parts: [{ text: prompt }] }],
             tools: [{ google_search: {} }],
-            generationConfig: { responseMimeType: "application/json" },
         }, { headers: { "x-goog-api-key": geminiApiKey }, timeout: 240000 });
     }
     catch (axiosErr) {

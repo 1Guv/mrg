@@ -377,7 +377,6 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
       {
         contents: [{parts: [{text: prompt}]}],
         tools: [{google_search: {}}],
-        generationConfig: {responseMimeType: "application/json"},
       },
       {headers: {"x-goog-api-key": geminiApiKey}, timeout: 240000}
     );
@@ -494,7 +493,6 @@ Respond ONLY with valid JSON (no markdown fences):
       {
         contents: [{parts: [{text: prompt}]}],
         tools: [{google_search: {}}],
-        generationConfig: {responseMimeType: "application/json"},
       },
       {headers: {"x-goog-api-key": geminiApiKey}, timeout: 240000}
     );
