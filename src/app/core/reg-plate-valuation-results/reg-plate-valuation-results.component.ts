@@ -161,7 +161,6 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
             this.minPrice,
             this.maxPrice
           ).subscribe();
-          this.postValuationPrompt.promptIfNeeded();
         }
       })
     );

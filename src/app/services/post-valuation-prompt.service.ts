@@ -24,7 +24,7 @@ export class PostValuationPromptService {
     if (this.auth.currentUser) return;
     this.shown = true;
     setTimeout(() => {
-      const ref = this.dialog.open(UserDetailsDialogComponent, { width: '520px' });
+      const ref = this.dialog.open(UserDetailsDialogComponent, { width: '520px', disableClose: true });
       ref.afterClosed().subscribe((details) => {
         if (details) this.valuationService.setUserDetails(details);
       });

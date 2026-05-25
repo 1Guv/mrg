@@ -23,8 +23,11 @@ import { MatCardModule } from '@angular/material/card';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
 import { MatDialog } from '@angular/material/dialog';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
+import { UserDetailsDialogComponent } from '../dialogs/user-details-dialog/user-details-dialog.component';
 import { Router } from '@angular/router';
 import { TrackClickDirective } from '../../directives/track-click.directive';
+import { AuthService } from '../../services/auth.service';
+import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
@@ -97,7 +100,8 @@ export class RegPlateMainComponent implements OnInit {
     private fb: FormBuilder,
     private sharedPlateDataService: SharedPlateDataService,
     private numberPlateFormService: NumberPlateFormService,
-    private valuationService: ValuationService
+    private valuationService: ValuationService,
+    private authService: AuthService
   ) {
     effect(() => {
       if (this.numberPlateFormService.resetSignal()) {
@@ -126,7 +130,15 @@ export class RegPlateMainComponent implements OnInit {
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
+    const user = await firstValueFrom(this.authService.currentUser$);
+    if (!user) {
+      const detailsRef = this.dialog.open(UserDetailsDialogComponent, { width: '520px', disableClose: true });
+      const details = await firstValueFrom(detailsRef.afterClosed());
+      if (!details) return;
+      this.valuationService.setUserDetails(details);
+    }
+
     if (this.isUnsupportedType) {
       const { registration, type } = this.registrationForm.value;
       this.valuationService.savePlateSearch(
