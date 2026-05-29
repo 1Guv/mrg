@@ -115,6 +115,46 @@ async function runWeeklyReport(): Promise<string> {
     ).join("") :
     "<tr><td colspan='4'>No searches this week</td></tr>";
 
+  // ── Buyer Searches ────────────────────────────────────────
+  console.log("weeklyReport: fetching buyer_searches...");
+  const buyerSearchesSnap = await db.collection("buyer_searches")
+    .where("searchedAt", ">=", sevenDaysAgo)
+    .get();
+  console.log(
+    `weeklyReport: buyer_searches count = ${buyerSearchesSnap.size}`
+  );
+
+  const buyerSearchDocs = buyerSearchesSnap.docs.map((d) => d.data());
+  const buyerSearchTotal = buyerSearchDocs.length;
+
+  const termMap = new Map<string, {count: number; totalResults: number}>();
+  for (const d of buyerSearchDocs) {
+    const term = String(d["term"] ?? "");
+    const results = Number(d["resultsCount"] ?? 0);
+    const entry = termMap.get(term) ?? {count: 0, totalResults: 0};
+    entry.count++;
+    entry.totalResults += results;
+    termMap.set(term, entry);
+  }
+  const top10 = [...termMap.entries()]
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 10);
+
+  const zeroResultCount = buyerSearchDocs
+    .filter((d) => Number(d["resultsCount"] ?? 0) === 0).length;
+
+  const buyerSearchRows = top10.length ?
+    top10.map(([term, data]) => {
+      const avg = data.count > 0 ?
+        Math.round(data.totalResults / data.count) : 0;
+      return `<tr>
+      <td>${term}</td>
+      <td>${data.count}</td>
+      <td>${avg}</td>
+    </tr>`;
+    }).join("") :
+    "<tr><td colspan='3'>No buyer searches this week</td></tr>";
+
   // ── Feature Requests ──────────────────────────────────────
   console.log("weeklyReport: fetching feature_requests...");
   const requestsSnap = await db.collection("feature_requests")
@@ -174,6 +214,17 @@ async function runWeeklyReport(): Promise<string> {
     </thead>
     <tbody>${searchRows}</tbody>
   </table>
+
+  <h2>🔎 Buyer Searches (${buyerSearchTotal})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr><th>Term</th><th>Searches</th><th>Avg Results</th></tr>
+    </thead>
+    <tbody>${buyerSearchRows}</tbody>
+  </table>
+  ${zeroResultCount > 0 ?
+    "<p style=\"color:#b00;font-weight:bold\">⚠️ " +
+    zeroResultCount + " searches returned 0 results</p>" : ""}
 
   <h2>🚀 Feature Requests (${requests.length})</h2>
   <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">

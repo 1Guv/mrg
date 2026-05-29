@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { UpperCasePipe, DatePipe, DecimalPipe } from '@angular/common';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { MatCardModule } from '@angular/material/card';
@@ -15,13 +15,15 @@ import { RecentlySoldComponent } from '../../shared/recently-sold/recently-sold.
 import { BenefitCard } from '../../models/benefit-card.model';
 import { PlateListing } from '../../models/plate-listing.model';
 import { PlateListingService } from '../../services/plate-listing.service';
-import { take } from 'rxjs';
+import { Subject, Subscription, take } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../services/auth.service';
 import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 import { MessageSellerDialogComponent } from '../../shared/message-seller-dialog/message-seller-dialog.component';
 import { ListNowBannerComponent } from '../../shared/list-now-banner/list-now-banner.component';
 import { TrackClickDirective } from '../../directives/track-click.directive';
+import { Firestore, addDoc, collection, serverTimestamp } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-plates-for-sale',
@@ -30,11 +32,15 @@ import { TrackClickDirective } from '../../directives/track-click.directive';
   templateUrl: './plates-for-sale.component.html',
   styleUrl: './plates-for-sale.component.scss'
 })
-export class PlatesForSaleComponent {
+export class PlatesForSaleComponent implements OnInit, OnDestroy {
 
   private plateListingService = inject(PlateListingService);
   private dialog = inject(MatDialog);
   private authService = inject(AuthService);
+  private firestore = inject(Firestore);
+
+  private searchSubject = new Subject<string>();
+  private searchSub?: Subscription;
 
   allListings: PlateListing[] = [];
   searchTerm = '';
@@ -69,6 +75,38 @@ export class PlatesForSaleComponent {
       rows.push(items.slice(i, i + 2));
     }
     return rows;
+  }
+
+  ngOnInit(): void {
+    this.searchSub = this.searchSubject.pipe(
+      debounceTime(1000),
+      distinctUntilChanged()
+    ).subscribe(term => {
+      if (term.length >= 2) {
+        this.recordSearch(term);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.searchSub?.unsubscribe();
+  }
+
+  onSearchChange(value: string): void {
+    this.searchTerm = value;
+    const normalized = value.trim().toLowerCase().replace(/\s/g, '');
+    this.searchSubject.next(normalized);
+  }
+
+  private recordSearch(term: string): void {
+    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
+      addDoc(collection(this.firestore, 'buyer_searches'), {
+        term,
+        resultsCount: this.filteredListings.length,
+        searchedAt: serverTimestamp(),
+        userId: (user as any)?.uid ?? null,
+      });
+    });
   }
 
   trackRow(index: number): number {

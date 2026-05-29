@@ -95,6 +95,14 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Buyer searches — public write; admin read only
+    match /buyer_searches/{docId} {
+      allow create: if true;
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow update, delete: if false;
+    }
+
     // Nudge queue — admin read only; written exclusively by Cloud Functions (admin SDK)
     match /listing_nudge_queue/{docId} {
       allow read: if request.auth != null

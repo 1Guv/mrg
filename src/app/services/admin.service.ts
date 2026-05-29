@@ -56,6 +56,14 @@ export interface ValuationFeedback {
   userId?: string;
 }
 
+export interface BuyerSearch {
+  id?: string;
+  term: string;
+  resultsCount: number;
+  searchedAt: any;
+  userId?: string | null;
+}
+
 export interface NudgeQueueEntry {
   id?: string;
   email: string;
@@ -129,5 +137,11 @@ export class AdminService {
     const ref = collection(this.firestore, 'listing_nudge_queue');
     const q = query(ref, where('listed', '==', false), orderBy('nextSendAt', 'asc'));
     return collectionData(q, { idField: 'id' }) as Observable<NudgeQueueEntry[]>;
+  }
+
+  getBuyerSearches(): Observable<BuyerSearch[]> {
+    const ref = collection(this.firestore, 'buyer_searches');
+    const q = query(ref, orderBy('searchedAt', 'desc'));
+    return collectionData(q, { idField: 'id' }) as Observable<BuyerSearch[]>;
   }
 }

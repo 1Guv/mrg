@@ -20,7 +20,7 @@ import { AccountDashboardValuationComponent } from '../account-dashboard-valuati
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { AdminComponent } from '../admin/admin.component';
 import { MatTableModule } from '@angular/material/table';
-import { AdminService, AutoValuation, NudgeQueueEntry, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
+import { AdminService, AutoValuation, BuyerSearch, NudgeQueueEntry, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
 import { MeComponent } from '../me/me.component';
 import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enquiry.service';
@@ -68,6 +68,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   sellerEnquiries$ = signal<SellerEnquiry[]>([]);
   myListings$ = signal<PlateListing[]>([]);
   nudgeQueue$ = signal<NudgeQueueEntry[]>([]);
+  buyerSearches$ = signal<BuyerSearch[]>([]);
   listingForms = new Map<string, FormGroup>();
   savingListingId = signal<string | null>(null);
   saveError = signal(new Map<string, string>());
@@ -140,6 +141,16 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
             )
           : of([] as NudgeQueueEntry[]))
       ).subscribe((entries) => this.nudgeQueue$.set(entries))
+    );
+
+    this.subs.add(
+      combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
+        switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
+          ? this.adminService.getBuyerSearches().pipe(
+              catchError((err) => { console.error('Firestore error loading buyer searches:', err); return of([] as BuyerSearch[]); })
+            )
+          : of([] as BuyerSearch[]))
+      ).subscribe((searches) => this.buyerSearches$.set(searches))
     );
 
     this.subs.add(

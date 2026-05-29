@@ -1,16 +1,17 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
+import { AutoValuation, BuyerSearch, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
 
 @Component({
   selector: 'app-admin',
   imports: [
     CommonModule,
+    DatePipe,
     MatCardModule,
     MatTableModule,
     MatExpansionModule,
@@ -89,6 +90,44 @@ import { AdminsService } from '../../services/admins.service';
                 }
               </mat-expansion-panel>
 
+            </mat-accordion>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="mb-4">
+        <mat-card-header>
+          <mat-card-title>Buyer Searches</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if(buyerSearches().length === 0){
+            <p class="text-muted mt-3">No buyer searches yet.</p>
+          } @else {
+            <mat-accordion class="mt-3">
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>All Searches</mat-panel-title>
+                  <mat-panel-description>
+                    <span class="search-count">{{ buyerSearches().length }}</span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+                <table mat-table [dataSource]="buyerSearches()" class="w-100 mt-2">
+                  <ng-container matColumnDef="term">
+                    <th mat-header-cell *matHeaderCellDef>Term</th>
+                    <td mat-cell *matCellDef="let s"><strong>{{ s.term }}</strong></td>
+                  </ng-container>
+                  <ng-container matColumnDef="resultsCount">
+                    <th mat-header-cell *matHeaderCellDef>Results</th>
+                    <td mat-cell *matCellDef="let s">{{ s.resultsCount }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="searchedAt">
+                    <th mat-header-cell *matHeaderCellDef>Searched At</th>
+                    <td mat-cell *matCellDef="let s">{{ s.searchedAt?.toDate() | date:'dd/MM/yyyy HH:mm' }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="buyerSearchColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: buyerSearchColumns;"></tr>
+                </table>
+              </mat-expansion-panel>
             </mat-accordion>
           }
         </mat-card-content>
@@ -357,6 +396,9 @@ export class AdminComponent {
   users = input<UserProfile[]>([]);
   feedback = input<ValuationFeedback[]>([]);
   plateMessages = input<PlateValuationMessage[]>([]);
+  buyerSearches = input<BuyerSearch[]>([]);
+
+  buyerSearchColumns = ['term', 'resultsCount', 'searchedAt'];
 
   private adminsService = inject(AdminsService);
 
