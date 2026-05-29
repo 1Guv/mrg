@@ -2,14 +2,26 @@ import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 
 const APP_URL = "https://mrvaluations.co.uk";
-const FUNCTIONS_BASE_URL = "https://us-central1-code-g-b8b6f.cloudfunctions.net";
+const FUNCTIONS_BASE_URL =
+  "https://us-central1-code-g-b8b6f.cloudfunctions.net";
 const HOURS_24 = 24 * 60 * 60 * 1000;
 const HOURS_48 = 48 * 60 * 60 * 1000;
 
+/**
+ * Creates an HMAC-SHA256 token for the given email.
+ * @param {string} email The email address to sign.
+ * @param {string} secret The HMAC secret.
+ * @return {string} Hex-encoded token.
+ */
 export function hmacToken(email: string, secret: string): string {
   return crypto.createHmac("sha256", secret).update(email).digest("hex");
 }
 
+/**
+ * Formats a number as a GBP price string.
+ * @param {number} amount The amount in GBP.
+ * @return {string} Formatted price, e.g. "£1,250".
+ */
 function formatPrice(amount: number): string {
   return "£" + Number(amount).toLocaleString("en-GB", {
     minimumFractionDigits: 0,
@@ -17,6 +29,15 @@ function formatPrice(amount: number): string {
   });
 }
 
+/**
+ * Builds the HTML body for a nudge email.
+ * @param {string} firstName Recipient first name.
+ * @param {string} registration Plate registration (e.g. AB12CDE).
+ * @param {number} minPrice Minimum valuation price.
+ * @param {number} maxPrice Maximum valuation price.
+ * @param {string} unsubUrl Signed one-click unsubscribe URL.
+ * @return {string} HTML string.
+ */
 function buildEmailHtml(
   firstName: string,
   registration: string,
@@ -77,8 +98,10 @@ function buildEmailHtml(
 }
 
 /**
- * Called when a new auto_valuations document is created.
+ * Seeds the nudge queue when a new auto_valuations document is created.
  * Creates a listing_nudge_queue entry if none exists for this email+plate.
+ * @param {admin.firestore.DocumentData} data The document data.
+ * @param {admin.firestore.Timestamp} savedAt When the valuation was saved.
  */
 export async function runOnAutoValuationCreated(
   data: admin.firestore.DocumentData,
@@ -118,13 +141,18 @@ export async function runOnAutoValuationCreated(
     listed: false,
   });
 
-  console.log(`nudge: queued ${registration} for ${email}, first send at ${nextSendAt.toISOString()}`);
+  const ts = nextSendAt.toISOString();
+  console.log(`nudge: queued ${registration} for ${email}, send at ${ts}`);
 }
 
 /**
- * Processes all due nudge queue entries — sends emails and updates next send time.
+ * Processes all due nudge queue entries.
+ * Sends emails and advances the next send time by 48 hours.
+ * @param {string} nudgeSecret HMAC secret for signing unsubscribe URLs.
  */
-export async function runScheduledNudgeEmails(nudgeSecret: string): Promise<void> {
+export async function runScheduledNudgeEmails(
+  nudgeSecret: string
+): Promise<void> {
   const db = admin.firestore();
   const now = admin.firestore.Timestamp.now();
 
@@ -153,7 +181,7 @@ export async function runScheduledNudgeEmails(nudgeSecret: string): Promise<void
 
     if (!listingSnap.empty) {
       await doc.ref.update({listed: true});
-      console.log(`nudge: ${registration} now listed — closed queue entry`);
+      console.log(`nudge: ${registration} now listed — closed`);
       continue;
     }
 
@@ -168,10 +196,12 @@ export async function runScheduledNudgeEmails(nudgeSecret: string): Promise<void
     const sendCount = ((entry["sendCount"] as number) ?? 0) + 1;
 
     const subject =
-      `Your plate ${registration} could be worth ${formatPrice(valuationMax)}` +
-      ` — have you thought about listing it?`;
+      `Your plate ${registration} could be worth ` +
+      `${formatPrice(valuationMax)} — have you thought about listing it?`;
 
-    const html = buildEmailHtml(firstName, registration, valuationMin, valuationMax, unsubUrl);
+    const html = buildEmailHtml(
+      firstName, registration, valuationMin, valuationMax, unsubUrl
+    );
 
     await db.collection("mail").add({
       to: [email],
@@ -181,7 +211,9 @@ export async function runScheduledNudgeEmails(nudgeSecret: string): Promise<void
     await doc.ref.update({
       sendCount,
       lastSentAt: admin.firestore.Timestamp.now(),
-      nextSendAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + HOURS_48)),
+      nextSendAt: admin.firestore.Timestamp.fromDate(
+        new Date(Date.now() + HOURS_48)
+      ),
     });
 
     console.log(`nudge: sent #${sendCount} to ${email} for ${registration}`);
@@ -189,8 +221,11 @@ export async function runScheduledNudgeEmails(nudgeSecret: string): Promise<void
 }
 
 /**
- * Validates an unsubscribe token and marks all queue entries for the email as unsubscribed.
- * Returns whether the token was valid.
+ * Validates an unsubscribe token and marks all queue entries as unsubscribed.
+ * @param {string} rawEmail The email from the query string.
+ * @param {string} token The HMAC token from the query string.
+ * @param {string} secret The HMAC secret.
+ * @return {Promise<boolean>} Whether the token was valid.
  */
 export async function runUnsubscribeNudge(
   rawEmail: string,
@@ -220,9 +255,14 @@ export async function runUnsubscribeNudge(
 }
 
 /**
- * Toggles nudge email opt-out for all queue entries belonging to a Firebase Auth UID.
+ * Toggles nudge email opt-out for all queue entries for a given UID.
+ * @param {string} uid Firebase Auth UID.
+ * @param {boolean} optOut True to unsubscribe, false to re-subscribe.
  */
-export async function runToggleNudgeEmails(uid: string, optOut: boolean): Promise<void> {
+export async function runToggleNudgeEmails(
+  uid: string,
+  optOut: boolean
+): Promise<void> {
   const db = admin.firestore();
   const userRecord = await admin.auth().getUser(uid);
   const email = userRecord.email?.toLowerCase();
@@ -236,13 +276,19 @@ export async function runToggleNudgeEmails(uid: string, optOut: boolean): Promis
 
   const batch = db.batch();
   const now = admin.firestore.Timestamp.now();
-  const nextSendAt = admin.firestore.Timestamp.fromDate(new Date(Date.now() + HOURS_48));
+  const nextSendAt = admin.firestore.Timestamp.fromDate(
+    new Date(Date.now() + HOURS_48)
+  );
 
   for (const d of snap.docs) {
     if (optOut) {
       batch.update(d.ref, {unsubscribed: true, unsubscribedAt: now});
     } else {
-      batch.update(d.ref, {unsubscribed: false, unsubscribedAt: null, nextSendAt});
+      batch.update(d.ref, {
+        unsubscribed: false,
+        unsubscribedAt: null,
+        nextSendAt,
+      });
     }
   }
   await batch.commit();
@@ -250,9 +296,13 @@ export async function runToggleNudgeEmails(uid: string, optOut: boolean): Promis
 }
 
 /**
- * Returns whether a Firebase Auth UID has any active opt-out in the nudge queue.
+ * Returns whether a UID has any active opt-out in the nudge queue.
+ * @param {string} uid Firebase Auth UID.
+ * @return {Promise<{optedOut: boolean}>} Opt-out status.
  */
-export async function runGetNudgeStatus(uid: string): Promise<{optedOut: boolean}> {
+export async function runGetNudgeStatus(
+  uid: string
+): Promise<{optedOut: boolean}> {
   const db = admin.firestore();
   const userRecord = await admin.auth().getUser(uid);
   const email = userRecord.email?.toLowerCase();

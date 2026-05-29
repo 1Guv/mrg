@@ -671,7 +671,9 @@ export const unsubscribeNudge = onRequest(
       response.status(400).send("Bad request");
       return;
     }
-    const valid = await runUnsubscribeNudge(email, token, nudgeUnsubscribeSecret.value());
+    const valid = await runUnsubscribeNudge(
+      email, token, nudgeUnsubscribeSecret.value()
+    );
     if (!valid) {
       response.status(400).send("Invalid token");
       return;
@@ -693,7 +695,7 @@ export const toggleNudgeEmails = onCall(
   }
 );
 
-/** Callable — returns whether the current user has opted out of nudge emails. */
+/** Callable — returns nudge email opt-out status for the current user. */
 export const getNudgeStatus = onCall(
   {maxInstances: 10},
   async (request) => {
