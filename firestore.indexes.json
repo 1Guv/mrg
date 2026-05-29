@@ -7,6 +7,31 @@
         { "fieldPath": "category", "order": "ASCENDING" },
         { "fieldPath": "publishedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "listing_nudge_queue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" },
+        { "fieldPath": "registration", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "listing_nudge_queue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "unsubscribed", "order": "ASCENDING" },
+        { "fieldPath": "listed", "order": "ASCENDING" },
+        { "fieldPath": "nextSendAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "listing_nudge_queue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "listed", "order": "ASCENDING" },
+        { "fieldPath": "nextSendAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -5,7 +5,8 @@ import {
   collection,
   collectionData,
   query,
-  orderBy
+  orderBy,
+  where
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { from, Observable } from 'rxjs';
@@ -53,6 +54,22 @@ export interface ValuationFeedback {
   popularityMultiplier: number;
   submittedAt: any;
   userId?: string;
+}
+
+export interface NudgeQueueEntry {
+  id?: string;
+  email: string;
+  registration: string;
+  firstName?: string;
+  valuationMin: number;
+  valuationMax: number;
+  firstValuationAt: any;
+  nextSendAt: any;
+  lastSentAt: any;
+  sendCount: number;
+  unsubscribed: boolean;
+  unsubscribedAt: any;
+  listed: boolean;
 }
 
 export interface AutoValuation {
@@ -106,5 +123,11 @@ export class AdminService {
     const ref = collection(this.firestore, 'valuation_feedback');
     const q = query(ref, orderBy('submittedAt', 'desc'));
     return collectionData(q, { idField: 'id' }) as Observable<ValuationFeedback[]>;
+  }
+
+  getNudgeQueue(): Observable<NudgeQueueEntry[]> {
+    const ref = collection(this.firestore, 'listing_nudge_queue');
+    const q = query(ref, where('listed', '==', false), orderBy('nextSendAt', 'asc'));
+    return collectionData(q, { idField: 'id' }) as Observable<NudgeQueueEntry[]>;
   }
 }

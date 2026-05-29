@@ -15,3 +15,14 @@ $indigo: #6558d3;
         margin-top: 1rem;
     }
 }
+
+.nudge-toggle-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nudge-hint {
+    font-size: 0.8rem;
+    margin: 0;
+}

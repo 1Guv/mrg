@@ -27,6 +27,50 @@
                 </mat-tab>
                 }
 
+                @if(isAdmin) {
+                <mat-tab [label]="'Nudge Queue (' + nudgeQueue$().length + ')'">
+                    <div class="tab-content">
+                        @if (nudgeQueue$().length === 0) {
+                            <p class="text-muted mt-3 text-center">No nudge queue entries yet.</p>
+                        } @else {
+                            <table mat-table [dataSource]="nudgeQueue$()" class="w-100 mt-3">
+                                <ng-container matColumnDef="email">
+                                    <th mat-header-cell *matHeaderCellDef>Email</th>
+                                    <td mat-cell *matCellDef="let e">{{ e.email }}</td>
+                                </ng-container>
+                                <ng-container matColumnDef="registration">
+                                    <th mat-header-cell *matHeaderCellDef>Plate</th>
+                                    <td mat-cell *matCellDef="let e"><strong>{{ e.registration }}</strong></td>
+                                </ng-container>
+                                <ng-container matColumnDef="nextSendAt">
+                                    <th mat-header-cell *matHeaderCellDef>Next Send</th>
+                                    <td mat-cell *matCellDef="let e">
+                                        {{ e.unsubscribed ? '—' : (e.nextSendAt?.toDate() | date:'dd/MM/yyyy HH:mm') }}
+                                    </td>
+                                </ng-container>
+                                <ng-container matColumnDef="lastSentAt">
+                                    <th mat-header-cell *matHeaderCellDef>Last Sent</th>
+                                    <td mat-cell *matCellDef="let e">
+                                        {{ e.lastSentAt ? (e.lastSentAt?.toDate() | date:'dd/MM/yyyy HH:mm') : '—' }}
+                                    </td>
+                                </ng-container>
+                                <ng-container matColumnDef="sendCount">
+                                    <th mat-header-cell *matHeaderCellDef>Emails Sent</th>
+                                    <td mat-cell *matCellDef="let e">{{ e.sendCount }}</td>
+                                </ng-container>
+                                <ng-container matColumnDef="unsubscribed">
+                                    <th mat-header-cell *matHeaderCellDef>Unsubscribed</th>
+                                    <td mat-cell *matCellDef="let e">{{ e.unsubscribed ? 'Yes' : 'No' }}</td>
+                                </ng-container>
+                                <tr mat-header-row *matHeaderRowDef="nudgeQueueColumns"></tr>
+                                <tr mat-row *matRowDef="let row; columns: nudgeQueueColumns;"
+                                    [class.nudge-row-unsub]="row.unsubscribed"></tr>
+                            </table>
+                        }
+                    </div>
+                </mat-tab>
+                }
+
                 <mat-tab label="User Details">
                     <div class="tab-content">
                         <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details>

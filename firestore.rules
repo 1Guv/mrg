@@ -95,6 +95,13 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Nudge queue — admin read only; written exclusively by Cloud Functions (admin SDK)
+    match /listing_nudge_queue/{docId} {
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow write: if false;
+    }
+
     // Articles — publicly readable; written only by Cloud Function (admin SDK bypasses rules)
     match /articles/{articleId} {
       allow read: if true;

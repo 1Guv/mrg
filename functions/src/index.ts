@@ -11,6 +11,15 @@ import {
   runGenerateDailyArticle,
   runGenerateCelebrityArticle,
 } from "./article-generator.js";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {
+  runOnAutoValuationCreated,
+  runScheduledNudgeEmails,
+  runUnsubscribeNudge,
+  runToggleNudgeEmails,
+  runGetNudgeStatus,
+  APP_URL,
+} from "./nudge-emails.js";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -22,6 +31,7 @@ const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const gscRefreshToken = defineSecret("GSC_REFRESH_TOKEN");
 const gscClientId = defineSecret("GSC_CLIENT_ID");
 const gscClientSecret = defineSecret("GSC_CLIENT_SECRET");
+const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
 
 const socialSecretNames = [
   "SHEETS_CLIENT_EMAIL",
@@ -622,5 +632,74 @@ export const generateCelebrityArticle = onSchedule(
   },
   async () => {
     await runGenerateCelebrityArticle(geminiApiKey.value());
+  }
+);
+
+// ── Plate listing nudge emails ──────────────────────────────────────────────
+
+/** Seeds the nudge queue when a new auto_valuation is created. */
+export const onAutoValuationCreated = onDocumentCreated(
+  "auto_valuations/{docId}",
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+    const savedAt = data["savedAt"] ?? admin.firestore.Timestamp.now();
+    await runOnAutoValuationCreated(data, savedAt);
+  }
+);
+
+/** Runs every 6 hours — sends due nudge emails and advances queue timers. */
+export const scheduledNudgeEmails = onSchedule(
+  {
+    schedule: "every 6 hours",
+    timeZone: "Europe/London",
+    timeoutSeconds: 300,
+    secrets: [nudgeUnsubscribeSecret],
+  },
+  async () => {
+    await runScheduledNudgeEmails(nudgeUnsubscribeSecret.value());
+  }
+);
+
+/** One-click unsubscribe endpoint linked from nudge emails. */
+export const unsubscribeNudge = onRequest(
+  {maxInstances: 10, secrets: [nudgeUnsubscribeSecret]},
+  async (request, response) => {
+    const email = request.query["email"] as string | undefined;
+    const token = request.query["token"] as string | undefined;
+    if (!email || !token) {
+      response.status(400).send("Bad request");
+      return;
+    }
+    const valid = await runUnsubscribeNudge(email, token, nudgeUnsubscribeSecret.value());
+    if (!valid) {
+      response.status(400).send("Invalid token");
+      return;
+    }
+    response.redirect(`${APP_URL}/unsubscribed`);
+  }
+);
+
+/** Callable — toggles nudge email opt-out for the current user. */
+export const toggleNudgeEmails = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+    const optOut = Boolean(request.data?.optOut);
+    await runToggleNudgeEmails(request.auth.uid, optOut);
+    return {success: true};
+  }
+);
+
+/** Callable — returns whether the current user has opted out of nudge emails. */
+export const getNudgeStatus = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+    return runGetNudgeStatus(request.auth.uid);
   }
 );

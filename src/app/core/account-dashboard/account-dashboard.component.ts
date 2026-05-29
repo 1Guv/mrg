@@ -19,7 +19,8 @@ import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { AdminComponent } from '../admin/admin.component';
-import { AdminService, AutoValuation, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
+import { MatTableModule } from '@angular/material/table';
+import { AdminService, AutoValuation, NudgeQueueEntry, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
 import { MeComponent } from '../me/me.component';
 import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enquiry.service';
@@ -34,6 +35,7 @@ import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enqui
     MatButtonModule,
     MatTabsModule,
     MatDialogModule,
+    MatTableModule,
     RouterModule,
     ReactiveFormsModule,
     MatFormFieldModule,
@@ -65,9 +67,11 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   plateMessages$ = signal<PlateValuationMessage[]>([]);
   sellerEnquiries$ = signal<SellerEnquiry[]>([]);
   myListings$ = signal<PlateListing[]>([]);
+  nudgeQueue$ = signal<NudgeQueueEntry[]>([]);
   listingForms = new Map<string, FormGroup>();
   savingListingId = signal<string | null>(null);
   saveError = signal(new Map<string, string>());
+  nudgeQueueColumns = ['email', 'registration', 'nextSendAt', 'lastSentAt', 'sendCount', 'unsubscribed'];
 
   private plateListingService = inject(PlateListingService);
   private fb = inject(FormBuilder);
@@ -126,6 +130,16 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
             )
           : of([] as AutoValuation[]))
       ).subscribe((valuations) => this.autoValuations$.set(valuations))
+    );
+
+    this.subs.add(
+      combineLatest([this.authService.currentUser$, this.adminUids$]).pipe(
+        switchMap(([user, adminUids]) => adminUids.includes((user as any)?.uid)
+          ? this.adminService.getNudgeQueue().pipe(
+              catchError((err) => { console.error('Firestore error loading nudge queue:', err); return of([] as NudgeQueueEntry[]); })
+            )
+          : of([] as NudgeQueueEntry[]))
+      ).subscribe((entries) => this.nudgeQueue$.set(entries))
     );
 
     this.subs.add(

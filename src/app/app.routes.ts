@@ -10,6 +10,7 @@ import { ListPlateComponent } from './core/list-plate/list-plate.component';
 import { ListPlateSuccessComponent } from './core/list-plate-success/list-plate-success.component';
 import { NewsListingComponent } from './core/news-listing/news-listing.component';
 import { NewsArticleComponent } from './core/news-article/news-article.component';
+import { UnsubscribedComponent } from './core/unsubscribed/unsubscribed.component';
 
 export const routes: Routes = [
     { path: '', component: MainSectionComponent },
@@ -26,4 +27,5 @@ export const routes: Routes = [
     { path: 'list-plate/success', component: ListPlateSuccessComponent },
     { path: 'news', component: NewsListingComponent },
     { path: 'news/:slug', component: NewsArticleComponent },
+    { path: 'unsubscribed', component: UnsubscribedComponent },
 ];
