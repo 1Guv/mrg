@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
+import * as dns from "dns";
 
 const APP_URL = "https://mrvaluations.co.uk";
 const FUNCTIONS_BASE_URL =
@@ -15,6 +16,29 @@ const HOURS_48 = 48 * 60 * 60 * 1000;
  */
 export function hmacToken(email: string, secret: string): string {
   return crypto.createHmac("sha256", secret).update(email).digest("hex");
+}
+
+/**
+ * Checks whether the given email's domain has MX records.
+ * Returns true if at least one MX record exists.
+ * Returns false if the domain provably has no mail records (ENODATA, ENOTFOUND).
+ * Throws for transient errors (ESERVFAIL, ETIMEOUT, etc.) so the caller can
+ * leave emailValid unset and retry next run.
+ * @param {string} email The email address to check.
+ * @return {Promise<boolean>} Whether the domain has MX records.
+ */
+async function checkMxRecord(email: string): Promise<boolean> {
+  const domain = email.split("@")[1];
+  if (!domain) return false;
+  try {
+    const records = await dns.promises.resolveMx(domain);
+    return records.length > 0;
+  } catch (err: any) {
+    if (err.code === "ENODATA" || err.code === "ENOTFOUND") {
+      return false;
+    }
+    throw err;
+  }
 }
 
 /**
@@ -184,6 +208,28 @@ export async function runScheduledNudgeEmails(
       console.log(`nudge: ${registration} now listed — closed`);
       continue;
     }
+
+    // --- MX validation ---
+    const emailValid: boolean | undefined = entry["emailValid"] as boolean | undefined;
+    if (emailValid === false) {
+      console.log(`nudge: skipping ${email} — emailValid=false`);
+      continue;
+    }
+    if (emailValid === undefined || emailValid === null) {
+      let valid: boolean;
+      try {
+        valid = await checkMxRecord(email);
+      } catch (err) {
+        console.warn(`nudge: DNS error for ${email}, skipping this run`, err);
+        continue;
+      }
+      await doc.ref.update({emailValid: valid});
+      if (!valid) {
+        console.log(`nudge: ${email} has no MX records — marked invalid`);
+        continue;
+      }
+    }
+    // --- end MX validation ---
 
     const token = hmacToken(email, nudgeSecret);
     const unsubUrl =

@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -47,6 +47,8 @@ const valuation_js_1 = require("./valuation.js");
 const social_post_js_1 = require("./social-post.js");
 const analytics_js_1 = require("./analytics.js");
 const article_generator_js_1 = require("./article-generator.js");
+const firestore_1 = require("firebase-functions/v2/firestore");
+const nudge_emails_js_1 = require("./nudge-emails.js");
 admin.initializeApp();
 const db = admin.firestore();
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
@@ -56,6 +58,7 @@ const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const gscRefreshToken = (0, params_1.defineSecret)("GSC_REFRESH_TOKEN");
 const gscClientId = (0, params_1.defineSecret)("GSC_CLIENT_ID");
 const gscClientSecret = (0, params_1.defineSecret)("GSC_CLIENT_SECRET");
+const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
     "SHEETS_CLIENT_EMAIL",
     "SHEETS_PRIVATE_KEY",
@@ -107,6 +110,7 @@ exports.getUsers = (0, https_1.onCall)({ maxInstances: 1 }, async (request) => {
  * @return {Promise<string>} The Firestore document ID of the mail doc.
  */
 async function runWeeklyReport() {
+    var _a, _b, _c;
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     console.log("weeklyReport: starting run");
@@ -128,6 +132,39 @@ async function runWeeklyReport() {
     </tr>`;
         }).join("") :
         "<tr><td colspan='4'>No searches this week</td></tr>";
+    // ── Buyer Searches ────────────────────────────────────────
+    console.log("weeklyReport: fetching buyer_searches...");
+    const buyerSearchesSnap = await db.collection("buyer_searches")
+        .where("searchedAt", ">=", sevenDaysAgo)
+        .get();
+    console.log(`weeklyReport: buyer_searches count = ${buyerSearchesSnap.size}`);
+    const buyerSearchDocs = buyerSearchesSnap.docs.map((d) => d.data());
+    const buyerSearchTotal = buyerSearchDocs.length;
+    const termMap = new Map();
+    for (const d of buyerSearchDocs) {
+        const term = String((_a = d["term"]) !== null && _a !== void 0 ? _a : "");
+        const results = Number((_b = d["resultsCount"]) !== null && _b !== void 0 ? _b : 0);
+        const entry = (_c = termMap.get(term)) !== null && _c !== void 0 ? _c : { count: 0, totalResults: 0 };
+        entry.count++;
+        entry.totalResults += results;
+        termMap.set(term, entry);
+    }
+    const top10 = [...termMap.entries()]
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 10);
+    const zeroResultCount = buyerSearchDocs
+        .filter((d) => { var _a; return Number((_a = d["resultsCount"]) !== null && _a !== void 0 ? _a : 0) === 0; }).length;
+    const buyerSearchRows = top10.length ?
+        top10.map(([term, data]) => {
+            const avg = data.count > 0 ?
+                Math.round(data.totalResults / data.count) : 0;
+            return `<tr>
+      <td>${term}</td>
+      <td>${data.count}</td>
+      <td>${avg}</td>
+    </tr>`;
+        }).join("") :
+        "<tr><td colspan='3'>No buyer searches this week</td></tr>";
     // ── Feature Requests ──────────────────────────────────────
     console.log("weeklyReport: fetching feature_requests...");
     const requestsSnap = await db.collection("feature_requests")
@@ -183,6 +220,17 @@ async function runWeeklyReport() {
     </thead>
     <tbody>${searchRows}</tbody>
   </table>
+
+  <h2>🔎 Buyer Searches (${buyerSearchTotal})</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
+    <thead style="${thStyle}">
+      <tr><th>Term</th><th>Searches</th><th>Avg Results</th></tr>
+    </thead>
+    <tbody>${buyerSearchRows}</tbody>
+  </table>
+  ${zeroResultCount > 0 ?
+        "<p style=\"color:#b00;font-weight:bold\">⚠️ " +
+            zeroResultCount + " searches returned 0 results</p>" : ""}
 
   <h2>🚀 Feature Requests (${requests.length})</h2>
   <table border="1" cellpadding="6" cellspacing="0" style="${tableStyle}">
@@ -527,5 +575,56 @@ exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({
     secrets: [geminiApiKey],
 }, async () => {
     await (0, article_generator_js_1.runGenerateCelebrityArticle)(geminiApiKey.value());
+});
+// ── Plate listing nudge emails ──────────────────────────────────────────────
+/** Seeds the nudge queue when a new auto_valuation is created. */
+exports.onAutoValuationCreated = (0, firestore_1.onDocumentCreated)("auto_valuations/{docId}", async (event) => {
+    var _a, _b;
+    const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
+    if (!data)
+        return;
+    const savedAt = (_b = data["savedAt"]) !== null && _b !== void 0 ? _b : admin.firestore.Timestamp.now();
+    await (0, nudge_emails_js_1.runOnAutoValuationCreated)(data, savedAt);
+});
+/** Runs every 6 hours — sends due nudge emails and advances queue timers. */
+exports.scheduledNudgeEmails = (0, scheduler_1.onSchedule)({
+    schedule: "every 6 hours",
+    timeZone: "Europe/London",
+    timeoutSeconds: 300,
+    secrets: [nudgeUnsubscribeSecret],
+}, async () => {
+    await (0, nudge_emails_js_1.runScheduledNudgeEmails)(nudgeUnsubscribeSecret.value());
+});
+/** One-click unsubscribe endpoint linked from nudge emails. */
+exports.unsubscribeNudge = (0, https_1.onRequest)({ maxInstances: 10, secrets: [nudgeUnsubscribeSecret] }, async (request, response) => {
+    const email = request.query["email"];
+    const token = request.query["token"];
+    if (!email || !token) {
+        response.status(400).send("Bad request");
+        return;
+    }
+    const valid = await (0, nudge_emails_js_1.runUnsubscribeNudge)(email, token, nudgeUnsubscribeSecret.value());
+    if (!valid) {
+        response.status(400).send("Invalid token");
+        return;
+    }
+    response.redirect(`${nudge_emails_js_1.APP_URL}/unsubscribed`);
+});
+/** Callable — toggles nudge email opt-out for the current user. */
+exports.toggleNudgeEmails = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be logged in");
+    }
+    const optOut = Boolean((_a = request.data) === null || _a === void 0 ? void 0 : _a.optOut);
+    await (0, nudge_emails_js_1.runToggleNudgeEmails)(request.auth.uid, optOut);
+    return { success: true };
+});
+/** Callable — returns nudge email opt-out status for the current user. */
+exports.getNudgeStatus = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be logged in");
+    }
+    return (0, nudge_emails_js_1.runGetNudgeStatus)(request.auth.uid);
 });
 //# sourceMappingURL=index.js.map
