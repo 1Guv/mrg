@@ -225,7 +225,6 @@ async function runScheduledNudgeEmails(nudgeSecret) {
             console.log(`nudge: ${registration} now listed — closed`);
             continue;
         }
-        // --- MX validation ---
         const emailValid = entry["emailValid"];
         if (emailValid === false) {
             console.log(`nudge: skipping ${email} — emailValid=false`);
@@ -246,7 +245,7 @@ async function runScheduledNudgeEmails(nudgeSecret) {
                 continue;
             }
         }
-        // --- end MX validation ---
+        // emailValid === true: fall through to send
         const token = hmacToken(email, nudgeSecret);
         const unsubUrl = `${FUNCTIONS_BASE_URL}/unsubscribeNudge` +
             `?email=${encodeURIComponent(email)}&token=${token}`;

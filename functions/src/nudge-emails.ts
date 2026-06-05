@@ -209,8 +209,8 @@ export async function runScheduledNudgeEmails(
       continue;
     }
 
-    // --- MX validation ---
-    const emailValid: boolean | undefined = entry["emailValid"] as boolean | undefined;
+    const emailValid: boolean | null | undefined =
+      entry["emailValid"] as boolean | null | undefined;
     if (emailValid === false) {
       console.log(`nudge: skipping ${email} — emailValid=false`);
       continue;
@@ -229,7 +229,7 @@ export async function runScheduledNudgeEmails(
         continue;
       }
     }
-    // --- end MX validation ---
+    // emailValid === true: fall through to send
 
     const token = hmacToken(email, nudgeSecret);
     const unsubUrl =
