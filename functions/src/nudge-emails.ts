@@ -21,7 +21,7 @@ export function hmacToken(email: string, secret: string): string {
 /**
  * Checks whether the given email's domain has MX records.
  * Returns true if at least one MX record exists.
- * Returns false if the domain provably has no mail records (ENODATA, ENOTFOUND).
+ * Returns false if the domain has no mail records (ENODATA, ENOTFOUND).
  * Throws for transient errors (ESERVFAIL, ETIMEOUT, etc.) so the caller can
  * leave emailValid unset and retry next run.
  * @param {string} email The email address to check.
