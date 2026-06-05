@@ -58,6 +58,12 @@
                                     <th mat-header-cell *matHeaderCellDef>Emails Sent</th>
                                     <td mat-cell *matCellDef="let e">{{ e.sendCount }}</td>
                                 </ng-container>
+                                <ng-container matColumnDef="emailValid">
+                                    <th mat-header-cell *matHeaderCellDef>Email Valid</th>
+                                    <td mat-cell *matCellDef="let e">
+                                        {{ e.emailValid === true ? '👍' : e.emailValid === false ? '👎' : '—' }}
+                                    </td>
+                                </ng-container>
                                 <ng-container matColumnDef="unsubscribed">
                                     <th mat-header-cell *matHeaderCellDef>Unsubscribed</th>
                                     <td mat-cell *matCellDef="let e">{{ e.unsubscribed ? 'Yes' : 'No' }}</td>

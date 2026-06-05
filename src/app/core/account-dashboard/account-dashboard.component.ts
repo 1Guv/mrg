@@ -72,7 +72,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   listingForms = new Map<string, FormGroup>();
   savingListingId = signal<string | null>(null);
   saveError = signal(new Map<string, string>());
-  nudgeQueueColumns = ['email', 'registration', 'nextSendAt', 'lastSentAt', 'sendCount', 'unsubscribed'];
+  nudgeQueueColumns = ['email', 'registration', 'emailValid', 'nextSendAt', 'lastSentAt', 'sendCount', 'unsubscribed'];
 
   private plateListingService = inject(PlateListingService);
   private fb = inject(FormBuilder);
