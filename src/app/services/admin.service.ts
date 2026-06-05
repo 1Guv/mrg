@@ -78,6 +78,7 @@ export interface NudgeQueueEntry {
   unsubscribed: boolean;
   unsubscribedAt: any;
   listed: boolean;
+  emailValid?: boolean | null;
 }
 
 export interface AutoValuation {
