@@ -21,13 +21,13 @@ import { NudgeEmailsService } from '../../services/nudge-emails.service';
       <div class="mx-2 my-2">
           <mat-card-header>
               <mat-card-title>User Details</mat-card-title>
-              <mat-card-subtitle>Welcome back {{ currentUser()?.firstName }}</mat-card-subtitle>
+              <mat-card-subtitle>Welcome back {{ currentUser()?.displayName?.split(' ')?.[0] }}</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
               <div class="my-3">
-                  <p><span class="tag">Full Name:</span> {{ currentUser()?.name }}</p>
+                  <p><span class="tag">Full Name:</span> {{ currentUser()?.displayName }}</p>
                   <p><span class="tag">Email:</span> {{ currentUser()?.email }}</p>
-                  <p><span class="tag">Provider Name:</span> {{ currentUser()?.provider }}</p>
+                  <p><span class="tag">Provider Name:</span> {{ currentUser()?.providerData?.[0]?.providerId }}</p>
               </div>
 
               <div class="nudge-toggle-row my-3">
