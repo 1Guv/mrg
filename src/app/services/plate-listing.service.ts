@@ -28,10 +28,10 @@ export class PlateListingService {
     const oldRef = collection(this.firestore, this.COLLECTION);
     const newRef = collection(this.firestore, this.COLLECTION_NEW);
     const old$ = collectionData(
-      query(oldRef, orderBy('createdDate', 'asc')), { idField: 'id' }
+      query(oldRef, orderBy('createdDate', 'desc')), { idField: 'id' }
     ) as Observable<PlateListing[]>;
     const new$ = collectionData(
-      query(newRef, orderBy('createdDate', 'asc')), { idField: 'id' }
+      query(newRef, orderBy('createdDate', 'desc')), { idField: 'id' }
     ) as Observable<PlateListing[]>;
     return combineLatest([new$, old$]).pipe(
       map(([newListings, oldListings]) => [
