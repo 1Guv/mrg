@@ -1,7 +1,7 @@
 <div class="container-fluid main-bg-c">
   <div class="list-plate-container">
     <h1 class="cabin-font-sketch text-center">List Your Plate</h1>
-    <p class="text-center text-muted mb-4">One-off £6 listing fee — listed until sold.</p>
+    <p class="text-center text-muted mb-4">One-off £{{ plateListingService.listingFee }} listing fee — listed until sold.</p>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="list-plate-form">
 
@@ -65,7 +65,7 @@
 
       <button type="submit" mat-raised-button color="primary" class="submit-btn"
         [disabled]="form.invalid || loading">
-        @if (loading) { Processing... } @else { Pay £6 &amp; List }
+        @if (loading) { Processing... } @else { Pay £{{ plateListingService.listingFee }} &amp; List }
       </button>
 
     </form>

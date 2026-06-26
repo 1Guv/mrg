@@ -13,6 +13,7 @@ import {
 } from '@angular/fire/firestore';
 import { combineLatest, map, Observable } from 'rxjs';
 import { PlateListing } from '../models/plate-listing.model';
+import { LISTING_FEE } from '../constants/listing-fee';
 
 @Injectable({
   providedIn: 'root'
@@ -22,7 +23,7 @@ export class PlateListingService {
   private firestore = inject(Firestore);
   private readonly COLLECTION = 'plate-listings';
   private readonly COLLECTION_NEW = 'plate-listings-new';
-  readonly listingFee = 6;
+  readonly listingFee = LISTING_FEE;
 
   getAll(): Observable<PlateListing[]> {
     const oldRef = collection(this.firestore, this.COLLECTION);

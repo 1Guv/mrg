@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { StripeService } from '../../services/stripe.service';
+import { PlateListingService } from '../../services/plate-listing.service';
 import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 
 @Component({
@@ -35,6 +36,7 @@ export class ListPlateComponent implements OnInit {
   private authService = inject(AuthService);
   private stripeService = inject(StripeService);
   private dialog = inject(MatDialog);
+  plateListingService = inject(PlateListingService);
   private route = inject(ActivatedRoute);
 
   form: FormGroup = this.fb.group({

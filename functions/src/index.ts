@@ -1,3 +1,6 @@
+// Keep in sync with src/app/constants/listing-fee.ts LISTING_FEE
+const LISTING_FEE_PENCE = 3000;
+
 import * as functionsV1 from "firebase-functions/v1";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
@@ -391,7 +394,7 @@ export const createCheckoutSession = onCall(
         {
           price_data: {
             currency: "gbp",
-            unit_amount: 600,
+            unit_amount: LISTING_FEE_PENCE,
             product_data: {
               name: `Plate listing: ${String(plateCharacters).toUpperCase()}`,
               description: "One-off listing fee — listed until sold",
