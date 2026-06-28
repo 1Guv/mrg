@@ -43,6 +43,7 @@ exports.runGetNudgeStatus = runGetNudgeStatus;
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 const dns = __importStar(require("dns"));
+const constants_js_1 = require("./constants.js");
 const APP_URL = "https://mrvaluations.co.uk";
 exports.APP_URL = APP_URL;
 const FUNCTIONS_BASE_URL = "https://us-central1-code-g-b8b6f.cloudfunctions.net";
@@ -125,7 +126,7 @@ function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl) {
     visit MR Valuations every month specifically looking for plates like yours.
   </p>
   <p>
-    <strong>Listing your plate is just £6</strong> — a one-off fee, and it stays listed until it sells.
+    <strong>Listing your plate is just £${constants_js_1.LISTING_FEE_GBP}</strong> — a one-off fee, and it stays listed until it sells.
     No commission, no monthly charges, no hassle.
   </p>
   <div style="background:#f8f9fa;border-left:4px solid #003399;padding:16px;margin:24px 0;">
@@ -140,7 +141,7 @@ function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl) {
   <div style="text-align:center;margin:32px 0;">
     <a href="${APP_URL}/list-plate"
        style="background:#003399;color:#fff;padding:14px 32px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;display:inline-block;">
-      List My Plate for £6 &rarr;
+      List My Plate for £${constants_js_1.LISTING_FEE_GBP} &rarr;
     </a>
   </div>
   <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">

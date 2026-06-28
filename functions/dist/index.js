@@ -37,8 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
-// Keep in sync with src/app/constants/listing-fee.ts LISTING_FEE
-const LISTING_FEE_PENCE = 3000;
+const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
@@ -374,7 +373,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ maxInstances: 10, secrets:
             {
                 price_data: {
                     currency: "gbp",
-                    unit_amount: LISTING_FEE_PENCE,
+                    unit_amount: constants_js_1.LISTING_FEE_PENCE,
                     product_data: {
                         name: `Plate listing: ${String(plateCharacters).toUpperCase()}`,
                         description: "One-off listing fee — listed until sold",
