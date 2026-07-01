@@ -106,7 +106,7 @@ function buildEmailHtml(
     </ul>
   </div>
   <div style="text-align:center;margin:32px 0;">
-    <a href="${APP_URL}/list-plate"
+    <a href="${APP_URL}/#/list-plate"
        style="background:#003399;color:#fff;padding:14px 32px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;display:inline-block;">
       List My Plate for £${LISTING_FEE_GBP} &rarr;
     </a>

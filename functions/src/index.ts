@@ -402,8 +402,8 @@ export const createCheckoutSession = onCall(
         },
       ],
       // eslint-disable-next-line max-len
-      success_url: `${appBaseUrl}/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appBaseUrl}/list-plate`,
+      success_url: `${appBaseUrl}/#/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appBaseUrl}/#/list-plate`,
       metadata: {
         plateCharacters: String(plateCharacters).toUpperCase(),
         askingPrice: String(askingPrice),
@@ -730,7 +730,7 @@ export const unsubscribeNudge = onRequest(
       response.status(400).send("Invalid token");
       return;
     }
-    response.redirect(`${APP_URL}/unsubscribed`);
+    response.redirect(`${APP_URL}/#/unsubscribed`);
   }
 );
 
