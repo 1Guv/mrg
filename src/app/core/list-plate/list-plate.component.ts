@@ -12,7 +12,7 @@ import { take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { StripeService } from '../../services/stripe.service';
 import { PlateListingService } from '../../services/plate-listing.service';
-import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
+import { AuthPromptDialogComponent, AuthPromptDialogData } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 
 @Component({
   selector: 'app-list-plate',
@@ -67,7 +67,13 @@ export class ListPlateComponent implements OnInit {
 
     this.authService.currentUser$.pipe(take(1)).subscribe(user => {
       if (!user) {
-        this.dialog.open(AuthPromptDialogComponent, { width: '380px' });
+        this.dialog.open(AuthPromptDialogComponent, {
+          width: '380px',
+          data: {
+            title: 'Sign in to list your plate',
+            message: 'You need to be logged in to list a plate for sale. Please log in or create a free account to continue.',
+          } satisfies AuthPromptDialogData,
+        });
       } else {
         this.form.patchValue({ email: user.email ?? '' });
       }
