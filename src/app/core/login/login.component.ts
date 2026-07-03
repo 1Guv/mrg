@@ -61,6 +61,41 @@ export class LoginComponent implements OnDestroy {
     );
   }
 
+  async onFacebookLogin() {
+    try {
+      await this.authService.loginWithFacebook();
+      await this.router.navigate(['/account-dashboard']);
+    } catch (error: any) {
+      if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') return;
+      console.error('Facebook sign-in error:', error?.code, error);
+      const messages: Record<string, string> = {
+        'auth/operation-not-allowed': 'Facebook sign-in is not enabled. Please contact support.',
+        'auth/unauthorized-domain': 'This domain is not authorised for Facebook sign-in.',
+        'auth/popup-blocked': 'Pop-up was blocked by your browser. Please allow pop-ups and try again.',
+        'auth/account-exists-with-different-credential': 'An account already exists with this email. Please sign in with your original method.',
+      };
+      this.errorMessage = messages[error?.code] ?? 'Facebook sign-in failed. Please try again.';
+      this.snackBar.open(this.errorMessage, 'OK');
+    }
+  }
+
+  async onGoogleLogin() {
+    try {
+      await this.authService.loginWithGoogle();
+      await this.router.navigate(['/account-dashboard']);
+    } catch (error: any) {
+      if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') return;
+      console.error('Google sign-in error:', error?.code, error);
+      const messages: Record<string, string> = {
+        'auth/operation-not-allowed': 'Google sign-in is not enabled. Please contact support.',
+        'auth/unauthorized-domain': 'This domain is not authorised for Google sign-in.',
+        'auth/popup-blocked': 'Pop-up was blocked by your browser. Please allow pop-ups and try again.',
+      };
+      this.errorMessage = messages[error?.code] ?? 'Google sign-in failed. Please try again.';
+      this.snackBar.open(this.errorMessage, 'OK');
+    }
+  }
+
   async onLogin() {
     if (this.loginForm.valid) {
       try {

@@ -5,7 +5,12 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   user,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  signInWithPopup,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  getAdditionalUserInfo,
+  UserCredential,
 } from '@angular/fire/auth';
 import { Firestore, collection, addDoc } from '@angular/fire/firestore';
 
@@ -19,7 +24,7 @@ export class AuthService {
   constructor(private auth: Auth) {
   }
 
-  async saveUserProfile(uid: string, email: string, source: 'manual' | 'auto', extra?: { firstName?: string; lastName?: string; city?: string; plateMeaning?: string }) {
+  async saveUserProfile(uid: string, email: string, source: 'manual' | 'auto' | 'google' | 'facebook', extra?: { firstName?: string; lastName?: string; city?: string; plateMeaning?: string }) {
     const ref = collection(this.firestore, 'users');
     return addDoc(ref, {
       uid,
@@ -30,8 +35,34 @@ export class AuthService {
     });
   }
 
+  async loginWithFacebook(): Promise<UserCredential> {
+    const result = await signInWithPopup(this.auth, new FacebookAuthProvider());
+    if (getAdditionalUserInfo(result)?.isNewUser) {
+      const { displayName, email, uid } = result.user;
+      const [firstName, ...rest] = (displayName ?? '').split(' ');
+      await this.saveUserProfile(uid, email ?? '', 'facebook', {
+        firstName,
+        lastName: rest.join(' ') || undefined,
+      });
+    }
+    return result;
+  }
+
   async login(email: string, password: string) {
     return await signInWithEmailAndPassword(this.auth, email, password);
+  }
+
+  async loginWithGoogle(): Promise<UserCredential> {
+    const result = await signInWithPopup(this.auth, new GoogleAuthProvider());
+    if (getAdditionalUserInfo(result)?.isNewUser) {
+      const { displayName, email, uid } = result.user;
+      const [firstName, ...rest] = (displayName ?? '').split(' ');
+      await this.saveUserProfile(uid, email ?? '', 'google', {
+        firstName,
+        lastName: rest.join(' ') || undefined,
+      });
+    }
+    return result;
   }
 
   async register(email: string, password: string) {
