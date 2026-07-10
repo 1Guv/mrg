@@ -12,6 +12,7 @@ import { NewsListingComponent } from './core/news-listing/news-listing.component
 import { NewsArticleComponent } from './core/news-article/news-article.component';
 import { UnsubscribedComponent } from './core/unsubscribed/unsubscribed.component';
 import { PrivacyPolicyComponent } from './core/privacy-policy/privacy-policy.component';
+import { PlateDetailComponent } from './core/plate-detail/plate-detail.component';
 
 export const routes: Routes = [
     { path: '', component: MainSectionComponent },
@@ -24,6 +25,7 @@ export const routes: Routes = [
     },
     { path: 'forgot-password', component: ForgotPasswordComponent },
     { path: 'plates-for-sale', component: PlatesForSaleComponent },
+    { path: 'plates-for-sale/:plate', component: PlateDetailComponent },
     { path: 'list-plate', component: ListPlateComponent },
     { path: 'list-plate/success', component: ListPlateSuccessComponent },
     { path: 'news', component: NewsListingComponent },

@@ -1,0 +1,120 @@
+@use '../../../styles/variables' as *;
+
+.plate-detail {
+  padding: 1.5rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.detail-breadcrumb {
+  margin-bottom: 1.5rem;
+
+  a {
+    color: #1565c0;
+    text-decoration: none;
+    font-size: 0.9rem;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.detail-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0px 0px 16px 4px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1.5rem 1.5rem;
+}
+
+.plate-css {
+  height: 60px;
+  border-radius: 5px;
+  background-color: #ff0;
+  color: #000;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+
+  .bevel-plate {
+    font-size: 3em;
+  }
+}
+
+.listing-price {
+  @include cabin-font;
+  font-size: 1rem;
+  color: white;
+  font-weight: 700;
+  background-color: #ff4081;
+  border-radius: 999px;
+  padding: 4px 14px;
+}
+
+.listing-meanings {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  text-align: center;
+}
+
+.listing-meanings-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.listing-meanings-text {
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.plate-meta-row {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.listed-date {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.listing-divider {
+  width: 100%;
+  margin: 0.5rem 0 0.25rem;
+  border: none;
+  border-top: 1px solid #e0e0e0;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.message-seller-btn {
+  border-radius: 4px !important;
+  background-color: #1565c0 !important;
+  color: white !important;
+}
+
+.loading,
+.not-found {
+  padding: 3rem 1.5rem;
+  text-align: center;
+
+  a {
+    color: #1565c0;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+}

@@ -1,0 +1,50 @@
+@if (listingState$ | async; as state) {
+  @if (state.status === 'loading') {
+    <div class="loading">
+      <p class="text-muted">Loading...</p>
+    </div>
+  } @else if (state.status === 'found') {
+    <div class="plate-detail">
+      <div class="detail-breadcrumb">
+        <a routerLink="/plates-for-sale">← Back to all plates</a>
+      </div>
+      <div class="detail-card">
+        <div class="plate-css">
+          <span class="bevel-plate">{{ state.listing.plateCharacters | uppercase }}</span>
+        </div>
+        <span class="listing-price">£{{ state.listing.askingPrice }}</span>
+        @if (state.listing.meanings) {
+          <div class="listing-meanings">
+            <span class="listing-meanings-label">Meaning</span>
+            <span class="listing-meanings-text">{{ state.listing.meanings }}</span>
+          </div>
+        }
+        @if (state.listing.plateType) {
+          <div class="plate-meta-row">
+            <span>{{ state.listing.plateType }}</span>
+            @if (state.listing.plateCategory) {
+              <span> · {{ state.listing.plateCategory }}</span>
+            }
+          </div>
+        }
+        <div class="listed-date">Listed {{ state.listing.createdDate | date:'d MMMM y' }}</div>
+        <hr class="listing-divider">
+        <div class="card-actions">
+          <button mat-raised-button class="message-seller-btn" (click)="onMessageSeller(state.listing)">
+            Message Seller
+          </button>
+          <button mat-stroked-button (click)="onCopyLink()">
+            <mat-icon>link</mat-icon>
+            Copy link
+          </button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="not-found">
+      <h2>Listing not found</h2>
+      <p>This plate may have been sold or removed.</p>
+      <a routerLink="/plates-for-sale">← Back to all plates</a>
+    </div>
+  }
+}
