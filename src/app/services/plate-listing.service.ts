@@ -14,6 +14,7 @@ import {
 import { combineLatest, map, Observable } from 'rxjs';
 import { PlateListing } from '../models/plate-listing.model';
 import { LISTING_FEE } from '../constants/listing-fee';
+import { normalisePlate } from '../utils/normalise-plate';
 
 @Injectable({
   providedIn: 'root'
@@ -80,5 +81,14 @@ export class PlateListingService {
   updateListing(id: string, data: { askingPrice: string; meanings: string }): Promise<void> {
     const ref = doc(this.firestore, `${this.COLLECTION_NEW}/${id}`);
     return updateDoc(ref, data);
+  }
+
+  getByPlate(plateChars: string): Observable<PlateListing | null> {
+    const normalised = normalisePlate(plateChars);
+    return this.getAll().pipe(
+      map(listings =>
+        listings.find(l => normalisePlate(l.plateCharacters) === normalised) ?? null
+      )
+    );
   }
 }
