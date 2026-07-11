@@ -56,11 +56,12 @@ export class PlateDetailComponent implements OnDestroy {
         startWith({ status: 'loading' as const })
       );
     }),
-    shareReplay(1)
+    shareReplay({ bufferSize: 1, refCount: true })
   );
 
   constructor() {
-    // Subscribe eagerly so side-effects (SEO tags) fire without needing a rendered template.
+    // Subscribe eagerly so SEO tags fire before the async pipe subscribes in the template.
+    // shareReplay ensures a single Firestore call is shared between this sub and the async pipe.
     this.sub = this.listingState$.subscribe();
   }
 
@@ -89,7 +90,7 @@ export class PlateDetailComponent implements OnDestroy {
       description: desc,
       offers: {
         '@type': 'Offer',
-        price: listing.askingPrice,
+        price: Number(listing.askingPrice) || 0,
         priceCurrency: 'GBP',
         availability: 'https://schema.org/InStock',
       },
