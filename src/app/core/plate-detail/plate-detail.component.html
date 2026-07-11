@@ -6,7 +6,7 @@
   } @else if (state.status === 'found') {
     <div class="plate-detail">
       <div class="detail-breadcrumb">
-        <a routerLink="/plates-for-sale">← Back to all plates</a>
+        <a href="#/plates-for-sale" (click)="goBack($event)">← Back to all plates</a>
       </div>
       <div class="detail-card">
         <div class="plate-css">
@@ -44,7 +44,7 @@
     <div class="not-found">
       <h2>Listing not found</h2>
       <p>This plate may have been sold or removed.</p>
-      <a routerLink="/plates-for-sale">← Back to all plates</a>
+      <a href="#/plates-for-sale" (click)="goBack($event)">← Back to all plates</a>
     </div>
   }
 }

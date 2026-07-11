@@ -9,7 +9,6 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { BenefitCardComponent } from '../../shared/benefit-card/benefit-card.component';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
 import { RecentlySoldComponent } from '../../shared/recently-sold/recently-sold.component';
@@ -18,6 +17,7 @@ import { PlateListing } from '../../models/plate-listing.model';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { Subject, Subscription, take } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../services/auth.service';
 import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
@@ -30,7 +30,7 @@ import { normalisePlate } from '../../utils/normalise-plate';
 @Component({
   selector: 'app-plates-for-sale',
   standalone: true,
-  imports: [MatCardModule, MatIconModule, MatTabsModule, MatButtonModule, MatBadgeModule, BenefitCardComponent, ShareButtonsComponent, RecentlySoldComponent, ScrollingModule, UpperCasePipe, DatePipe, DecimalPipe, MatFormFieldModule, MatInputModule, FormsModule, MatDialogModule, ListNowBannerComponent, TrackClickDirective, RouterLink],
+  imports: [MatCardModule, MatIconModule, MatTabsModule, MatButtonModule, MatBadgeModule, BenefitCardComponent, ShareButtonsComponent, RecentlySoldComponent, ScrollingModule, UpperCasePipe, DatePipe, DecimalPipe, MatFormFieldModule, MatInputModule, FormsModule, MatDialogModule, ListNowBannerComponent, TrackClickDirective],
   templateUrl: './plates-for-sale.component.html',
   styleUrl: './plates-for-sale.component.scss'
 })
@@ -40,10 +40,12 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private authService = inject(AuthService);
   private firestore = inject(Firestore);
+  private route = inject(ActivatedRoute);
 
   private searchSubject = new Subject<string>();
   private searchSub?: Subscription;
 
+  selectedTabIndex = 0;
   allListings: PlateListing[] = [];
   searchTerm = '';
 
@@ -80,6 +82,9 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.route.queryParams.pipe(take(1)).subscribe(params => {
+      if (params['tab'] === 'buy') this.selectedTabIndex = 1;
+    });
     this.searchSub = this.searchSubject.pipe(
       debounceTime(1000),
       distinctUntilChanged()

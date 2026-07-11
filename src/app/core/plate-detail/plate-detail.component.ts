@@ -1,6 +1,6 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, UpperCasePipe, DOCUMENT } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
 import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay, catchError, of } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -23,7 +23,7 @@ type ListingState =
   selector: 'app-plate-detail',
   standalone: true,
   imports: [
-    AsyncPipe, DatePipe, UpperCasePipe, RouterLink,
+    AsyncPipe, DatePipe, UpperCasePipe,
     MatButtonModule, MatIconModule, MatDialogModule, MatSnackBarModule,
   ],
   templateUrl: './plate-detail.component.html',
@@ -61,8 +61,6 @@ export class PlateDetailComponent implements OnDestroy {
   );
 
   constructor() {
-    // Subscribe eagerly so SEO tags fire before the async pipe subscribes in the template.
-    // shareReplay ensures a single Firestore call is shared between this sub and the async pipe.
     this.sub = this.listingState$.subscribe();
   }
 
@@ -124,6 +122,12 @@ export class PlateDetailComponent implements OnDestroy {
         this.dialog.open(MessageSellerDialogComponent, { width: '520px', data: listing });
       }
     });
+  }
+
+  goBack(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.hash = '/plates-for-sale?tab=buy';
   }
 
   onCopyLink(): void {
