@@ -1,16 +1,18 @@
 import { Component, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-share-buttons',
   standalone: true,
-  imports: [MatIconModule, MatSnackBarModule],
+  imports: [MatIconModule, MatSnackBarModule, RouterLink],
   templateUrl: './share-buttons.component.html',
   styleUrl: './share-buttons.component.scss'
 })
 export class ShareButtonsComponent {
   shareText = input.required<string>();
+  viewListingLink = input<string[] | null>(null);
 
   private snackBar = inject(MatSnackBar);
 

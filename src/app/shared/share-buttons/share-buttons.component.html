@@ -15,4 +15,9 @@
   <button type="button" class="share-btn copy" (click)="onCopyToClipboard()" aria-label="Copy to clipboard">
     <mat-icon>content_copy</mat-icon>
   </button>
+  @if (viewListingLink()) {
+    <a [routerLink]="viewListingLink()" class="share-btn" aria-label="View listing page">
+      <mat-icon>open_in_new</mat-icon>
+    </a>
+  }
 </div>
