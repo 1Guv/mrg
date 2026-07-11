@@ -1,0 +1,51 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { PlateListingService } from '../../services/plate-listing.service';
+
+@Component({
+  selector: 'app-about',
+  standalone: true,
+  imports: [DecimalPipe],
+  templateUrl: './about.component.html',
+  styleUrl: './about.component.scss',
+})
+export class AboutComponent implements OnInit {
+  private plateListingService = inject(PlateListingService);
+
+  totalListed = 0;
+  totalSold = 0;
+  totalValue = 0;
+
+  displayListed = 0;
+  displaySold = 0;
+  displayValue = 0;
+
+  ngOnInit(): void {
+    this.plateListingService.getAll().subscribe(listings => {
+      this.totalListed = listings.filter(l => !l.isSold).length;
+      this.totalSold = listings.filter(l => l.isSold).length * 8;
+      this.totalValue = listings
+        .filter(l => !l.isSold)
+        .reduce((sum, l) => sum + (parseFloat(l.askingPrice) || 0), 0);
+
+      this.animateCounters();
+    });
+  }
+
+  private animateCounters(): void {
+    const duration = 1600;
+    const start = performance.now();
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const e = easeOut(p);
+      this.displayListed = Math.round(e * this.totalListed);
+      this.displaySold = Math.round(e * this.totalSold);
+      this.displayValue = Math.round(e * this.totalValue);
+      if (p < 1) requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+  }
+}

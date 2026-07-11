@@ -13,6 +13,8 @@ import { NewsArticleComponent } from './core/news-article/news-article.component
 import { UnsubscribedComponent } from './core/unsubscribed/unsubscribed.component';
 import { PrivacyPolicyComponent } from './core/privacy-policy/privacy-policy.component';
 import { PlateDetailComponent } from './core/plate-detail/plate-detail.component';
+import { AboutComponent } from './core/about/about.component';
+import { ContactComponent } from './core/contact/contact.component';
 
 export const routes: Routes = [
     { path: '', component: MainSectionComponent },
@@ -32,4 +34,6 @@ export const routes: Routes = [
     { path: 'news/:slug', component: NewsArticleComponent },
     { path: 'unsubscribed', component: UnsubscribedComponent },
     { path: 'privacy-policy', component: PrivacyPolicyComponent },
+    { path: 'about', component: AboutComponent },
+    { path: 'contact', component: ContactComponent },
 ];

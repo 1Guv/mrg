@@ -22,11 +22,17 @@ export class SideMenuComponent {
 
   @Output() linkClicked = new EventEmitter<void>();
 
-  menuOptions$: Observable<HeaderMenuOptions[]>
+  menuOptions$: Observable<(HeaderMenuOptions | 'space')[]>
 
   constructor(
     private contentService: ContentService,
   ) {
-    this.menuOptions$ = this.contentService.content$.pipe(map(content => content?.header?.menuOptions)) as Observable<any>
+    this.menuOptions$ = this.contentService.content$.pipe(
+      map(content => {
+        const options: (HeaderMenuOptions | 'space')[] = [...(content?.header?.menuOptions ?? [])];
+        if (options.length >= 2) options.splice(options.length - 2, 0, 'space');
+        return options;
+      })
+    ) as Observable<any>
   }
 }

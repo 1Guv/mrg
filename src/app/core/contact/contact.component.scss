@@ -1,0 +1,145 @@
+$navy: #0c1552;
+$navy-bright: #1a237e;
+$gold: #ffd600;
+$text-dark: #141830;
+$text-body: #374151;
+$text-muted: #6b7594;
+$border: #e0e4f5;
+$off-white: #f4f6ff;
+
+.contact-page {
+  min-height: 80vh;
+  background: $off-white;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 72px 24px 88px;
+}
+
+.contact-inner {
+  max-width: 560px;
+  width: 100%;
+}
+
+.eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: $navy-bright;
+  margin-bottom: 16px;
+}
+
+.heading {
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 800;
+  color: $text-dark;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.sub {
+  font-size: 16px;
+  color: $text-muted;
+  line-height: 1.6;
+  margin-bottom: 48px;
+}
+
+.channels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.channel-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 24px 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+
+  &:hover {
+    border-color: $navy-bright;
+    box-shadow: 0 4px 20px rgba(26, 35, 126, 0.1);
+    transform: translateY(-2px);
+
+    .arrow {
+      transform: translateX(4px);
+    }
+  }
+}
+
+.channel-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  mat-icon {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+  }
+
+  &.whatsapp {
+    background: #e8f8f0;
+    color: #25d366;
+  }
+
+  &.email {
+    background: #e8eaf6;
+    color: $navy-bright;
+  }
+}
+
+.channel-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.channel-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+.channel-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: $text-dark;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-hint {
+  font-size: 13px;
+  color: $text-muted;
+}
+
+.arrow {
+  color: $text-muted;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
