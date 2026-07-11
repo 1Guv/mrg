@@ -347,6 +347,14 @@
   padding: 0 2rem !important;
 }
 
+.card-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  width: 100%;
+}
+
 
 .storefront-icon {
   font-size: 3rem;

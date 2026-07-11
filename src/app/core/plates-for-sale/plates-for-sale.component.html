@@ -85,13 +85,20 @@
                                             </div>
                                         }
                                         <hr class="listing-divider">
-                                        <button mat-raised-button class="message-seller-btn"
-                                            [matBadge]="listing.viewsPlaceholder"
-                                            matBadgePosition="above after"
-                                            matBadgeColor="accent"
-                                            (click)="onMessageSeller(listing)">
-                                            Message Seller
-                                        </button>
+                                        <div class="card-actions-row">
+                                            <button mat-raised-button class="message-seller-btn"
+                                                [matBadge]="listing.viewsPlaceholder"
+                                                matBadgePosition="above after"
+                                                matBadgeColor="accent"
+                                                (click)="onMessageSeller(listing)">
+                                                Message Seller
+                                            </button>
+                                            <a mat-icon-button
+                                               [routerLink]="['/plates-for-sale', normalisePlate(listing.plateCharacters)]"
+                                               aria-label="View listing page">
+                                                <mat-icon>open_in_new</mat-icon>
+                                            </a>
+                                        </div>
                                         <div class="share-buttons-wrapper">
                                             <app-share-buttons [shareText]="listing.plateCharacters + ' — £' + listing.askingPrice" />
                                         </div>

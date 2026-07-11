@@ -9,6 +9,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { BenefitCardComponent } from '../../shared/benefit-card/benefit-card.component';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
 import { RecentlySoldComponent } from '../../shared/recently-sold/recently-sold.component';
@@ -24,11 +25,12 @@ import { MessageSellerDialogComponent } from '../../shared/message-seller-dialog
 import { ListNowBannerComponent } from '../../shared/list-now-banner/list-now-banner.component';
 import { TrackClickDirective } from '../../directives/track-click.directive';
 import { Firestore, addDoc, collection, serverTimestamp } from '@angular/fire/firestore';
+import { normalisePlate } from '../../utils/normalise-plate';
 
 @Component({
   selector: 'app-plates-for-sale',
   standalone: true,
-  imports: [MatCardModule, MatIconModule, MatTabsModule, MatButtonModule, MatBadgeModule, BenefitCardComponent, ShareButtonsComponent, RecentlySoldComponent, ScrollingModule, UpperCasePipe, DatePipe, DecimalPipe, MatFormFieldModule, MatInputModule, FormsModule, MatDialogModule, ListNowBannerComponent, TrackClickDirective],
+  imports: [MatCardModule, MatIconModule, MatTabsModule, MatButtonModule, MatBadgeModule, BenefitCardComponent, ShareButtonsComponent, RecentlySoldComponent, ScrollingModule, UpperCasePipe, DatePipe, DecimalPipe, MatFormFieldModule, MatInputModule, FormsModule, MatDialogModule, ListNowBannerComponent, TrackClickDirective, RouterLink],
   templateUrl: './plates-for-sale.component.html',
   styleUrl: './plates-for-sale.component.scss'
 })
@@ -125,6 +127,8 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  protected readonly normalisePlate = normalisePlate;
 
   constructor() {
     this.plateListingService.getAll().subscribe(listings => {
