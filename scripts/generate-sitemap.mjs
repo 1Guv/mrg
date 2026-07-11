@@ -23,9 +23,13 @@ function normalisePlate(plate) {
   return plate.replace(/\s/g, '').toUpperCase();
 }
 
+function escapeXml(str) {
+  return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+}
+
 function buildXml(urls) {
   const entries = urls.map(u =>
-    `  <url>\n    <loc>${u.loc}</loc>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`
+    `  <url>\n    <loc>${escapeXml(u.loc)}</loc>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`
   ).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>`;
 }
@@ -44,10 +48,10 @@ async function generate() {
     ...newSnap.docs.map(d => d.data().plateCharacters),
   ].filter(Boolean);
 
-  const plates = [...new Set(allPlateChars)];
+  const plates = [...new Set(allPlateChars.map(normalisePlate))];
 
   const plateUrls = plates.map(plate => ({
-    loc: `${BASE_URL}/plates-for-sale/${normalisePlate(plate)}`,
+    loc: `${BASE_URL}/plates-for-sale/${plate}`,
     changefreq: 'weekly',
     priority: '0.8',
   }));

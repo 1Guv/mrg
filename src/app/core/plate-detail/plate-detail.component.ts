@@ -2,7 +2,7 @@ import { Component, OnDestroy, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, UpperCasePipe, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
-import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay } from 'rxjs';
+import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay, catchError, of } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -53,6 +53,7 @@ export class PlateDetailComponent implements OnDestroy {
             ? ({ status: 'found' as const, listing })
             : ({ status: 'not-found' as const })
         ),
+        catchError(() => of({ status: 'not-found' as const })),
         startWith({ status: 'loading' as const })
       );
     }),
@@ -72,6 +73,9 @@ export class PlateDetailComponent implements OnDestroy {
 
     this.titleService.setTitle(title);
     this.metaService.updateTag({ name: 'description', content: desc });
+
+    // Remove any pre-existing canonical (e.g. the static one in index.html)
+    this.document.head.querySelector('link[rel="canonical"]')?.remove();
 
     this.canonicalLink?.remove();
     const link = this.document.createElement('link');
@@ -105,6 +109,11 @@ export class PlateDetailComponent implements OnDestroy {
     this.metaService.removeTag('name="description"');
     this.canonicalLink?.remove();
     this.jsonLdScript?.remove();
+    // Restore the root canonical removed during setSeoTags
+    const rootCanonical = this.document.createElement('link');
+    rootCanonical.setAttribute('rel', 'canonical');
+    rootCanonical.setAttribute('href', 'https://mrvaluations.co.uk/');
+    this.document.head.appendChild(rootCanonical);
   }
 
   onMessageSeller(listing: PlateListing): void {
