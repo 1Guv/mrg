@@ -39,10 +39,12 @@ async function generate() {
     db.collection('plate-listings-new').where('isSold', '==', false).get(),
   ]);
 
-  const plates = [
+  const allPlateChars = [
     ...oldSnap.docs.map(d => d.data().plateCharacters),
     ...newSnap.docs.map(d => d.data().plateCharacters),
   ].filter(Boolean);
+
+  const plates = [...new Set(allPlateChars)];
 
   const plateUrls = plates.map(plate => ({
     loc: `${BASE_URL}/plates-for-sale/${normalisePlate(plate)}`,
