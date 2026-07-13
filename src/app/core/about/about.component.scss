@@ -37,8 +37,8 @@ $text-body: #374151;
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  max-width: 860px;
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 1060px;
   margin: 0 auto;
 }
 
@@ -145,9 +145,9 @@ $text-body: #374151;
   }
 }
 
-@media (max-width: 580px) {
+@media (max-width: 720px) {
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .stat-item {
@@ -155,6 +155,18 @@ $text-body: #374151;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 20px 16px;
 
+    &:nth-child(-n+2) {
+      border-top: none;
+    }
+  }
+}
+
+@media (max-width: 380px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-item {
     &:first-child {
       border-top: none;
     }

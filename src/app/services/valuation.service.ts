@@ -10,7 +10,8 @@ import {
   addDoc,
   doc,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  getCountFromServer
 } from '@angular/fire/firestore';
 import { Observable, of, switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
@@ -174,6 +175,11 @@ export class ValuationService {
         return addDoc(ref, payload);
       })
     );
+  }
+
+  getAutoValuationsCount(): Promise<number> {
+    const ref = collection(this.firestore, 'auto_valuations');
+    return getCountFromServer(ref).then(snap => snap.data().count);
   }
 
   savePlateValuationMessage(registration: string, valuation: number, plateMeaning: string, message: string) {

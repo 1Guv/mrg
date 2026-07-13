@@ -5,11 +5,9 @@ hr {
   margin: 3px 10px !important;
 }
 
-hr.section-gap {
-  margin-top: 20px !important;
-  margin-bottom: 4px !important;
+.section-start {
+  margin-top: 14px;
 }
-
 
 .base-font {
   @include cabin-font;

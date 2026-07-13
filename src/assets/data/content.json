@@ -47,18 +47,6 @@
           "icon": "newspaper",
           "url": "/news",
           "toolTip": "Latest News"
-        },
-        {
-          "name": "About Us",
-          "icon": "info",
-          "url": "/about",
-          "toolTip": "About MR Valuations"
-        },
-        {
-          "name": "Contact Us",
-          "icon": "chat_bubble_outline",
-          "url": "/contact",
-          "toolTip": "Contact Us"
         }
       ]
     },
