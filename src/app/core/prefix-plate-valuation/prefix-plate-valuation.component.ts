@@ -16,6 +16,7 @@ import { ValuationService } from '../../services/valuation.service';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
 import { PostValuationPromptService } from '../../services/post-valuation-prompt.service';
+import { PlateListingService } from '../../services/plate-listing.service';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
 import { ValuationFeedbackComponent } from '../../shared/valuation-feedback/valuation-feedback.component';
@@ -63,6 +64,7 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
   private valuationService = inject(ValuationService);
   private router = inject(Router);
   private postValuationPrompt = inject(PostValuationPromptService);
+  plateListingService = inject(PlateListingService);
   private subs = new Subscription();
 
   registration: string | null = null;

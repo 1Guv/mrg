@@ -88,22 +88,12 @@
   }
 }
 
-.list-now-btn {
+.list-now-btn-wrapper {
+  position: relative;
+  display: inline-block;
   margin: 0.75rem;
-  padding: 0.75rem 2.5rem;
-  background-color: #2e7d32;
-  color: white;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  border-radius: 2rem;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.45);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-  overflow: visible;
 
-  &::after {
-    content: '£6';
+  .price-badge {
     position: absolute;
     top: -8px;
     right: -8px;
@@ -115,9 +105,22 @@
     border-radius: 0.75rem;
     letter-spacing: 0;
     line-height: 1.5;
-    text-transform: none;
     pointer-events: none;
   }
+}
+
+.list-now-btn {
+  padding: 0.75rem 2.5rem;
+  background-color: #2e7d32;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 2rem;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  overflow: visible;
 
   &:hover {
     background-color: #1b5e20;

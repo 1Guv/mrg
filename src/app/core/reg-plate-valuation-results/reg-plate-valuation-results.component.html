@@ -208,7 +208,10 @@
     </mat-card>
 
     <p class="d-flex justify-content-center">
-      <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+      <span class="list-now-btn-wrapper">
+        <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+        <span class="price-badge">£{{ plateListingService.listingFee }}</span>
+      </span>
     </p>
 
     <app-share-buttons [shareText]="shareText" />
@@ -271,7 +274,10 @@
 
     <p class="d-flex flex-column align-items-center pt-3 gap-2">
         <button mat-raised-button type="button" class="valuate-now" (click)="onResetPlateForm()">Start Over</button>
-        <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+        <span class="list-now-btn-wrapper">
+            <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+            <span class="price-badge">£{{ plateListingService.listingFee }}</span>
+        </span>
     </p>
 
     <p class="d-flex justify-content-center pt-3">

@@ -22,6 +22,7 @@ import { catchError, map, of, pipe, Subscription } from 'rxjs';
 import { ValuationService } from '../../services/valuation.service';
 import { AuthService } from '../../services/auth.service';
 import { PostValuationPromptService } from '../../services/post-valuation-prompt.service';
+import { PlateListingService } from '../../services/plate-listing.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
@@ -128,6 +129,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   private valuationService = inject(ValuationService);
   private authService = inject(AuthService);
   private postValuationPrompt = inject(PostValuationPromptService);
+  plateListingService = inject(PlateListingService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
 
