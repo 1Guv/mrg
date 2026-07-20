@@ -12,6 +12,9 @@
  *
  * Dry-run (no writes):
  *   DRY_RUN=true node scripts/backfill-nudge-queue.mjs
+ *
+ * Exclude specific emails (e.g. test accounts), comma-separated:
+ *   EXCLUDE_EMAILS=test@example.com,other@example.com node scripts/backfill-nudge-queue.mjs
  */
 
 import { initializeApp, cert } from 'firebase-admin/app';
@@ -23,6 +26,12 @@ const serviceAccount = require('./service-account.json');
 
 const DRY_RUN = process.env.DRY_RUN === 'true';
 const MINUTES_30 = 30 * 60 * 1000;
+const EXCLUDE_EMAILS = new Set(
+  (process.env.EXCLUDE_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 async function backfill() {
   initializeApp({ credential: cert(serviceAccount) });
@@ -45,6 +54,7 @@ async function backfill() {
     if (!rawEmail || !rawReg) continue;
 
     const email = String(rawEmail).trim().toLowerCase();
+    if (EXCLUDE_EMAILS.has(email)) continue;
     const registration = String(rawReg).replace(/\s/g, '').toUpperCase();
     const key = `${email}::${registration}`;
 
