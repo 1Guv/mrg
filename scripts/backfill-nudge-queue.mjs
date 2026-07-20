@@ -5,7 +5,7 @@
  * creates a nudge queue entry if one doesn't already exist and the plate isn't
  * already listed in plate-listings-new.
  *
- * First emails will go out ~24 hours after this script runs.
+ * First emails will go out ~30 minutes after this script runs.
  *
  * Usage:
  *   node scripts/backfill-nudge-queue.mjs
@@ -22,7 +22,7 @@ const require = createRequire(import.meta.url);
 const serviceAccount = require('./service-account.json');
 
 const DRY_RUN = process.env.DRY_RUN === 'true';
-const HOURS_24 = 24 * 60 * 60 * 1000;
+const MINUTES_30 = 30 * 60 * 1000;
 
 async function backfill() {
   initializeApp({ credential: cert(serviceAccount) });
@@ -83,7 +83,7 @@ async function backfill() {
   console.log(`Already in queue: ${alreadyQueued.size}\n`);
 
   // ── 5. Seed queue entries ─────────────────────────────────────────────────
-  const nextSendAt = Timestamp.fromMillis(Date.now() + HOURS_24);
+  const nextSendAt = Timestamp.fromMillis(Date.now() + MINUTES_30);
   let created = 0;
   let skippedListed = 0;
   let skippedQueued = 0;

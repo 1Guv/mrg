@@ -700,10 +700,10 @@ export const onAutoValuationCreated = onDocumentCreated(
   }
 );
 
-/** Runs every 6 hours — sends due nudge emails and advances queue timers. */
+/** Runs every 15 minutes — sends due nudge emails and advances queue timers. */
 export const scheduledNudgeEmails = onSchedule(
   {
-    schedule: "every 6 hours",
+    schedule: "every 15 minutes",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [nudgeUnsubscribeSecret],

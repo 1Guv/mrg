@@ -6,8 +6,8 @@ import {LISTING_FEE_GBP} from "./constants.js";
 const APP_URL = "https://mrvaluations.co.uk";
 const FUNCTIONS_BASE_URL =
   "https://us-central1-code-g-b8b6f.cloudfunctions.net";
+const MINUTES_30 = 30 * 60 * 1000;
 const HOURS_24 = 24 * 60 * 60 * 1000;
-const HOURS_48 = 48 * 60 * 60 * 1000;
 
 /**
  * Creates an HMAC-SHA256 token for the given email.
@@ -149,7 +149,7 @@ export async function runOnAutoValuationCreated(
 
   if (!existing.empty) return;
 
-  const nextSendAt = new Date(savedAt.toMillis() + HOURS_24);
+  const nextSendAt = new Date(savedAt.toMillis() + MINUTES_30);
 
   await db.collection("listing_nudge_queue").add({
     email,
@@ -172,7 +172,7 @@ export async function runOnAutoValuationCreated(
 
 /**
  * Processes all due nudge queue entries.
- * Sends emails and advances the next send time by 48 hours.
+ * Sends emails and advances the next send time by 24 hours (once a day).
  * @param {string} nudgeSecret HMAC secret for signing unsubscribe URLs.
  */
 export async function runScheduledNudgeEmails(
@@ -259,7 +259,7 @@ export async function runScheduledNudgeEmails(
       sendCount,
       lastSentAt: admin.firestore.Timestamp.now(),
       nextSendAt: admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + HOURS_48)
+        new Date(Date.now() + HOURS_24)
       ),
     });
 
@@ -324,7 +324,7 @@ export async function runToggleNudgeEmails(
   const batch = db.batch();
   const now = admin.firestore.Timestamp.now();
   const nextSendAt = admin.firestore.Timestamp.fromDate(
-    new Date(Date.now() + HOURS_48)
+    new Date(Date.now() + HOURS_24)
   );
 
   for (const d of snap.docs) {
