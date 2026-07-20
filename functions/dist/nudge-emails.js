@@ -47,8 +47,8 @@ const constants_js_1 = require("./constants.js");
 const APP_URL = "https://mrvaluations.co.uk";
 exports.APP_URL = APP_URL;
 const FUNCTIONS_BASE_URL = "https://us-central1-code-g-b8b6f.cloudfunctions.net";
+const MINUTES_30 = 30 * 60 * 1000;
 const HOURS_24 = 24 * 60 * 60 * 1000;
-const HOURS_48 = 48 * 60 * 60 * 1000;
 /**
  * Creates an HMAC-SHA256 token for the given email.
  * @param {string} email The email address to sign.
@@ -139,7 +139,7 @@ function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl) {
     </ul>
   </div>
   <div style="text-align:center;margin:32px 0;">
-    <a href="${APP_URL}/list-plate"
+    <a href="${APP_URL}/#/list-plate"
        style="background:#003399;color:#fff;padding:14px 32px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;display:inline-block;">
       List My Plate for £${constants_js_1.LISTING_FEE_GBP} &rarr;
     </a>
@@ -176,7 +176,7 @@ async function runOnAutoValuationCreated(data, savedAt) {
         .get();
     if (!existing.empty)
         return;
-    const nextSendAt = new Date(savedAt.toMillis() + HOURS_24);
+    const nextSendAt = new Date(savedAt.toMillis() + MINUTES_30);
     await db.collection("listing_nudge_queue").add({
         email,
         registration,
@@ -196,7 +196,7 @@ async function runOnAutoValuationCreated(data, savedAt) {
 }
 /**
  * Processes all due nudge queue entries.
- * Sends emails and advances the next send time by 48 hours.
+ * Sends emails and advances the next send time by 24 hours (once a day).
  * @param {string} nudgeSecret HMAC secret for signing unsubscribe URLs.
  */
 async function runScheduledNudgeEmails(nudgeSecret) {
@@ -264,7 +264,7 @@ async function runScheduledNudgeEmails(nudgeSecret) {
         await doc.ref.update({
             sendCount,
             lastSentAt: admin.firestore.Timestamp.now(),
-            nextSendAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + HOURS_48)),
+            nextSendAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + HOURS_24)),
         });
         console.log(`nudge: sent #${sendCount} to ${email} for ${registration}`);
     }
@@ -315,7 +315,7 @@ async function runToggleNudgeEmails(uid, optOut) {
         return;
     const batch = db.batch();
     const now = admin.firestore.Timestamp.now();
-    const nextSendAt = admin.firestore.Timestamp.fromDate(new Date(Date.now() + HOURS_48));
+    const nextSendAt = admin.firestore.Timestamp.fromDate(new Date(Date.now() + HOURS_24));
     for (const d of snap.docs) {
         if (optOut) {
             batch.update(d.ref, { unsubscribed: true, unsubscribedAt: now });

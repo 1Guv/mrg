@@ -383,8 +383,8 @@ exports.createCheckoutSession = (0, https_1.onCall)({ maxInstances: 10, secrets:
             },
         ],
         // eslint-disable-next-line max-len
-        success_url: `${appBaseUrl}/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${appBaseUrl}/list-plate`,
+        success_url: `${appBaseUrl}/#/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appBaseUrl}/#/list-plate`,
         metadata: {
             plateCharacters: String(plateCharacters).toUpperCase(),
             askingPrice: String(askingPrice),
@@ -587,9 +587,9 @@ exports.onAutoValuationCreated = (0, firestore_1.onDocumentCreated)("auto_valuat
     const savedAt = (_b = data["savedAt"]) !== null && _b !== void 0 ? _b : admin.firestore.Timestamp.now();
     await (0, nudge_emails_js_1.runOnAutoValuationCreated)(data, savedAt);
 });
-/** Runs every 6 hours — sends due nudge emails and advances queue timers. */
+/** Runs every 15 minutes — sends due nudge emails and advances queue timers. */
 exports.scheduledNudgeEmails = (0, scheduler_1.onSchedule)({
-    schedule: "every 6 hours",
+    schedule: "every 15 minutes",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [nudgeUnsubscribeSecret],
@@ -609,7 +609,7 @@ exports.unsubscribeNudge = (0, https_1.onRequest)({ maxInstances: 10, secrets: [
         response.status(400).send("Invalid token");
         return;
     }
-    response.redirect(`${nudge_emails_js_1.APP_URL}/unsubscribed`);
+    response.redirect(`${nudge_emails_js_1.APP_URL}/#/unsubscribed`);
 });
 /** Callable — toggles nudge email opt-out for the current user. */
 exports.toggleNudgeEmails = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
