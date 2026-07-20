@@ -152,6 +152,7 @@ export class ValuationService {
       take(1),
       switchMap((user) => {
         if (user) payload['userId'] = user.uid;
+        if (!payload['email'] && user?.email) payload['email'] = user.email;
         const displayEmail = user?.email ?? details?.email ?? 'Guest';
         const displayName = details ? `${details.firstName} ${details.lastName}` : (user ? user.email ?? user.uid : 'Guest');
         addDoc(mailRef, {
