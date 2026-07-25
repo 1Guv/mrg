@@ -114,7 +114,7 @@ function buildEmailHtml(
   <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
   <p style="color:#888;font-size:12px;text-align:center;">
     If you'd rather not hear from us about this, no problem at all.<br>
-    <a href="${unsubUrl}" style="color:#888;">Unsubscribe from these emails</a>
+    <a href="${unsubUrl}" style="color:#003399;text-decoration:underline;font-weight:bold;">Unsubscribe</a> from these emails
   </p>
   <p style="color:#888;font-size:12px;text-align:center;">The MR Valuations Team</p>
 </body>
