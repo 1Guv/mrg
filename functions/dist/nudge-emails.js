@@ -32,6 +32,9 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.APP_URL = void 0;
 exports.hmacToken = hmacToken;
@@ -43,7 +46,9 @@ exports.runGetNudgeStatus = runGetNudgeStatus;
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 const dns = __importStar(require("dns"));
+const stripe_1 = __importDefault(require("stripe"));
 const constants_js_1 = require("./constants.js");
+const vouchers_js_1 = require("./vouchers.js");
 const APP_URL = "https://mrvaluations.co.uk";
 exports.APP_URL = APP_URL;
 const FUNCTIONS_BASE_URL = "https://us-central1-code-g-b8b6f.cloudfunctions.net";
@@ -100,10 +105,23 @@ function formatPrice(amount) {
  * @param {number} minPrice Minimum valuation price.
  * @param {number} maxPrice Maximum valuation price.
  * @param {string} unsubUrl Signed one-click unsubscribe URL.
+ * @param {string | null} voucherCode First-send 10%-off code, or null.
  * @return {string} HTML string.
  */
-function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl) {
+function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl, voucherCode) {
     /* eslint-disable max-len */
+    const ctaUrl = voucherCode ?
+        `${APP_URL}/#/list-plate?plate=${encodeURIComponent(registration)}&voucher=${encodeURIComponent(voucherCode)}` :
+        `${APP_URL}/#/list-plate?plate=${encodeURIComponent(registration)}`;
+    const voucherBanner = voucherCode ? `
+  <div style="background:#FFC200;border-radius:6px;padding:16px;margin:24px 0;text-align:center;">
+    <p style="margin:0;font-weight:bold;color:#003399;">
+      List in the next 24 hours and get 10% off — already applied when you click below.
+    </p>
+  </div>` : "";
+    const ctaLabel = voucherCode ?
+        "List My Plate — 10% Off &rarr;" :
+        `List My Plate for £${constants_js_1.LISTING_FEE_GBP} &rarr;`;
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -129,6 +147,7 @@ function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl) {
     <strong>Listing your plate is just £${constants_js_1.LISTING_FEE_GBP}</strong> — a one-off fee, and it stays listed until it sells.
     No commission, no monthly charges, no hassle.
   </p>
+  ${voucherBanner}
   <div style="background:#f8f9fa;border-left:4px solid #003399;padding:16px;margin:24px 0;">
     <p style="margin:0 0 8px;font-weight:bold;">Why list with us?</p>
     <ul style="margin:0;padding-left:20px;">
@@ -139,9 +158,9 @@ function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl) {
     </ul>
   </div>
   <div style="text-align:center;margin:32px 0;">
-    <a href="${APP_URL}/#/list-plate"
+    <a href="${ctaUrl}"
        style="background:#003399;color:#fff;padding:14px 32px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;display:inline-block;">
-      List My Plate for £${constants_js_1.LISTING_FEE_GBP} &rarr;
+      ${ctaLabel}
     </a>
   </div>
   <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
@@ -198,11 +217,15 @@ async function runOnAutoValuationCreated(data, savedAt) {
  * Processes all due nudge queue entries.
  * Sends emails and advances the next send time by 24 hours (once a day).
  * @param {string} nudgeSecret HMAC secret for signing unsubscribe URLs.
+ * @param {string} stripeSecretKey Stripe secret key, for minting the
+ *   first-send 10%-off voucher.
  */
-async function runScheduledNudgeEmails(nudgeSecret) {
-    var _a, _b, _c;
+async function runScheduledNudgeEmails(nudgeSecret, stripeSecretKey) {
+    var _a, _b, _c, _d;
     const db = admin.firestore();
     const now = admin.firestore.Timestamp.now();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe = new stripe_1.default(stripeSecretKey);
     const due = await db.collection("listing_nudge_queue")
         .where("unsubscribed", "==", false)
         .where("listed", "==", false)
@@ -253,10 +276,28 @@ async function runScheduledNudgeEmails(nudgeSecret) {
         const firstName = entry["firstName"] || "there";
         const valuationMin = (_a = entry["valuationMin"]) !== null && _a !== void 0 ? _a : 0;
         const valuationMax = (_b = entry["valuationMax"]) !== null && _b !== void 0 ? _b : 0;
-        const sendCount = ((_c = entry["sendCount"]) !== null && _c !== void 0 ? _c : 0) + 1;
+        const sendCountBefore = (_c = entry["sendCount"]) !== null && _c !== void 0 ? _c : 0;
+        const sendCount = sendCountBefore + 1;
+        let voucherCode = null;
+        if (sendCountBefore === 0) {
+            voucherCode = (_d = entry["voucherCode"]) !== null && _d !== void 0 ? _d : null;
+            if (!voucherCode) {
+                try {
+                    const minted = await (0, vouchers_js_1.mintNudgeVoucher)(stripe, db, registration);
+                    voucherCode = minted.code;
+                    await doc.ref.update({
+                        voucherCode: minted.code,
+                        voucherExpiresAt: minted.expiresAt,
+                    });
+                }
+                catch (err) {
+                    console.warn(`nudge: failed to mint voucher for ${registration}`, err);
+                }
+            }
+        }
         const subject = `Your plate ${registration} could be worth ` +
             `${formatPrice(valuationMax)} — have you thought about listing it?`;
-        const html = buildEmailHtml(firstName, registration, valuationMin, valuationMax, unsubUrl);
+        const html = buildEmailHtml(firstName, registration, valuationMin, valuationMax, unsubUrl, voucherCode);
         await db.collection("mail").add({
             to: [email],
             message: { subject, html },
