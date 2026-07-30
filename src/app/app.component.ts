@@ -6,9 +6,10 @@ import {NgStyle} from "@angular/common";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
 import {SideMenuComponent} from "./core/side-menu/side-menu.component";
+import {VoucherBannerComponent} from "./shared/voucher-banner/voucher-banner.component";
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, HeaderMenuComponent, MatSidenavContainer, NgStyle, MatSidenavModule, MatButtonModule, MatIconModule, SideMenuComponent],
+    imports: [RouterOutlet, HeaderMenuComponent, MatSidenavContainer, NgStyle, MatSidenavModule, MatButtonModule, MatIconModule, SideMenuComponent, VoucherBannerComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss'
 })

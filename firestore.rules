@@ -110,6 +110,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Vouchers — public marketing codes are publicly readable (queried by audience);
+    // personal nudge codes are not publicly queryable. Written only by Cloud Functions.
+    match /vouchers/{docId} {
+      allow read: if resource.data.audience == 'public';
+      allow write: if false;
+    }
+
     // Articles — publicly readable; written only by Cloud Function (admin SDK bypasses rules)
     match /articles/{articleId} {
       allow read: if true;

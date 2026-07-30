@@ -14,6 +14,7 @@ export class StripeService {
     initials: string;
     meanings: string;
     negotiable: boolean;
+    voucherCode?: string;
   }): Promise<string> {
     const fn = httpsCallable<typeof data & { appBaseUrl: string }, { url: string }>(
       this.functions,

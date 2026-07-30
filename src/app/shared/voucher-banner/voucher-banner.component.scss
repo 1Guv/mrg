@@ -1,0 +1,25 @@
+.voucher-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #FFC200;
+  padding: 0.6rem 1rem;
+  text-align: center;
+}
+
+.voucher-banner-text {
+  font-size: 0.9rem;
+  color: #003399;
+  font-weight: 500;
+}
+
+.voucher-banner-dismiss {
+  background: none;
+  border: none;
+  color: #003399;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}

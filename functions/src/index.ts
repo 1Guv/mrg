@@ -21,6 +21,11 @@ import {
   runGetNudgeStatus,
   APP_URL,
 } from "./nudge-emails.js";
+import {
+  createPublicVoucher,
+  deactivateVoucher,
+  resolveVoucherForCheckout,
+} from "./vouchers.js";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -378,12 +383,19 @@ export const createCheckoutSession = onCall(
       meanings,
       negotiable,
       appBaseUrl,
+      voucherCode,
     } = request.data;
 
     const sellerUid = request.auth.uid;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stripe =
       new (Stripe as any)(stripeSecretKey.value()) as import("stripe").Stripe;
+
+    let promotionCodeId: string | null = null;
+    if (voucherCode) {
+      promotionCodeId =
+        await resolveVoucherForCheckout(stripe, String(voucherCode));
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -404,6 +416,9 @@ export const createCheckoutSession = onCall(
       // eslint-disable-next-line max-len
       success_url: `${appBaseUrl}/#/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appBaseUrl}/#/list-plate`,
+      ...(promotionCodeId ?
+        {discounts: [{promotion_code: promotionCodeId}]} :
+        {allow_promotion_codes: true}),
       metadata: {
         plateCharacters: String(plateCharacters).toUpperCase(),
         askingPrice: String(askingPrice),
@@ -413,10 +428,58 @@ export const createCheckoutSession = onCall(
         meanings: String(meanings ?? ""),
         negotiable: negotiable ? "true" : "false",
         sellerUid,
+        voucherCode: promotionCodeId ?
+          String(voucherCode).trim().toUpperCase() : "",
       },
     });
 
     return {url: session.url};
+  }
+);
+
+/** Callable — admin creates/deactivates public marketing voucher codes. */
+export const manageVoucher = onCall(
+  {maxInstances: 10, secrets: [stripeSecretKey]},
+  async (request) => {
+    const adminEmail = "gurvinder.singh.sandhu@gmail.com";
+    if (!request.auth || request.auth.token.email !== adminEmail) {
+      throw new HttpsError("permission-denied", "Not authorised");
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe =
+      new (Stripe as any)(stripeSecretKey.value()) as import("stripe").Stripe;
+
+    const {action} = request.data;
+
+    if (action === "create") {
+      const {code, percentOff, description, expiresAt, maxRedemptions} =
+        request.data;
+      if (!code || !percentOff) {
+        throw new HttpsError(
+          "invalid-argument", "code and percentOff are required"
+        );
+      }
+      const id = await createPublicVoucher(stripe, db, {
+        code: String(code),
+        percentOff: Number(percentOff),
+        description: String(description ?? ""),
+        expiresAtMs: expiresAt ? new Date(String(expiresAt)).getTime() : null,
+        maxRedemptions: maxRedemptions ? Number(maxRedemptions) : null,
+      });
+      return {success: true, id};
+    }
+
+    if (action === "deactivate") {
+      const {voucherId} = request.data;
+      if (!voucherId) {
+        throw new HttpsError("invalid-argument", "voucherId is required");
+      }
+      await deactivateVoucher(stripe, db, String(voucherId));
+      return {success: true};
+    }
+
+    throw new HttpsError("invalid-argument", "Unknown action");
   }
 );
 
@@ -457,9 +520,40 @@ export const stripeWebhook = onRequest(
         meanings: string;
         negotiable: string;
         sellerUid: string;
+        voucherCode?: string;
       };
       const fallback = (meta.email ?? "XX").substring(0, 2).toUpperCase();
       const initials = meta.initials || fallback;
+
+      let voucherCode = meta.voucherCode || "";
+      const discountAppliedPence = session.total_details?.amount_discount ?? 0;
+
+      // Best-effort: if the discount wasn't pre-resolved (customer typed a
+      // public code manually), resolve which voucher was applied from the
+      // Stripe session so it can be recorded for reporting. Never blocks
+      // listing creation if this lookup fails.
+      if (!voucherCode && discountAppliedPence > 0) {
+        try {
+          const full = await stripe.checkout.sessions.retrieve(session.id, {
+            expand: ["total_details.breakdown.discounts"],
+          });
+          const discount = full.total_details?.breakdown?.discounts?.[0];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const promoCode = (discount as any)?.discount?.promotion_code;
+          const promoId = typeof promoCode === "string" ? promoCode : null;
+          if (promoId) {
+            const voucherSnap = await db.collection("vouchers")
+              .where("stripePromotionCodeId", "==", promoId)
+              .limit(1)
+              .get();
+            if (!voucherSnap.empty) {
+              voucherCode = voucherSnap.docs[0].data()["code"] as string;
+            }
+          }
+        } catch (err) {
+          console.warn("stripeWebhook: failed to resolve applied voucher", err);
+        }
+      }
 
       await db.collection("plate-listings-new").add({
         plateCharacters: meta.plateCharacters,
@@ -485,6 +579,8 @@ export const stripeWebhook = onRequest(
         profiletPicUrl: "",
         profiletPicInitials: true,
         messageSeller: "",
+        voucherCode: voucherCode || null,
+        discountAppliedPence: discountAppliedPence || null,
       });
     }
 
@@ -706,10 +802,12 @@ export const scheduledNudgeEmails = onSchedule(
     schedule: "every 15 minutes",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
-    secrets: [nudgeUnsubscribeSecret],
+    secrets: [nudgeUnsubscribeSecret, stripeSecretKey],
   },
   async () => {
-    await runScheduledNudgeEmails(nudgeUnsubscribeSecret.value());
+    await runScheduledNudgeEmails(
+      nudgeUnsubscribeSecret.value(), stripeSecretKey.value()
+    );
   }
 );
 

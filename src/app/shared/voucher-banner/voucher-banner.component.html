@@ -1,0 +1,8 @@
+@if (visible()) {
+  <div class="voucher-banner">
+    <span class="voucher-banner-text">
+      🎉 Use code <strong>{{ activeVoucher()!.code }}</strong> — {{ activeVoucher()!.description }}
+    </span>
+    <button type="button" class="voucher-banner-dismiss" (click)="dismiss()" aria-label="Dismiss">×</button>
+  </div>
+}

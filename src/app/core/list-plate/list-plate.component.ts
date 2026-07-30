@@ -53,6 +53,7 @@ export class ListPlateComponent implements OnInit {
   errorMessage = '';
   valuationMin: number | null = null;
   valuationMax: number | null = null;
+  voucherCode: string | null = null;
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;
@@ -64,6 +65,7 @@ export class ListPlateComponent implements OnInit {
     if (!isNaN(minVal) && minVal > 0) this.valuationMin = minVal;
     const maxVal = Number(params['max']);
     if (!isNaN(maxVal) && maxVal > 0) this.valuationMax = maxVal;
+    if (params['voucher']) this.voucherCode = String(params['voucher']).toUpperCase();
 
     this.authService.currentUser$.pipe(take(1)).subscribe(user => {
       if (!user) {
@@ -93,6 +95,7 @@ export class ListPlateComponent implements OnInit {
         initials: this.form.value.initials.toUpperCase(),
         meanings: this.form.value.meanings ?? '',
         negotiable: this.form.value.negotiable ?? false,
+        voucherCode: this.voucherCode ?? undefined,
       });
       window.location.href = url;
     } catch {

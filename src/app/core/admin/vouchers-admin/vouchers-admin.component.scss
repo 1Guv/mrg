@@ -1,0 +1,17 @@
+.voucher-create-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.description-field {
+  flex: 1 1 240px;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  flex-basis: 100%;
+}

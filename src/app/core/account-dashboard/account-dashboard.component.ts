@@ -19,6 +19,7 @@ import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { AccountDashboardValuationComponent } from '../account-dashboard-valuation/account-dashboard-valuation.component';
 import { NumberPlateFormService } from '../../services/number-plate-form.service';
 import { AdminComponent } from '../admin/admin.component';
+import { VouchersAdminComponent } from '../admin/vouchers-admin/vouchers-admin.component';
 import { MatTableModule } from '@angular/material/table';
 import { AdminService, AutoValuation, BuyerSearch, NudgeQueueEntry, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
@@ -43,6 +44,7 @@ import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enqui
     UserAccountDetailsComponent,
     AccountDashboardValuationComponent,
     AdminComponent,
+    VouchersAdminComponent,
     MeComponent
   ],
   templateUrl: './account-dashboard.component.html',

@@ -77,6 +77,14 @@
                 </mat-tab>
                 }
 
+                @if(isAdmin) {
+                <mat-tab label="Vouchers">
+                    <div class="tab-content">
+                        <app-vouchers-admin></app-vouchers-admin>
+                    </div>
+                </mat-tab>
+                }
+
                 <mat-tab label="User Details">
                     <div class="tab-content">
                         <app-user-account-details [currentUser]="currentUser$()"></app-user-account-details>
