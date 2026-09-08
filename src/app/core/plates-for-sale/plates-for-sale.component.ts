@@ -45,7 +45,8 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<string>();
   private searchSub?: Subscription;
 
-  selectedTabIndex = 0;
+  // Tab order: 0 = Sell, 1 = Buy, 2 = Sold. Buy is the default landing tab.
+  selectedTabIndex = 1;
   allListings: PlateListing[] = [];
   searchTerm = '';
 
@@ -83,7 +84,8 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.route.queryParams.pipe(take(1)).subscribe(params => {
-      if (params['tab'] === 'buy') this.selectedTabIndex = 1;
+      const tabIndexes: Record<string, number> = { sell: 0, buy: 1, sold: 2 };
+      this.selectedTabIndex = tabIndexes[params['tab']] ?? 1;
     });
     this.searchSub = this.searchSubject.pipe(
       debounceTime(1000),
