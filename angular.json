@@ -38,7 +38,9 @@
               "src/CNAME",
               "src/sitemap.xml",
               "src/robots.txt",
-              "src/google1a695c0d17440acd.html"
+              "src/google1a695c0d17440acd.html",
+              "src/privacy-policy",
+              "src/terms"
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
