@@ -97,18 +97,27 @@ async function fetchGscRows(clientId, clientSecret, refreshToken) {
 }
 // ── Keyword categorisation ───────────────────────────────────────────────────
 /**
- * Categorise GSC rows into keyword candidates, sorted by impressions desc.
- * Priority: Quick Wins (position 5-40, impressions >= 2) + Untapped
- * (impressions >= 2, clicks === 0). Both lists are combined, deduped,
- * and sorted by impressions descending.
+ * Categorise GSC rows into keyword candidates, in priority order.
+ * Quick Wins (position 5-40, impressions >= 2) come first, then Untapped
+ * (impressions >= 2, clicks === 0). Each tier is sorted by impressions
+ * descending and the merged list is deduped, keeping the earlier tier.
  * @param {GscRow[]} rows - GSC query rows.
- * @return {string[]} Candidate keywords ordered by impressions desc.
+ * @return {string[]} Candidate keywords, quick wins first.
  */
 function categoriseKeywords(rows) {
     const quickWins = rows.filter((r) => r.position >= 5 && r.position <= 40 && r.impressions >= 2);
     const untapped = rows.filter((r) => r.impressions >= 2 && r.clicks === 0);
-    const combined = [...quickWins, ...untapped];
-    // Dedup by query, keeping first occurrence
+    // Sort each tier by impressions before merging. Sorting the merged list
+    // instead would discard the tier split: untapped terms ranking 50th+ have
+    // far more impressions than the quick wins, so they would crowd out every
+    // keyword actually within reach.
+    const byImpressions = (a, b) => b.impressions - a.impressions;
+    const combined = [
+        ...[...quickWins].sort(byImpressions),
+        ...[...untapped].sort(byImpressions),
+    ];
+    // Dedup by query, keeping first occurrence — so a term appearing in both
+    // tiers keeps its quick-win position.
     const seen = new Set();
     const deduped = [];
     for (const row of combined) {
@@ -117,8 +126,6 @@ function categoriseKeywords(rows) {
             deduped.push(row);
         }
     }
-    // Sort by impressions descending
-    deduped.sort((a, b) => b.impressions - a.impressions);
     return deduped.map((r) => r.query);
 }
 // ── Gemini call ──────────────────────────────────────────────────────────────
