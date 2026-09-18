@@ -148,6 +148,66 @@ function categoriseKeywords(rows: GscRow[]): string[] {
   return deduped.map((r) => r.query);
 }
 
+// ── Gemini retry ─────────────────────────────────────────────────────────────
+
+/** Gemini returned a response we could not use — worth retrying. */
+class MalformedGeminiResponse extends Error {}
+
+const GEMINI_ATTEMPTS = 3;
+
+/**
+ * Run a Gemini call, retrying when the response comes back unusable.
+ *
+ * Gemini intermittently returns text that stops mid-document while still
+ * reporting finishReason STOP — roughly 1 call in 10 with search grounding
+ * enabled. The output is not parseable and the whole run is lost, so retry
+ * before giving up. Only malformed responses are retried; HTTP and auth
+ * failures throw straight through, since repeating them cannot help.
+ * @param {string} label - Call name, for logging.
+ * @param {Function} attempt - The call to run.
+ * @return {Promise<T>} The first successful result.
+ */
+async function withGeminiRetry<T>(
+  label: string,
+  attempt: () => Promise<T>
+): Promise<T> {
+  let lastError: MalformedGeminiResponse | undefined;
+  for (let i = 1; i <= GEMINI_ATTEMPTS; i++) {
+    try {
+      return await attempt();
+    } catch (err) {
+      if (!(err instanceof MalformedGeminiResponse)) throw err;
+      lastError = err;
+      console.warn(
+        `article-generator: ${label} attempt ${i}/${GEMINI_ATTEMPTS} ` +
+        `unusable — ${err.message}`
+      );
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Describe an unparseable Gemini response. The head of a truncated document
+ * always looks well-formed, so report the tail and the length too.
+ * @param {string} what - Which call produced it.
+ * @param {string} rawText - The response text.
+ * @param {string} finishReason - finishReason from the candidate.
+ * @return {MalformedGeminiResponse} The error to throw.
+ */
+function malformed(
+  what: string,
+  rawText: string,
+  finishReason: string
+): MalformedGeminiResponse {
+  return new MalformedGeminiResponse(
+    `${what} was not valid JSON. len=${rawText.length} ` +
+    `finishReason=${finishReason} ` +
+    `head=${JSON.stringify(rawText.slice(0, 120))} ` +
+    `tail=${JSON.stringify(rawText.slice(-120))}`
+  );
+}
+
 // ── Gemini call ──────────────────────────────────────────────────────────────
 
 /**
@@ -156,7 +216,7 @@ function categoriseKeywords(rows: GscRow[]): string[] {
  * @param {string} keyword - Target keyword.
  * @return {Promise<GeminiArticlePayload>} Parsed article payload from Gemini.
  */
-async function callGemini(
+async function callGeminiOnce(
   geminiApiKey: string,
   keyword: string
 ): Promise<GeminiArticlePayload> {
@@ -240,7 +300,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   const candidate = response.data?.candidates?.[0];
   let rawText = candidate?.content?.parts?.[0]?.text;
   if (typeof rawText !== "string" || rawText.trim() === "") {
-    throw new Error(
+    throw new MalformedGeminiResponse(
       "article-generator: Gemini returned no usable text. " +
       `finishReason=${candidate?.finishReason ?? "unknown"}`
     );
@@ -257,9 +317,10 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   try {
     parsed = JSON.parse(rawText);
   } catch {
-    throw new Error(
-      "article-generator: Gemini response was not valid JSON. " +
-      `Preview: ${rawText.slice(0, 200)}`
+    throw malformed(
+      "article-generator: Gemini response",
+      rawText,
+      String(candidate?.finishReason ?? "unknown")
     );
   }
 
@@ -267,7 +328,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     ["slug", "title", "metaTitle", "metaDescription", "category", "content"];
   for (const key of requiredKeys) {
     if (!parsed[key]) {
-      throw new Error(
+      throw new MalformedGeminiResponse(
         `article-generator: Gemini payload missing field "${key}"`
       );
     }
@@ -309,7 +370,7 @@ const GROUNDED_TOPICS = [
  * @param {number} topicIndex - Index into GROUNDED_TOPICS (cycles 0→1→2→0).
  * @return {Promise<GeminiArticlePayload>} Parsed article payload.
  */
-async function callGeminiGrounded(
+async function callGeminiGroundedOnce(
   geminiApiKey: string,
   topicIndex: number
 ): Promise<GeminiArticlePayload> {
@@ -398,7 +459,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   );
   let rawText = gTextPart?.text;
   if (typeof rawText !== "string" || rawText.trim() === "") {
-    throw new Error(
+    throw new MalformedGeminiResponse(
       "article-generator: Gemini grounded call returned no usable text. " +
       `finishReason=${candidate?.finishReason ?? "unknown"}`
     );
@@ -414,9 +475,10 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   try {
     parsed = JSON.parse(rawText);
   } catch {
-    throw new Error(
-      "article-generator: Gemini grounded response was not valid JSON. " +
-      `Preview: ${rawText.slice(0, 200)}`
+    throw malformed(
+      "article-generator: Gemini grounded response",
+      rawText,
+      String(candidate?.finishReason ?? "unknown")
     );
   }
 
@@ -434,7 +496,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
  * @param {string} geminiApiKey - Gemini API key.
  * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity article payload.
  */
-async function callGeminiCelebrity(
+async function callGeminiCelebrityOnce(
   geminiApiKey: string
 ): Promise<GeminiCelebrityPayload> {
   /* eslint-disable max-len */
@@ -528,7 +590,7 @@ Respond ONLY with valid JSON (no markdown fences):
   );
   let rawText = textPart?.text;
   if (typeof rawText !== "string" || rawText.trim() === "") {
-    throw new Error(
+    throw new MalformedGeminiResponse(
       "article-generator: Gemini celebrity call returned no text. " +
       `finishReason=${candidate?.finishReason ?? "unknown"}, ` +
       `parts=${JSON.stringify(parts).slice(0, 300)}`
@@ -545,9 +607,10 @@ Respond ONLY with valid JSON (no markdown fences):
   try {
     parsed = JSON.parse(rawText);
   } catch {
-    throw new Error(
-      "article-generator: celebrity response was not valid JSON. " +
-      `Preview: ${rawText.slice(0, 200)}`
+    throw malformed(
+      "article-generator: celebrity response",
+      rawText,
+      String(candidate?.finishReason ?? "unknown")
     );
   }
 
@@ -556,7 +619,7 @@ Respond ONLY with valid JSON (no markdown fences):
       "celebrity", "suggestedPlates", "content"];
   for (const key of requiredKeys) {
     if (!parsed[key]) {
-      throw new Error(
+      throw new MalformedGeminiResponse(
         `article-generator: celebrity payload missing field "${key}"`
       );
     }
@@ -669,6 +732,49 @@ function calcReadTime(html: string): number {
   const wordCount =
     text.trim().split(/\s+/).filter((w) => w.length > 0).length;
   return Math.max(1, Math.ceil(wordCount / 200));
+}
+
+// ── Retrying wrappers ────────────────────────────────────────────────────────
+
+/**
+ * callGemini with retry on an unusable response.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @param {string} keyword - Target keyword.
+ * @return {Promise<GeminiArticlePayload>} Parsed article payload.
+ */
+function callGemini(
+  geminiApiKey: string,
+  keyword: string
+): Promise<GeminiArticlePayload> {
+  return withGeminiRetry(
+    "callGemini", () => callGeminiOnce(geminiApiKey, keyword));
+}
+
+/**
+ * callGeminiGrounded with retry on an unusable response.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @param {number} topicIndex - Index into GROUNDED_TOPICS.
+ * @return {Promise<GeminiArticlePayload>} Parsed article payload.
+ */
+function callGeminiGrounded(
+  geminiApiKey: string,
+  topicIndex: number
+): Promise<GeminiArticlePayload> {
+  return withGeminiRetry(
+    "callGeminiGrounded",
+    () => callGeminiGroundedOnce(geminiApiKey, topicIndex));
+}
+
+/**
+ * callGeminiCelebrity with retry on an unusable response.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity payload.
+ */
+function callGeminiCelebrity(
+  geminiApiKey: string
+): Promise<GeminiCelebrityPayload> {
+  return withGeminiRetry(
+    "callGeminiCelebrity", () => callGeminiCelebrityOnce(geminiApiKey));
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
