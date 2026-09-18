@@ -34,9 +34,6 @@ const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
-const gscRefreshToken = defineSecret("GSC_REFRESH_TOKEN");
-const gscClientId = defineSecret("GSC_CLIENT_ID");
-const gscClientSecret = defineSecret("GSC_CLIENT_SECRET");
 const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
 
 const socialSecretNames = [
@@ -699,7 +696,7 @@ export const triggerArticleGeneration = onRequest(
   {
     maxInstances: 1,
     timeoutSeconds: 300,
-    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+    secrets: [geminiApiKey],
   },
   async (request, response) => {
     // CORS — allow the hosted app to call this endpoint
@@ -737,12 +734,7 @@ export const triggerArticleGeneration = onRequest(
     }
 
     try {
-      await runGenerateDailyArticle(
-        geminiApiKey.value(),
-        gscRefreshToken.value(),
-        gscClientId.value(),
-        gscClientSecret.value()
-      );
+      await runGenerateDailyArticle(geminiApiKey.value());
       response.status(200).json({success: true});
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -758,15 +750,10 @@ export const generateDailyArticle = onSchedule(
     schedule: "0 8,14 * * *",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
-    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+    secrets: [geminiApiKey],
   },
   async () => {
-    await runGenerateDailyArticle(
-      geminiApiKey.value(),
-      gscRefreshToken.value(),
-      gscClientId.value(),
-      gscClientSecret.value()
-    );
+    await runGenerateDailyArticle(geminiApiKey.value());
   }
 );
 

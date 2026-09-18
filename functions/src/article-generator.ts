@@ -67,24 +67,18 @@ function toYMD(d: Date): string {
 
 /**
  * Fetch search analytics rows from Google Search Console for last 90 days.
- * @param {string} clientId - OAuth2 client ID.
- * @param {string} clientSecret - OAuth2 client secret.
- * @param {string} refreshToken - OAuth2 refresh token.
+ *
+ * Authenticates as the function's own runtime service account via Application
+ * Default Credentials — no key material is stored or passed in. That service
+ * account is a Restricted (read-only) user on the Search Console property.
  * @return {Promise<GscRow[]>} Array of query rows.
  */
-async function fetchGscRows(
-  clientId: string,
-  clientSecret: string,
-  refreshToken: string
-): Promise<GscRow[]> {
-  const oauth2Client = new google.auth.OAuth2(
-    clientId,
-    clientSecret,
-    "http://localhost:3456"
-  );
-  oauth2Client.setCredentials({refresh_token: refreshToken});
+async function fetchGscRows(): Promise<GscRow[]> {
+  const auth = new google.auth.GoogleAuth({
+    scopes: ["https://www.googleapis.com/auth/webmasters.readonly"],
+  });
 
-  const sc = google.searchconsole({version: "v1", auth: oauth2Client});
+  const sc = google.searchconsole({version: "v1", auth});
 
   const endDate = new Date();
   const startDate = new Date();
@@ -683,24 +677,16 @@ function calcReadTime(html: string): number {
  * Pull keyword opportunities from Google Search Console, pick the best unused
  * one, call Gemini to write an SEO article, and store it in Firestore.
  * @param {string} geminiApiKey - Gemini API key.
- * @param {string} gscRefreshToken - GSC OAuth2 refresh token.
- * @param {string} gscClientId - GSC OAuth2 client ID.
- * @param {string} gscClientSecret - GSC OAuth2 client secret.
  * @return {Promise<void>}
  */
 export async function runGenerateDailyArticle(
-  geminiApiKey: string,
-  gscRefreshToken: string,
-  gscClientId: string,
-  gscClientSecret: string
+  geminiApiKey: string
 ): Promise<void> {
   const db = admin.firestore();
 
   // 1. Fetch GSC data
   console.log("article-generator: fetching GSC data...");
-  const gscRows = await fetchGscRows(
-    gscClientId, gscClientSecret, gscRefreshToken
-  );
+  const gscRows = await fetchGscRows();
   console.log(`article-generator: received ${gscRows.length} GSC rows`);
 
   // 2. Categorise into candidates
