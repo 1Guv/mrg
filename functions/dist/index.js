@@ -57,9 +57,6 @@ const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
-const gscRefreshToken = (0, params_1.defineSecret)("GSC_REFRESH_TOKEN");
-const gscClientId = (0, params_1.defineSecret)("GSC_CLIENT_ID");
-const gscClientSecret = (0, params_1.defineSecret)("GSC_CLIENT_SECRET");
 const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
     "SHEETS_CLIENT_EMAIL",
@@ -585,7 +582,7 @@ exports.getAnalytics = functionsV1
 exports.triggerArticleGeneration = (0, https_1.onRequest)({
     maxInstances: 1,
     timeoutSeconds: 300,
-    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+    secrets: [geminiApiKey],
 }, async (request, response) => {
     var _a, _b;
     // CORS — allow the hosted app to call this endpoint
@@ -618,7 +615,7 @@ exports.triggerArticleGeneration = (0, https_1.onRequest)({
         return;
     }
     try {
-        await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
+        await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value());
         response.status(200).json({ success: true });
     }
     catch (err) {
@@ -632,9 +629,9 @@ exports.generateDailyArticle = (0, scheduler_1.onSchedule)({
     schedule: "0 8,14 * * *",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
-    secrets: [geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret],
+    secrets: [geminiApiKey],
 }, async () => {
-    await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value(), gscRefreshToken.value(), gscClientId.value(), gscClientSecret.value());
+    await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value());
 });
 /** Nightly celebrity article: grounded Gemini search + real-time valuations. */
 exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({

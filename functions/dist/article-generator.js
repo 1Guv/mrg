@@ -59,16 +59,18 @@ function toYMD(d) {
 // ── GSC fetch ────────────────────────────────────────────────────────────────
 /**
  * Fetch search analytics rows from Google Search Console for last 90 days.
- * @param {string} clientId - OAuth2 client ID.
- * @param {string} clientSecret - OAuth2 client secret.
- * @param {string} refreshToken - OAuth2 refresh token.
+ *
+ * Authenticates as the function's own runtime service account via Application
+ * Default Credentials — no key material is stored or passed in. That service
+ * account is a Restricted (read-only) user on the Search Console property.
  * @return {Promise<GscRow[]>} Array of query rows.
  */
-async function fetchGscRows(clientId, clientSecret, refreshToken) {
+async function fetchGscRows() {
     var _a;
-    const oauth2Client = new googleapis_1.google.auth.OAuth2(clientId, clientSecret, "http://localhost:3456");
-    oauth2Client.setCredentials({ refresh_token: refreshToken });
-    const sc = googleapis_1.google.searchconsole({ version: "v1", auth: oauth2Client });
+    const auth = new googleapis_1.google.auth.GoogleAuth({
+        scopes: ["https://www.googleapis.com/auth/webmasters.readonly"],
+    });
+    const sc = googleapis_1.google.searchconsole({ version: "v1", auth });
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 90);
@@ -556,17 +558,14 @@ function calcReadTime(html) {
  * Pull keyword opportunities from Google Search Console, pick the best unused
  * one, call Gemini to write an SEO article, and store it in Firestore.
  * @param {string} geminiApiKey - Gemini API key.
- * @param {string} gscRefreshToken - GSC OAuth2 refresh token.
- * @param {string} gscClientId - GSC OAuth2 client ID.
- * @param {string} gscClientSecret - GSC OAuth2 client secret.
  * @return {Promise<void>}
  */
-async function runGenerateDailyArticle(geminiApiKey, gscRefreshToken, gscClientId, gscClientSecret) {
+async function runGenerateDailyArticle(geminiApiKey) {
     var _a, _b, _c, _d;
     const db = admin.firestore();
     // 1. Fetch GSC data
     console.log("article-generator: fetching GSC data...");
-    const gscRows = await fetchGscRows(gscClientId, gscClientSecret, gscRefreshToken);
+    const gscRows = await fetchGscRows();
     console.log(`article-generator: received ${gscRows.length} GSC rows`);
     // 2. Categorise into candidates
     const candidates = categoriseKeywords(gscRows);
