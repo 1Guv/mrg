@@ -25,11 +25,12 @@ const LIMIT = limitArg !== -1 ? Number(process.argv[limitArg + 1]) : 20;
 const read = (f) => JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'));
 
 // --- Search Console ---------------------------------------------------------
-const { client_id, client_secret } = read('gsc-credentials.json').installed;
-const { refresh_token } = read('gsc-token.json');
-
-const auth = new google.auth.OAuth2(client_id, client_secret, 'http://localhost:3456');
-auth.setCredentials({ refresh_token });
+// Same identity the functions use via ADC; the key file is only needed because
+// gcloud is not installed locally.
+const auth = new google.auth.GoogleAuth({
+  credentials: read('service-account.json'),
+  scopes: ['https://www.googleapis.com/auth/webmasters.readonly'],
+});
 
 const endDate = new Date();
 const startDate = new Date();

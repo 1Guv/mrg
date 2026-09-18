@@ -11,26 +11,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CREDENTIALS_PATH = path.join(__dirname, 'gsc-credentials.json');
-const TOKEN_PATH = path.join(__dirname, 'gsc-token.json');
+const SERVICE_ACCOUNT_PATH = path.join(__dirname, 'service-account.json');
+const SCOPES = ['https://www.googleapis.com/auth/webmasters.readonly'];
 
 const SITE_URL = 'https://mrvaluations.co.uk/';
 const DAYS_BACK = 90;
 
 // --- Auth setup ---
+// Authenticates as the service account, which is a Restricted (read-only)
+// user on the Search Console property. The functions use the same identity
+// via ADC; locally the key file is needed because gcloud is not installed.
 
-const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'));
-const { client_id, client_secret } = credentials.installed;
-
-const oauth2Client = new google.auth.OAuth2(client_id, client_secret, 'http://localhost:3456');
-const token = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-oauth2Client.setCredentials(token);
-
-// Persist refreshed tokens automatically
-oauth2Client.on('tokens', (tokens) => {
-  const updated = { ...token, ...tokens };
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(updated, null, 2));
-});
+const credentials = JSON.parse(fs.readFileSync(SERVICE_ACCOUNT_PATH, 'utf8'));
+const auth = new google.auth.GoogleAuth({ credentials, scopes: SCOPES });
 
 // --- Date helpers ---
 
@@ -44,7 +37,7 @@ startDate.setDate(endDate.getDate() - DAYS_BACK);
 
 // --- Fetch data ---
 
-const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+const searchconsole = google.searchconsole({ version: 'v1', auth });
 
 async function fetchQueryData() {
   const res = await searchconsole.searchanalytics.query({
