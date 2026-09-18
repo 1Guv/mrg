@@ -115,12 +115,12 @@ async function fetchGscRows(
 // ── Keyword categorisation ───────────────────────────────────────────────────
 
 /**
- * Categorise GSC rows into keyword candidates, sorted by impressions desc.
- * Priority: Quick Wins (position 5-40, impressions >= 2) + Untapped
- * (impressions >= 2, clicks === 0). Both lists are combined, deduped,
- * and sorted by impressions descending.
+ * Categorise GSC rows into keyword candidates, in priority order.
+ * Quick Wins (position 5-40, impressions >= 2) come first, then Untapped
+ * (impressions >= 2, clicks === 0). Each tier is sorted by impressions
+ * descending and the merged list is deduped, keeping the earlier tier.
  * @param {GscRow[]} rows - GSC query rows.
- * @return {string[]} Candidate keywords ordered by impressions desc.
+ * @return {string[]} Candidate keywords, quick wins first.
  */
 function categoriseKeywords(rows: GscRow[]): string[] {
   const quickWins = rows.filter(
@@ -130,9 +130,18 @@ function categoriseKeywords(rows: GscRow[]): string[] {
     (r) => r.impressions >= 2 && r.clicks === 0
   );
 
-  const combined = [...quickWins, ...untapped];
+  // Sort each tier by impressions before merging. Sorting the merged list
+  // instead would discard the tier split: untapped terms ranking 50th+ have
+  // far more impressions than the quick wins, so they would crowd out every
+  // keyword actually within reach.
+  const byImpressions = (a: GscRow, b: GscRow) => b.impressions - a.impressions;
+  const combined = [
+    ...[...quickWins].sort(byImpressions),
+    ...[...untapped].sort(byImpressions),
+  ];
 
-  // Dedup by query, keeping first occurrence
+  // Dedup by query, keeping first occurrence — so a term appearing in both
+  // tiers keeps its quick-win position.
   const seen = new Set<string>();
   const deduped: GscRow[] = [];
   for (const row of combined) {
@@ -141,9 +150,6 @@ function categoriseKeywords(rows: GscRow[]): string[] {
       deduped.push(row);
     }
   }
-
-  // Sort by impressions descending
-  deduped.sort((a, b) => b.impressions - a.impressions);
 
   return deduped.map((r) => r.query);
 }
