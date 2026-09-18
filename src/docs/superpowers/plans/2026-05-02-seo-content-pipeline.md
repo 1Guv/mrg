@@ -1131,7 +1131,7 @@ Run each of these commands. When prompted, paste the value and press Enter:
 ```bash
 # Gemini API key (from aistudio.google.com)
 firebase functions:secrets:set GEMINI_API_KEY
-# Value: AIzaSyAc7VOwO8fEZAH7RMiYvHx7XlOHJ4L-yvM
+# Value: REDACTED
 
 # GSC OAuth refresh token (from scripts/gsc-token.json — copy the "refresh_token" value)
 firebase functions:secrets:set GSC_REFRESH_TOKEN
