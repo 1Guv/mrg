@@ -130,6 +130,53 @@ function categoriseKeywords(rows) {
     }
     return deduped.map((r) => r.query);
 }
+// ── Gemini retry ─────────────────────────────────────────────────────────────
+/** Gemini returned a response we could not use — worth retrying. */
+class MalformedGeminiResponse extends Error {
+}
+const GEMINI_ATTEMPTS = 3;
+/**
+ * Run a Gemini call, retrying when the response comes back unusable.
+ *
+ * Gemini intermittently returns text that stops mid-document while still
+ * reporting finishReason STOP — roughly 1 call in 10 with search grounding
+ * enabled. The output is not parseable and the whole run is lost, so retry
+ * before giving up. Only malformed responses are retried; HTTP and auth
+ * failures throw straight through, since repeating them cannot help.
+ * @param {string} label - Call name, for logging.
+ * @param {Function} attempt - The call to run.
+ * @return {Promise<T>} The first successful result.
+ */
+async function withGeminiRetry(label, attempt) {
+    let lastError;
+    for (let i = 1; i <= GEMINI_ATTEMPTS; i++) {
+        try {
+            return await attempt();
+        }
+        catch (err) {
+            if (!(err instanceof MalformedGeminiResponse))
+                throw err;
+            lastError = err;
+            console.warn(`article-generator: ${label} attempt ${i}/${GEMINI_ATTEMPTS} ` +
+                `unusable — ${err.message}`);
+        }
+    }
+    throw lastError;
+}
+/**
+ * Describe an unparseable Gemini response. The head of a truncated document
+ * always looks well-formed, so report the tail and the length too.
+ * @param {string} what - Which call produced it.
+ * @param {string} rawText - The response text.
+ * @param {string} finishReason - finishReason from the candidate.
+ * @return {MalformedGeminiResponse} The error to throw.
+ */
+function malformed(what, rawText, finishReason) {
+    return new MalformedGeminiResponse(`${what} was not valid JSON. len=${rawText.length} ` +
+        `finishReason=${finishReason} ` +
+        `head=${JSON.stringify(rawText.slice(0, 120))} ` +
+        `tail=${JSON.stringify(rawText.slice(-120))}`);
+}
 // ── Gemini call ──────────────────────────────────────────────────────────────
 /**
  * Call Gemini 2.5 Flash to generate a full SEO article for the given keyword.
@@ -137,8 +184,8 @@ function categoriseKeywords(rows) {
  * @param {string} keyword - Target keyword.
  * @return {Promise<GeminiArticlePayload>} Parsed article payload from Gemini.
  */
-async function callGemini(geminiApiKey, keyword) {
-    var _a, _b, _c, _d, _e, _f;
+async function callGeminiOnce(geminiApiKey, keyword) {
+    var _a, _b, _c, _d, _e, _f, _g;
     /* eslint-disable max-len */
     const prompt = `You are an expert SEO content writer for the UK number plate market. Write a short, punchy, visually rich SEO blog article targeting the keyword: "${keyword}".
 
@@ -208,7 +255,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     const candidate = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.candidates) === null || _b === void 0 ? void 0 : _b[0];
     let rawText = (_e = (_d = (_c = candidate === null || candidate === void 0 ? void 0 : candidate.content) === null || _c === void 0 ? void 0 : _c.parts) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.text;
     if (typeof rawText !== "string" || rawText.trim() === "") {
-        throw new Error("article-generator: Gemini returned no usable text. " +
+        throw new MalformedGeminiResponse("article-generator: Gemini returned no usable text. " +
             `finishReason=${(_f = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _f !== void 0 ? _f : "unknown"}`);
     }
     // Strip markdown code fences if present
@@ -221,14 +268,13 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     try {
         parsed = JSON.parse(rawText);
     }
-    catch (_g) {
-        throw new Error("article-generator: Gemini response was not valid JSON. " +
-            `Preview: ${rawText.slice(0, 200)}`);
+    catch (_h) {
+        throw malformed("article-generator: Gemini response", rawText, String((_g = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _g !== void 0 ? _g : "unknown"));
     }
     const requiredKeys = ["slug", "title", "metaTitle", "metaDescription", "category", "content"];
     for (const key of requiredKeys) {
         if (!parsed[key]) {
-            throw new Error(`article-generator: Gemini payload missing field "${key}"`);
+            throw new MalformedGeminiResponse(`article-generator: Gemini payload missing field "${key}"`);
         }
     }
     const validCategories = ["valuations", "plates", "cars", "celebrities"];
@@ -260,8 +306,8 @@ const GROUNDED_TOPICS = [
  * @param {number} topicIndex - Index into GROUNDED_TOPICS (cycles 0→1→2→0).
  * @return {Promise<GeminiArticlePayload>} Parsed article payload.
  */
-async function callGeminiGrounded(geminiApiKey, topicIndex) {
-    var _a, _b, _c, _d, _e;
+async function callGeminiGroundedOnce(geminiApiKey, topicIndex) {
+    var _a, _b, _c, _d, _e, _f;
     const idx = topicIndex % GROUNDED_TOPICS.length;
     const { search, category } = GROUNDED_TOPICS[idx];
     /* eslint-disable max-len */
@@ -334,7 +380,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     const gTextPart = gParts.find((p) => typeof p.text === "string" && p.text.trim() !== "");
     let rawText = gTextPart === null || gTextPart === void 0 ? void 0 : gTextPart.text;
     if (typeof rawText !== "string" || rawText.trim() === "") {
-        throw new Error("article-generator: Gemini grounded call returned no usable text. " +
+        throw new MalformedGeminiResponse("article-generator: Gemini grounded call returned no usable text. " +
             `finishReason=${(_e = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _e !== void 0 ? _e : "unknown"}`);
     }
     if (rawText.trimStart().startsWith("```")) {
@@ -346,9 +392,8 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     try {
         parsed = JSON.parse(rawText);
     }
-    catch (_f) {
-        throw new Error("article-generator: Gemini grounded response was not valid JSON. " +
-            `Preview: ${rawText.slice(0, 200)}`);
+    catch (_g) {
+        throw malformed("article-generator: Gemini grounded response", rawText, String((_f = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _f !== void 0 ? _f : "unknown"));
     }
     // Force the category to match the topic we searched for
     parsed.category = category;
@@ -361,8 +406,8 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
  * @param {string} geminiApiKey - Gemini API key.
  * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity article payload.
  */
-async function callGeminiCelebrity(geminiApiKey) {
-    var _a, _b, _c, _d, _e;
+async function callGeminiCelebrityOnce(geminiApiKey) {
+    var _a, _b, _c, _d, _e, _f;
     /* eslint-disable max-len */
     const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well.
 
@@ -441,7 +486,7 @@ Respond ONLY with valid JSON (no markdown fences):
     const textPart = parts.find((p) => typeof p.text === "string" && p.text.trim() !== "");
     let rawText = textPart === null || textPart === void 0 ? void 0 : textPart.text;
     if (typeof rawText !== "string" || rawText.trim() === "") {
-        throw new Error("article-generator: Gemini celebrity call returned no text. " +
+        throw new MalformedGeminiResponse("article-generator: Gemini celebrity call returned no text. " +
             `finishReason=${(_e = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _e !== void 0 ? _e : "unknown"}, ` +
             `parts=${JSON.stringify(parts).slice(0, 300)}`);
     }
@@ -454,15 +499,14 @@ Respond ONLY with valid JSON (no markdown fences):
     try {
         parsed = JSON.parse(rawText);
     }
-    catch (_f) {
-        throw new Error("article-generator: celebrity response was not valid JSON. " +
-            `Preview: ${rawText.slice(0, 200)}`);
+    catch (_g) {
+        throw malformed("article-generator: celebrity response", rawText, String((_f = candidate === null || candidate === void 0 ? void 0 : candidate.finishReason) !== null && _f !== void 0 ? _f : "unknown"));
     }
     const requiredKeys = ["slug", "title", "metaTitle", "metaDescription",
         "celebrity", "suggestedPlates", "content"];
     for (const key of requiredKeys) {
         if (!parsed[key]) {
-            throw new Error(`article-generator: celebrity payload missing field "${key}"`);
+            throw new MalformedGeminiResponse(`article-generator: celebrity payload missing field "${key}"`);
         }
     }
     return parsed;
@@ -552,6 +596,33 @@ function calcReadTime(html) {
     const text = html.replace(/<[^>]+>/g, " ");
     const wordCount = text.trim().split(/\s+/).filter((w) => w.length > 0).length;
     return Math.max(1, Math.ceil(wordCount / 200));
+}
+// ── Retrying wrappers ────────────────────────────────────────────────────────
+/**
+ * callGemini with retry on an unusable response.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @param {string} keyword - Target keyword.
+ * @return {Promise<GeminiArticlePayload>} Parsed article payload.
+ */
+function callGemini(geminiApiKey, keyword) {
+    return withGeminiRetry("callGemini", () => callGeminiOnce(geminiApiKey, keyword));
+}
+/**
+ * callGeminiGrounded with retry on an unusable response.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @param {number} topicIndex - Index into GROUNDED_TOPICS.
+ * @return {Promise<GeminiArticlePayload>} Parsed article payload.
+ */
+function callGeminiGrounded(geminiApiKey, topicIndex) {
+    return withGeminiRetry("callGeminiGrounded", () => callGeminiGroundedOnce(geminiApiKey, topicIndex));
+}
+/**
+ * callGeminiCelebrity with retry on an unusable response.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity payload.
+ */
+function callGeminiCelebrity(geminiApiKey) {
+    return withGeminiRetry("callGeminiCelebrity", () => callGeminiCelebrityOnce(geminiApiKey));
 }
 // ── Main export ──────────────────────────────────────────────────────────────
 /**
