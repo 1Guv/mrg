@@ -56,6 +56,7 @@ const db = admin.firestore();
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
+const failure_alerts_1 = require("./failure-alerts");
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
@@ -267,15 +268,10 @@ async function runWeeklyReport() {
     return mailRef.id;
 }
 exports.weeklyReport = (0, scheduler_1.onSchedule)({ schedule: "every sunday 08:00", maxInstances: 10 }, async () => {
-    try {
+    await (0, failure_alerts_1.withFailureAlert)("weeklyReport", async () => {
         await runWeeklyReport();
         console.log("weeklyReport: done");
-    }
-    catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`weeklyReport: FAILED — ${msg}`);
-        throw err;
-    }
+    });
 });
 /** Admin-only HTTP trigger to manually fire a celebrity article on demand. */
 exports.triggerCelebrityArticleGeneration = (0, https_1.onRequest)({
@@ -631,7 +627,7 @@ exports.generateDailyArticle = (0, scheduler_1.onSchedule)({
     timeoutSeconds: 300,
     secrets: [geminiApiKey],
 }, async () => {
-    await (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value());
+    await (0, failure_alerts_1.withFailureAlert)("generateDailyArticle", () => (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value()));
 });
 /** Nightly celebrity article: grounded Gemini search + real-time valuations. */
 exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({
@@ -640,7 +636,7 @@ exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({
     timeoutSeconds: 300,
     secrets: [geminiApiKey],
 }, async () => {
-    await (0, article_generator_js_1.runGenerateCelebrityArticle)(geminiApiKey.value());
+    await (0, failure_alerts_1.withFailureAlert)("generateCelebrityArticle", () => (0, article_generator_js_1.runGenerateCelebrityArticle)(geminiApiKey.value()));
 });
 // ── Plate listing nudge emails ──────────────────────────────────────────────
 /** Seeds the nudge queue when a new auto_valuation is created. */
@@ -659,7 +655,7 @@ exports.scheduledNudgeEmails = (0, scheduler_1.onSchedule)({
     timeoutSeconds: 300,
     secrets: [nudgeUnsubscribeSecret, stripeSecretKey],
 }, async () => {
-    await (0, nudge_emails_js_1.runScheduledNudgeEmails)(nudgeUnsubscribeSecret.value(), stripeSecretKey.value());
+    await (0, failure_alerts_1.withFailureAlert)("scheduledNudgeEmails", () => (0, nudge_emails_js_1.runScheduledNudgeEmails)(nudgeUnsubscribeSecret.value(), stripeSecretKey.value()));
 });
 /** One-click unsubscribe endpoint linked from nudge emails. */
 exports.unsubscribeNudge = (0, https_1.onRequest)({ maxInstances: 10, secrets: [nudgeUnsubscribeSecret] }, async (request, response) => {
