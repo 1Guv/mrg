@@ -33,6 +33,8 @@ const db = admin.firestore();
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
+import {withFailureAlert} from "./failure-alerts";
+
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
 
@@ -269,14 +271,10 @@ async function runWeeklyReport(): Promise<string> {
 export const weeklyReport = onSchedule(
   {schedule: "every sunday 08:00", maxInstances: 10},
   async () => {
-    try {
+    await withFailureAlert("weeklyReport", async () => {
       await runWeeklyReport();
       console.log("weeklyReport: done");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error(`weeklyReport: FAILED — ${msg}`);
-      throw err;
-    }
+    });
   }
 );
 
@@ -753,7 +751,8 @@ export const generateDailyArticle = onSchedule(
     secrets: [geminiApiKey],
   },
   async () => {
-    await runGenerateDailyArticle(geminiApiKey.value());
+    await withFailureAlert("generateDailyArticle", () =>
+      runGenerateDailyArticle(geminiApiKey.value()));
   }
 );
 
@@ -766,7 +765,8 @@ export const generateCelebrityArticle = onSchedule(
     secrets: [geminiApiKey],
   },
   async () => {
-    await runGenerateCelebrityArticle(geminiApiKey.value());
+    await withFailureAlert("generateCelebrityArticle", () =>
+      runGenerateCelebrityArticle(geminiApiKey.value()));
   }
 );
 
@@ -792,9 +792,10 @@ export const scheduledNudgeEmails = onSchedule(
     secrets: [nudgeUnsubscribeSecret, stripeSecretKey],
   },
   async () => {
-    await runScheduledNudgeEmails(
-      nudgeUnsubscribeSecret.value(), stripeSecretKey.value()
-    );
+    await withFailureAlert("scheduledNudgeEmails", () =>
+      runScheduledNudgeEmails(
+        nudgeUnsubscribeSecret.value(), stripeSecretKey.value()
+      ));
   }
 );
 
