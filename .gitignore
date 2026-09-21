@@ -45,6 +45,4 @@ Thumbs.db
 .superpowers/
 .env
 scripts/service-account.json
-scripts/gsc-credentials.json
-scripts/gsc-token.json
 scripts/gsc-data.json
