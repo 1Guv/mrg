@@ -1,0 +1,21 @@
+<div
+  class="mode-toggle"
+  role="radiogroup"
+  aria-label="Choose what to show"
+  (keydown)="onKeydown($event)">
+
+  <span class="mode-toggle__pill" [class.mode-toggle__pill--right]="mode() === 'plates'" aria-hidden="true"></span>
+
+  @for (option of options; track option.value) {
+    <button
+      type="button"
+      class="mode-toggle__option"
+      role="radio"
+      [class.is-active]="mode() === option.value"
+      [attr.aria-checked]="mode() === option.value"
+      [attr.tabindex]="mode() === option.value ? 0 : -1"
+      (click)="select(option.value)">
+      {{ option.label }}
+    </button>
+  }
+</div>

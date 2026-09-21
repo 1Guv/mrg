@@ -1,0 +1,28 @@
+<section class="plates-preview">
+  @if (listings().length) {
+    <div class="plates-preview__grid">
+      @for (listing of listings(); track listing.plateCharacters) {
+        <div class="plates-preview__card">
+          <a [routerLink]="['/plates-for-sale', plateLink(listing.plateCharacters)]"
+             class="plates-preview__link">
+            <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
+            <span class="plates-preview__price">
+              &pound;{{ listing.askingPrice | number }}
+            </span>
+            @if (listing.meanings) {
+              <span class="plates-preview__meaning">{{ listing.meanings }}</span>
+            }
+          </a>
+        </div>
+      }
+    </div>
+  } @else if (loaded()) {
+    <p class="plates-preview__empty">
+      No plates listed for sale just yet — yours could be the first.
+    </p>
+  }
+
+  <a routerLink="/plates-for-sale" class="plates-preview__all">
+    See all plates for sale &rarr;
+  </a>
+</section>

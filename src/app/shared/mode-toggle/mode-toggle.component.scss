@@ -1,0 +1,55 @@
+.mode-toggle {
+  position: relative;
+  display: inline-flex;
+  margin: 20px auto 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eef0f4;
+  border: 1px solid #dfe3ea;
+  // The pill is absolutely positioned against this box, so the two options
+  // must be equal width for it to line up in either position.
+  --option-width: 150px;
+}
+
+.mode-toggle__pill {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: var(--option-width);
+  height: calc(100% - 8px);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+  transition: transform .22s ease;
+}
+
+.mode-toggle__pill--right {
+  transform: translateX(var(--option-width));
+}
+
+.mode-toggle__option {
+  position: relative;
+  z-index: 1;
+  width: var(--option-width);
+  padding: 9px 8px;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color .22s ease;
+
+  &.is-active { color: #111827; }
+  &:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+}
+
+@media (max-width: 420px) {
+  .mode-toggle { --option-width: 132px; }
+  .mode-toggle__option { font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-toggle__pill { transition: none; }
+}

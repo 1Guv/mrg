@@ -3,6 +3,8 @@
     <h1 class="cabin-font-sketch mt-4 text-center responsive-heading">Fully <span class="highlight-text">Automated</span> Number Plate Valuations</h1>
     <h6 class="pt-4 text-center margin-override text-center">A <span class="emphasis-text">smarter</span> way to value your plate — <span class="emphasis-text">no waiting, no hassle</span>.</h6>
 
+    <app-mode-toggle [mode]="mode()" (modeChange)="mode.set($event)" />
+
     <div class="social-bar">
       <span class="social-label">Follow us</span>
       <div class="social-icons">
@@ -40,11 +42,16 @@
       </div>
     </div>
 
-    <reg-plate-main class="w-100"></reg-plate-main>
-    <app-current-plate-valuation class="w-100"></app-current-plate-valuation>
-    <app-prefix-plate-valuation class="w-100"></app-prefix-plate-valuation>
-    <app-suffix-plate-valuation class="w-100"></app-suffix-plate-valuation>
-    <reg-plate-valuation-results class="w-100"></reg-plate-valuation-results>
+    @if (mode() === 'valuations') {
+      <reg-plate-main class="w-100"></reg-plate-main>
+      <app-current-plate-valuation class="w-100"></app-current-plate-valuation>
+      <app-prefix-plate-valuation class="w-100"></app-prefix-plate-valuation>
+      <app-suffix-plate-valuation class="w-100"></app-suffix-plate-valuation>
+      <reg-plate-valuation-results class="w-100"></reg-plate-valuation-results>
+    } @else {
+      <app-plates-preview class="w-100" />
+    }
+
     <app-list-now-banner class="w-100 mt-3"></app-list-now-banner>
   </section>
 </div>
