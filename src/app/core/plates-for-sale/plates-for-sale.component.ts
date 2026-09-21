@@ -1,16 +1,12 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { UpperCasePipe, DatePipe, DecimalPipe } from '@angular/common';
 import { ScrollingModule } from '@angular/cdk/scrolling';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { BenefitCardComponent } from '../../shared/benefit-card/benefit-card.component';
-import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
 import { RecentlySoldComponent } from '../../shared/recently-sold/recently-sold.component';
 import { BenefitCard } from '../../models/benefit-card.model';
 import { PlateListing } from '../../models/plate-listing.model';
@@ -18,26 +14,22 @@ import { PlateListingService } from '../../services/plate-listing.service';
 import { Subject, Subscription, take } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '../../services/auth.service';
-import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
-import { MessageSellerDialogComponent } from '../../shared/message-seller-dialog/message-seller-dialog.component';
 import { ListNowBannerComponent } from '../../shared/list-now-banner/list-now-banner.component';
+import { PlateListingCardComponent } from '../../shared/plate-listing-card/plate-listing-card.component';
 import { TrackClickDirective } from '../../directives/track-click.directive';
 import { Firestore, addDoc, collection, serverTimestamp } from '@angular/fire/firestore';
-import { normalisePlate } from '../../utils/normalise-plate';
 
 @Component({
   selector: 'app-plates-for-sale',
   standalone: true,
-  imports: [MatCardModule, MatIconModule, MatTabsModule, MatButtonModule, MatBadgeModule, BenefitCardComponent, ShareButtonsComponent, RecentlySoldComponent, ScrollingModule, UpperCasePipe, DatePipe, DecimalPipe, MatFormFieldModule, MatInputModule, FormsModule, MatDialogModule, ListNowBannerComponent, TrackClickDirective],
+  imports: [MatIconModule, MatTabsModule, MatButtonModule, BenefitCardComponent, RecentlySoldComponent, ScrollingModule, MatFormFieldModule, MatInputModule, FormsModule, ListNowBannerComponent, TrackClickDirective, PlateListingCardComponent],
   templateUrl: './plates-for-sale.component.html',
   styleUrl: './plates-for-sale.component.scss'
 })
 export class PlatesForSaleComponent implements OnInit, OnDestroy {
 
   private plateListingService = inject(PlateListingService);
-  private dialog = inject(MatDialog);
   private authService = inject(AuthService);
   private firestore = inject(Firestore);
   private route = inject(ActivatedRoute);
@@ -122,20 +114,6 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
     return index;
   }
 
-  onMessageSeller(listing: PlateListing): void {
-    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
-      if (!user) {
-        this.dialog.open(AuthPromptDialogComponent, { width: '380px' });
-      } else {
-        this.dialog.open(MessageSellerDialogComponent, {
-          width: '520px',
-          data: listing
-        });
-      }
-    });
-  }
-
-  protected readonly normalisePlate = normalisePlate;
 
   constructor() {
     this.plateListingService.getAll().subscribe(listings => {

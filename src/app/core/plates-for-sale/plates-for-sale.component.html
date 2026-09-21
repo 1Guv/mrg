@@ -70,35 +70,7 @@
                     <cdk-virtual-scroll-viewport itemSize="420" minBufferPx="840" maxBufferPx="1260" class="listings-viewport">
                         <div *cdkVirtualFor="let row of listingRows; trackBy: trackRow; templateCacheSize: 0" class="listings-row">
                             @for (listing of row; track listing.id) {
-                                <div class="listing-card-wrapper">
-                                    <div class="listing-avatar">{{ listing.initials | uppercase }}</div>
-                                    <div class="listing-date">{{ listing.createdDate | date:'d MMM y' }}</div>
-                                    <mat-card class="listing-card">
-                                        <div class="plate-css">
-                                            <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
-                                        </div>
-                                        <span class="listing-price">£{{ listing.askingPrice }}</span>
-                                        @if (listing.meanings) {
-                                            <div class="listing-meanings">
-                                                <span class="listing-meanings-label">Meaning</span>
-                                                <span class="listing-meanings-text">{{ listing.meanings }}</span>
-                                            </div>
-                                        }
-                                        <hr class="listing-divider">
-                                        <button mat-raised-button class="message-seller-btn"
-                                            [matBadge]="listing.viewsPlaceholder"
-                                            matBadgePosition="above after"
-                                            matBadgeColor="accent"
-                                            (click)="onMessageSeller(listing)">
-                                            Message Seller
-                                        </button>
-                                        <div class="share-buttons-wrapper">
-                                            <app-share-buttons
-                                                [shareText]="listing.plateCharacters + ' — £' + listing.askingPrice"
-                                                [viewListingLink]="['/plates-for-sale', normalisePlate(listing.plateCharacters)]" />
-                                        </div>
-                                    </mat-card>
-                                </div>
+                                <app-plate-listing-card [listing]="listing" />
                             }
                         </div>
                     </cdk-virtual-scroll-viewport>
@@ -118,26 +90,7 @@
                     <cdk-virtual-scroll-viewport itemSize="380" minBufferPx="760" maxBufferPx="1140" class="listings-viewport">
                         <div *cdkVirtualFor="let row of soldListingRows; trackBy: trackRow; templateCacheSize: 0" class="listings-row">
                             @for (listing of row; track listing.id) {
-                                <div class="listing-card-wrapper">
-                                    <div class="listing-avatar">{{ listing.initials | uppercase }}</div>
-                                    <div class="listing-date">{{ listing.createdDate | date:'d MMM y' }}</div>
-                                    <span class="sold-tab-badge">SOLD</span>
-                                    <mat-card class="listing-card">
-                                        <div class="plate-css">
-                                            <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
-                                        </div>
-                                        <span class="listing-price">£{{ listing.soldPrice | number }}</span>
-                                        @if (listing.meanings) {
-                                            <div class="listing-meanings">
-                                                <span class="listing-meanings-label">Meaning</span>
-                                                <span class="listing-meanings-text">{{ listing.meanings }}</span>
-                                            </div>
-                                        }
-                                        <div class="share-buttons-wrapper">
-                                            <app-share-buttons [shareText]="listing.plateCharacters + ' — Sold for £' + listing.soldPrice" />
-                                        </div>
-                                    </mat-card>
-                                </div>
+                                <app-plate-listing-card [listing]="listing" variant="sold" />
                             }
                         </div>
                     </cdk-virtual-scroll-viewport>

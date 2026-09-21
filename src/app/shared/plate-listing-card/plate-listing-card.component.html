@@ -1,0 +1,49 @@
+<div class="listing-card-wrapper">
+  <div class="listing-avatar">{{ listing().initials | uppercase }}</div>
+  <div class="listing-date">{{ listing().createdDate | date:'d MMM y' }}</div>
+
+  @if (variant() === 'sold') {
+    <span class="sold-tab-badge">SOLD</span>
+  }
+
+  <mat-card class="listing-card">
+    <div class="plate-css">
+      <span class="bevel-plate">{{ listing().plateCharacters | uppercase }}</span>
+    </div>
+
+    @if (variant() === 'sold') {
+      <span class="listing-price">&pound;{{ listing().soldPrice | number }}</span>
+    } @else {
+      <span class="listing-price">&pound;{{ listing().askingPrice }}</span>
+    }
+
+    @if (listing().meanings) {
+      <div class="listing-meanings">
+        <span class="listing-meanings-label">Meaning</span>
+        <span class="listing-meanings-text">{{ listing().meanings }}</span>
+      </div>
+    }
+
+    @if (variant() === 'sale') {
+      <hr class="listing-divider">
+      <button mat-raised-button class="message-seller-btn"
+        [matBadge]="listing().viewsPlaceholder"
+        matBadgePosition="above after"
+        matBadgeColor="accent"
+        (click)="onMessageSeller()">
+        Message Seller
+      </button>
+    }
+
+    <div class="share-buttons-wrapper">
+      @if (variant() === 'sold') {
+        <app-share-buttons
+          [shareText]="listing().plateCharacters + ' — Sold for £' + listing().soldPrice" />
+      } @else {
+        <app-share-buttons
+          [shareText]="listing().plateCharacters + ' — £' + listing().askingPrice"
+          [viewListingLink]="['/plates-for-sale', normalisePlate(listing().plateCharacters)]" />
+      }
+    </div>
+  </mat-card>
+</div>

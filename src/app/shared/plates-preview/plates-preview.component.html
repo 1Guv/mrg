@@ -2,18 +2,7 @@
   @if (listings().length) {
     <div class="plates-preview__grid">
       @for (listing of listings(); track listing.plateCharacters) {
-        <div class="plates-preview__card">
-          <a [routerLink]="['/plates-for-sale', plateLink(listing.plateCharacters)]"
-             class="plates-preview__link">
-            <span class="bevel-plate">{{ listing.plateCharacters | uppercase }}</span>
-            <span class="plates-preview__price">
-              &pound;{{ listing.askingPrice | number }}
-            </span>
-            @if (listing.meanings) {
-              <span class="plates-preview__meaning">{{ listing.meanings }}</span>
-            }
-          </a>
-        </div>
+        <app-plate-listing-card [listing]="listing" />
       }
     </div>
   } @else if (loaded()) {

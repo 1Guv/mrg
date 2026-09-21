@@ -1,10 +1,10 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { DecimalPipe, UpperCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { PlateListing } from '../../models/plate-listing.model';
-import { normalisePlate } from '../../utils/normalise-plate';
+import { PlateListingCardComponent }
+  from '../plate-listing-card/plate-listing-card.component';
 
 /**
  * A short teaser of the newest plates for sale, shown on the homepage behind
@@ -14,7 +14,7 @@ import { normalisePlate } from '../../utils/normalise-plate';
 @Component({
   selector: 'app-plates-preview',
   standalone: true,
-  imports: [RouterLink, DecimalPipe, UpperCasePipe],
+  imports: [RouterLink, PlateListingCardComponent],
   templateUrl: './plates-preview.component.html',
   styleUrl: './plates-preview.component.scss',
 })
@@ -40,9 +40,5 @@ export class PlatesPreviewComponent {
         this.all.set(all);
         this.loaded.set(true);
       });
-  }
-
-  plateLink(plate: string): string {
-    return normalisePlate(plate);
   }
 }
