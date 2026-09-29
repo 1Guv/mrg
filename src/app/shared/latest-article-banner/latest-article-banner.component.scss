@@ -1,0 +1,26 @@
+.latest-article {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.latest-article__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #999;
+  font-weight: 500;
+}
+
+.latest-article__link {
+  font-weight: 600;
+  color: #1a73e8;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}

@@ -8,6 +8,7 @@ import { SuffixPlateValuationComponent } from "../suffix-plate-valuation/suffix-
 import { ListNowBannerComponent } from '../../shared/list-now-banner/list-now-banner.component';
 import { ModeToggleComponent, HomeMode } from '../../shared/mode-toggle/mode-toggle.component';
 import { PlatesPreviewComponent } from '../../shared/plates-preview/plates-preview.component';
+import { LatestArticleBannerComponent } from '../../shared/latest-article-banner/latest-article-banner.component';
 
 @Component({
     selector: 'app-main-section',
@@ -21,6 +22,7 @@ import { PlatesPreviewComponent } from '../../shared/plates-preview/plates-previ
         ListNowBannerComponent,
         ModeToggleComponent,
         PlatesPreviewComponent,
+        LatestArticleBannerComponent,
     ],
     templateUrl: './main-section.component.html',
     styleUrl: './main-section.component.scss'

@@ -1,0 +1,8 @@
+@if (latest(); as article) {
+  <div class="latest-article">
+    <span class="latest-article__label">Latest</span>
+    <a class="latest-article__link" [routerLink]="['/news', article.slug]">
+      {{ article.title }} &rarr;
+    </a>
+  </div>
+}
