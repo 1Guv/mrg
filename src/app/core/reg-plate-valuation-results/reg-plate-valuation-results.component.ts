@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { SharedPlateDataService } from '../../services/shared-plate-data.service';
 import { CommonModule } from '@angular/common';
 import { DatelessHowManyLettersMultiplier, DatelessHowManyNumbersMultiplier, DatelessReg, DatelessRegLength, DatelessRegMultiplier, DatelessYearMultiplier, DigitValues, IsAnyLetterUsedAsNumber, IsAnyNumberUsedAsLetter, IsPlateSpacingGoodForMot, LetterValues, MinMaxTotals, Spaces } from '../../formulas/dateless-formula';
@@ -132,6 +132,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   plateListingService = inject(PlateListingService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
+  private el = inject(ElementRef);
 
   constructor(
     private sharedPlateDataService: SharedPlateDataService,
@@ -156,6 +157,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
         this.popularityMultiplier.setValue(Math.round(1));
         this.calculateTotalWithPopularityMultiplier();
         if (data) {
+          setTimeout(() => this.el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }));
           this.valuationService.autoSaveValuation(
             this.currentPlate?.toUpperCase(),
             this.totalPoints * this.multiplier,

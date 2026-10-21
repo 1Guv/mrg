@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -66,6 +66,7 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
   private dictionaryService = inject(DictionaryService);
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
+  private el = inject(ElementRef);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
   private valuationService = inject(ValuationService);
@@ -122,6 +123,7 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
           this.savedValuationId = null;
           this.buildForm(reg);
           this.cdr.detectChanges();
+          this.scrollIntoView();
         }
       })
     );
@@ -290,9 +292,14 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
         this.isCalculating = false;
         this.showResults = true;
         this.cdr.detectChanges();
+        this.scrollIntoView();
         this.autoSave();
       })
     );
+  }
+
+  private scrollIntoView() {
+    this.el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   onReset() {
