@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterLink } from '@angular/router';
 import { NudgeEmailsService } from '../../services/nudge-emails.service';
 
 @Component({
@@ -15,6 +16,7 @@ import { NudgeEmailsService } from '../../services/nudge-emails.service';
     MatIconModule,
     MatSlideToggleModule,
     MatProgressSpinnerModule,
+    RouterLink,
   ],
   template: `
   <mat-card class="my-3">
@@ -45,6 +47,8 @@ import { NudgeEmailsService } from '../../services/nudge-emails.service';
                       </p>
                   }
               </div>
+
+              <a mat-raised-button color="primary" routerLink="/">New valuation</a>
           </mat-card-content>
       </div>
   </mat-card>
