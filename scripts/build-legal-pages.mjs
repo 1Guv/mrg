@@ -2,10 +2,10 @@
  * Generates standalone static legal pages from the Angular component templates,
  * so they are reachable at real paths with a real 200 status.
  *
- * The app is hash-routed, so `/#/privacy-policy` is invisible to crawlers and to
- * fetchers like Google's OAuth consent-screen validator — they only ever see the
- * SPA shell at `/`. These generated pages give those consumers a real URL while
- * the in-app routes stay the source of truth for the text.
+ * The SPA only renders the policy text after JavaScript runs, which fetchers like
+ * Google's OAuth consent-screen validator don't do. These generated pages give
+ * those consumers the full text at a real URL while the in-app routes stay the
+ * source of truth for it.
  *
  * Output: src/privacy-policy/index.html, src/terms/index.html
  * (copied into the build by the `assets` entries in angular.json)

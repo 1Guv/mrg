@@ -76,8 +76,8 @@ function buildEmailHtml(
 ): string {
   /* eslint-disable max-len */
   const ctaUrl = voucherCode ?
-    `${APP_URL}/#/list-plate?plate=${encodeURIComponent(registration)}&voucher=${encodeURIComponent(voucherCode)}` :
-    `${APP_URL}/#/list-plate?plate=${encodeURIComponent(registration)}`;
+    `${APP_URL}/list-plate?plate=${encodeURIComponent(registration)}&voucher=${encodeURIComponent(voucherCode)}` :
+    `${APP_URL}/list-plate?plate=${encodeURIComponent(registration)}`;
 
   const voucherBanner = voucherCode ? `
   <div style="background:#FFC200;border-radius:6px;padding:16px;margin:24px 0;text-align:center;">

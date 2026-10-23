@@ -16,6 +16,7 @@ import { TermsComponent } from './core/terms/terms.component';
 import { PlateDetailComponent } from './core/plate-detail/plate-detail.component';
 import { AboutComponent } from './core/about/about.component';
 import { ContactComponent } from './core/contact/contact.component';
+import { NotFoundComponent } from './core/not-found/not-found.component';
 
 export const routes: Routes = [
     { path: '', component: MainSectionComponent },
@@ -38,4 +39,5 @@ export const routes: Routes = [
     { path: 'terms', component: TermsComponent },
     { path: 'about', component: AboutComponent },
     { path: 'contact', component: ContactComponent },
+    { path: '**', component: NotFoundComponent },
 ];

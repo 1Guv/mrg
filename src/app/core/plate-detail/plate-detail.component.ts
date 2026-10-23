@@ -1,6 +1,6 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, UpperCasePipe, DOCUMENT } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
 import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay, catchError, of } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -31,6 +31,7 @@ type ListingState =
 })
 export class PlateDetailComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private plateListingService = inject(PlateListingService);
   private titleService = inject(Title);
   private metaService = inject(Meta);
@@ -78,7 +79,7 @@ export class PlateDetailComponent implements OnDestroy {
     this.canonicalLink?.remove();
     const link = this.document.createElement('link');
     link.setAttribute('rel', 'canonical');
-    link.setAttribute('href', `https://mrvaluations.co.uk/plates-for-sale/${plate}`);
+    link.setAttribute('href', `https://mrvaluations.co.uk/plates-for-sale/${plate}/`);
     this.document.head.appendChild(link);
     this.canonicalLink = link;
 
@@ -127,7 +128,7 @@ export class PlateDetailComponent implements OnDestroy {
   goBack(event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    window.location.hash = '/plates-for-sale?tab=buy';
+    this.router.navigate(['/plates-for-sale'], { queryParams: { tab: 'buy' } });
   }
 
   onCopyLink(): void {

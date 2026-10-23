@@ -409,8 +409,8 @@ export const createCheckoutSession = onCall(
         },
       ],
       // eslint-disable-next-line max-len
-      success_url: `${appBaseUrl}/#/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appBaseUrl}/#/list-plate`,
+      success_url: `${appBaseUrl}/list-plate/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appBaseUrl}/list-plate`,
       ...(promotionCodeId ?
         {discounts: [{promotion_code: promotionCodeId}]} :
         {allow_promotion_codes: true}),
@@ -816,7 +816,7 @@ export const unsubscribeNudge = onRequest(
       response.status(400).send("Invalid token");
       return;
     }
-    response.redirect(`${APP_URL}/#/unsubscribed`);
+    response.redirect(`${APP_URL}/unsubscribed`);
   }
 );
 
