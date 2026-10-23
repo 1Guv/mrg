@@ -139,6 +139,10 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
     private numberPlateFormService: NumberPlateFormService,
     private cdr: ChangeDetectorRef
   ) {
+    // currentPlateData is a BehaviorSubject, so subscribing replays the last
+    // valuation synchronously whenever this component is recreated (e.g. on
+    // returning to the home page). Show it, but only save and track new ones.
+    let replaying = true;
     this.subscriptions.push(
       this.sharedPlateDataService.getCurrentPlateData().subscribe((data) => {
         this.currentPlateData = data;
@@ -156,7 +160,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
         this.calcMaxPrice();
         this.popularityMultiplier.setValue(Math.round(1));
         this.calculateTotalWithPopularityMultiplier();
-        if (data) {
+        if (data && !replaying) {
           setTimeout(() => this.el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }));
           this.valuationService.autoSaveValuation(
             this.currentPlate?.toUpperCase(),
@@ -168,6 +172,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
         }
       })
     );
+    replaying = false;
   }
 
   ngOnInit(): void {
