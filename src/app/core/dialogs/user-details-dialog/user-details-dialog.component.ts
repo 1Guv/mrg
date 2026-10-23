@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../services/auth.service';
 import { UK_CITIES } from '../../../models/uk-cities.model';
+import { ConversionTrackingService } from '../../../services/conversion-tracking.service';
 
 @Component({
   selector: 'app-user-details-dialog',
@@ -32,6 +33,7 @@ export class UserDetailsDialogComponent implements OnInit {
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private tracking = inject(ConversionTrackingService);
 
   form: FormGroup = this.fb.group({
     firstName: ['', Validators.required],
@@ -71,6 +73,7 @@ export class UserDetailsDialogComponent implements OnInit {
 
     try {
       await this.authService.register(email, randomPassword);
+      this.tracking.signedUp('valuation_dialog');
       await this.authService.sendPasswordReset(email);
       this.dialogRef.close(this.form.value);
     } catch (error: any) {

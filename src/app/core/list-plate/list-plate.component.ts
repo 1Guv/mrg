@@ -11,6 +11,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { StripeService } from '../../services/stripe.service';
+import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { AuthPromptDialogComponent, AuthPromptDialogData } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 
@@ -35,6 +36,7 @@ export class ListPlateComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private stripeService = inject(StripeService);
+  private tracking = inject(ConversionTrackingService);
   private dialog = inject(MatDialog);
   plateListingService = inject(PlateListingService);
   private route = inject(ActivatedRoute);
@@ -97,6 +99,7 @@ export class ListPlateComponent implements OnInit {
         negotiable: this.form.value.negotiable ?? false,
         voucherCode: this.voucherCode ?? undefined,
       });
+      this.tracking.checkoutStarted(this.plateListingService.listingFee, !!this.voucherCode);
       window.location.href = url;
     } catch {
       this.errorMessage = 'Something went wrong. Please try again.';

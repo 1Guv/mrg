@@ -28,6 +28,7 @@ import { Router } from '@angular/router';
 import { TrackClickDirective } from '../../directives/track-click.directive';
 import { AuthService } from '../../services/auth.service';
 import { firstValueFrom } from 'rxjs';
+import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
@@ -54,6 +55,7 @@ export class RegPlateMainComponent implements OnInit {
 
   dialog: MatDialog = inject(MatDialog);
   router: Router = inject(Router);
+  private tracking = inject(ConversionTrackingService);
 
   types: Array<NumberPlateTypeObj> = [
     { value: NumberPlateType.Current, example: NumberPlateTypeExamples.currentEg },
@@ -152,6 +154,7 @@ export class RegPlateMainComponent implements OnInit {
     }
 
     const type = this.registrationForm.get('type')?.value?.value;
+    this.tracking.valuationStarted(type ?? 'unknown');
     if (type === NumberPlateType.Current) {
       const registration = this.registrationForm.get('registration')?.value?.toUpperCase().replace(/\s/g, '') ?? '';
       this.sharedPlateDataService.setCurrentPlatePending(registration);

@@ -12,6 +12,7 @@ import { take } from 'rxjs';
 import { User } from '@angular/fire/auth';
 import { AuthService } from '../../services/auth.service';
 import { SellerEnquiryService } from '../../services/seller-enquiry.service';
+import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { PlateListing } from '../../models/plate-listing.model';
 
 @Component({
@@ -38,6 +39,7 @@ export class MessageSellerDialogComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private enquiryService = inject(SellerEnquiryService);
+  private tracking = inject(ConversionTrackingService);
 
   readonly enquiryTypes = [
     'I love this plate, I want to buy it',
@@ -78,6 +80,7 @@ export class MessageSellerDialogComponent {
           user!.uid,
           user!.email ?? ''
         );
+        this.tracking.enquirySent(this.form.value.enquiryType);
         this.submitted = true;
       } catch {
         this.errorMessage = 'Something went wrong. Please try again.';

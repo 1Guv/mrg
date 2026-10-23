@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import {AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import {MatButton, MatIconButton} from "@angular/material/button";
 import {MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle} from "@angular/material/card";
 import {MatError, MatFormField, MatHint, MatLabel, MatSuffix} from "@angular/material/form-field";
@@ -45,7 +46,8 @@ export class RegisterComponent {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    private tracking: ConversionTrackingService
   ) {
     this.createRegisterForm();
   }
@@ -68,6 +70,7 @@ export class RegisterComponent {
           this.registerForm.get('password')?.value
         );
         await this.authService.saveUserProfile(credential.user.uid, credential.user.email ?? '', 'manual');
+        this.tracking.signedUp('manual');
         await this.router.navigate(['/account-dashboard']);
       } catch (error) {
         console.error('Registration failed:', error);

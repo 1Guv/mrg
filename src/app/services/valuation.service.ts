@@ -15,6 +15,7 @@ import {
 } from '@angular/fire/firestore';
 import { Observable, of, switchMap, take } from 'rxjs';
 import { AuthService } from './auth.service';
+import { ConversionTrackingService } from './conversion-tracking.service';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +26,7 @@ export class ValuationService {
   
   private firestore = inject(Firestore);
   private authService = inject(AuthService);
+  private tracking = inject(ConversionTrackingService);
 
   valuation = signal<Partial<RegValuation>>({});
   userDetails = signal<UserDetails | null>(null);
@@ -139,6 +141,7 @@ export class ValuationService {
   autoSaveValuation(registration: string, price: number, type: string, minPrice: number, maxPrice: number) {
     const ref = collection(this.firestore, 'auto_valuations');
     const mailRef = collection(this.firestore, 'mail');
+    this.tracking.valuationCompleted(type, price);
     const details = this.userDetails();
     const payload: any = { registration, price, type, minPrice, maxPrice, savedAt: new Date() };
     if (details) {
