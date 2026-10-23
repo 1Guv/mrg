@@ -21,7 +21,7 @@ export class NewsListingComponent {
   private metaService = inject(Meta);
 
   constructor() {
-    this.titleService.setTitle('Latest News — MRG Plates');
+    this.titleService.setTitle('Latest News | Mr Valuations');
     this.metaService.updateTag({ name: 'description', content: 'Guides, tips and market insights for UK number plate owners.' });
   }
 

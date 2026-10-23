@@ -13,11 +13,11 @@ const BASE_URL = 'https://mrvaluations.co.uk';
 
 const STATIC_URLS = [
   { loc: `${BASE_URL}/`,                  changefreq: 'weekly',  priority: '1.0' },
-  { loc: `${BASE_URL}/plates-for-sale`,   changefreq: 'daily',   priority: '0.9' },
-  { loc: `${BASE_URL}/news`,              changefreq: 'daily',   priority: '0.8' },
-  { loc: `${BASE_URL}/list-plate`,        changefreq: 'monthly', priority: '0.8' },
-  { loc: `${BASE_URL}/register`,          changefreq: 'monthly', priority: '0.5' },
-  { loc: `${BASE_URL}/login`,             changefreq: 'monthly', priority: '0.4' },
+  { loc: `${BASE_URL}/plates-for-sale/`,   changefreq: 'daily',   priority: '0.9' },
+  { loc: `${BASE_URL}/news/`,              changefreq: 'daily',   priority: '0.8' },
+  { loc: `${BASE_URL}/list-plate/`,        changefreq: 'monthly', priority: '0.8' },
+  { loc: `${BASE_URL}/register/`,          changefreq: 'monthly', priority: '0.5' },
+  { loc: `${BASE_URL}/login/`,             changefreq: 'monthly', priority: '0.4' },
 ];
 
 function normalisePlate(plate) {
@@ -55,18 +55,20 @@ async function generate() {
   const plates = [...new Set(allPlateChars.map(normalisePlate))];
 
   const plateUrls = plates.map(plate => ({
-    loc: `${BASE_URL}/plates-for-sale/${plate}`,
+    loc: `${BASE_URL}/plates-for-sale/${plate}/`,
     changefreq: 'weekly',
     priority: '0.8',
   }));
 
   // Every doc in `articles` is live — the generator writes only on publish,
-  // so there is no draft state to filter out.
+  // so there is no draft state to filter out. Some slugs repeat; the site
+  // serves the first, so the sitemap lists each slug once.
+  const seenSlugs = new Set();
   const articleUrls = articleSnap.docs
     .map(d => d.data())
-    .filter(a => a.slug)
+    .filter(a => a.slug && !seenSlugs.has(a.slug) && seenSlugs.add(a.slug))
     .map(a => ({
-      loc: `${BASE_URL}/news/${a.slug}`,
+      loc: `${BASE_URL}/news/${a.slug}/`,
       lastmod: a.publishedAt?.toDate?.().toISOString().slice(0, 10),
       changefreq: 'monthly',
       priority: '0.7',
