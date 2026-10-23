@@ -2,6 +2,13 @@
 <html lang="en" data-beasties-container>
 
 <head>
+  <!-- Old hash links (/#/news/x, emails, Stripe) become real paths before anything reads the URL -->
+  <script>
+    if (location.hash.indexOf('#/') === 0) {
+      history.replaceState(null, '', location.hash.slice(1));
+    }
+  </script>
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XRSRVZ3GTC"></script>
   <script>
@@ -34,8 +41,12 @@
   <meta property="og:url" content="https://mrvaluations.co.uk/">
   <meta property="og:title" content="FREE Instant Number Plate Valuation | UKs 1st Automated Tool">
   <meta property="og:description" content="Discover the true market value of your registration instantly with Mr Valuations. 100% Free and Automated.">
-  <meta property="og:image" content="https://mrvaluations.co.uk/assets/og-image.jpg">
+  <meta property="og:site_name" content="Mr Valuations">
+  <meta property="og:image" content="https://mrvaluations.co.uk/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:image" content="https://mrvaluations.co.uk/assets/og-image.png">
   <meta property="twitter:url" content="https://mrvaluations.co.uk/">
   <meta property="twitter:title" content="FREE Instant Number Plate Valuation">
   <meta property="twitter:description" content="Get an instant, data-driven result for any private plate. No more waiting.">
@@ -69,15 +80,7 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Mr Valuations",
-    "url": "https://mrvaluations.co.uk/",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": "https://mrvaluations.co.uk/?q={search_term_string}"
-      },
-      "query-input": "required name=search_term_string"
-    }
+    "url": "https://mrvaluations.co.uk/"
   }
   </script>
   <!-- Facebook Pixel Code -->
@@ -106,6 +109,6 @@
   <!-- End Google Tag Manager (noscript) -->
   <noscript><img height="1" width="1" src="https://www.facebook.com/tr?id=988999363629775&ev=PageView&noscript=1"></noscript>
   <app-root></app-root>
-<link rel="modulepreload" href="chunk-UZUZSPLV.js"><script src="polyfills-B6TNHZQ6.js" type="module"></script><script src="scripts-Z6VWI63P.js" defer></script><script src="main-UXOIHO3H.js" type="module"></script></body>
+<link rel="modulepreload" href="chunk-UZUZSPLV.js"><script src="polyfills-B6TNHZQ6.js" type="module"></script><script src="scripts-Z6VWI63P.js" defer></script><script src="main-2SQACVAF.js" type="module"></script></body>
 
 </html>
