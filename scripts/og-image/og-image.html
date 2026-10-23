@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Source for src/assets/og-image.png (1200x630). Re-render with:
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars \
+       --window-size=1200,630 --screenshot=src/assets/og-image.png scripts/og-image/og-image.html -->
+<link href="https://fonts.googleapis.com/css2?family=Cabin:wght@500;700&family=Cabin+Sketch:wght@700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4f1f9 100%);
+    font-family: Cabin, Arial, sans-serif; color: #1d2430;
+    display: flex; flex-direction: column; justify-content: center; gap: 36px; padding: 0 90px; box-sizing: border-box;
+  }
+  .logo { width: 186px; }
+  h1 { font-family: "Cabin Sketch", Cabin, sans-serif; font-size: 76px; line-height: 1.02; margin: 0; }
+  h1 span { color: #00b3b3; }
+  .row { display: flex; align-items: center; gap: 40px; }
+  .plate {
+    background: #f7d117; border: 5px solid #111; border-radius: 12px;
+    font: 700 88px/1 "Cabin", Arial, sans-serif; letter-spacing: 6px; color: #111;
+    padding: 16px 34px 12px; display: flex; align-items: center; gap: 26px;
+  }
+  .plate .band { background: #1d4fa3; color: #fff; font-size: 24px; letter-spacing: 1px; border-radius: 6px; padding: 30px 10px; }
+  .points { font-size: 32px; line-height: 1.5; font-weight: 500; }
+  .points b { color: #00b3b3; }
+  .url { font-size: 30px; font-weight: 700; color: #00b3b3; }
+</style>
+</head>
+<body>
+  <img class="logo" src="../../src/assets/images/mrv-header-logo-website.png" alt="">
+  <h1>Free <span>instant</span> number<br>plate valuations</h1>
+  <div class="row">
+    <div class="plate"><span class="band">UK</span>MR V4LS</div>
+    <div class="points"><b>100%</b> free<br><b>No</b> waiting<br><span class="url">mrvaluations.co.uk</span></div>
+  </div>
+</body>
+</html>
