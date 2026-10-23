@@ -379,7 +379,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ maxInstances: 10, secrets:
             },
         ], 
         // eslint-disable-next-line max-len
-        success_url: `${appBaseUrl}/#/list-plate/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${appBaseUrl}/#/list-plate` }, (promotionCodeId ?
+        success_url: `${appBaseUrl}/list-plate/success?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${appBaseUrl}/list-plate` }, (promotionCodeId ?
         { discounts: [{ promotion_code: promotionCodeId }] } :
         { allow_promotion_codes: true })), { metadata: {
             plateCharacters: String(plateCharacters).toUpperCase(),
@@ -670,7 +670,7 @@ exports.unsubscribeNudge = (0, https_1.onRequest)({ maxInstances: 10, secrets: [
         response.status(400).send("Invalid token");
         return;
     }
-    response.redirect(`${nudge_emails_js_1.APP_URL}/#/unsubscribed`);
+    response.redirect(`${nudge_emails_js_1.APP_URL}/unsubscribed`);
 });
 /** Callable — toggles nudge email opt-out for the current user. */
 exports.toggleNudgeEmails = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
