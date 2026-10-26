@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -58,6 +58,7 @@ const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
 const failure_alerts_1 = require("./failure-alerts");
 const plate_meanings_js_1 = require("./plate-meanings.js");
+const enquiries_js_1 = require("./enquiries.js");
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
@@ -476,14 +477,11 @@ exports.stripeWebhook = (0, https_1.onRequest)({ maxInstances: 10, secrets: [str
                 console.warn("stripeWebhook: failed to resolve applied voucher", err);
             }
         }
-        await db.collection("plate-listings-new").add({
+        const listingRef = db.collection("plate-listings-new").doc();
+        const batch = db.batch();
+        batch.set(listingRef, {
             plateCharacters: meta.plateCharacters,
             askingPrice: meta.askingPrice,
-            lCEmail: meta.email,
-            lCNumber: meta.phone,
-            lCName: meta.email,
-            plateListingAccName: meta.email,
-            plateListingAccTelNumber: meta.phone,
             meanings: meta.meanings,
             plateNegotiable: meta.negotiable === "true",
             sellerUid: meta.sellerUid,
@@ -503,6 +501,15 @@ exports.stripeWebhook = (0, https_1.onRequest)({ maxInstances: 10, secrets: [str
             voucherCode: voucherCode || null,
             discountAppliedPence: discountAppliedPence || null,
         });
+        // Contact details go where only Cloud Functions can read them.
+        batch.set((0, enquiries_js_1.contactRef)(listingRef), {
+            lCEmail: meta.email,
+            lCNumber: meta.phone,
+            lCName: meta.email,
+            plateListingAccName: meta.email,
+            plateListingAccTelNumber: meta.phone,
+        });
+        await batch.commit();
     }
     response.status(200).send("ok");
 });
@@ -701,5 +708,22 @@ exports.getNudgeStatus = (0, https_1.onCall)({ maxInstances: 10 }, async (reques
         throw new https_1.HttpsError("unauthenticated", "Must be logged in");
     }
     return (0, nudge_emails_js_1.runGetNudgeStatus)(request.auth.uid);
+});
+/** Callable — sends a buyer's enquiry to the seller of a listing. */
+exports.sendEnquiry = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a, _b;
+    if (!((_a = request.auth) === null || _a === void 0 ? void 0 : _a.token.email)) {
+        throw new https_1.HttpsError("unauthenticated", "Must be logged in");
+    }
+    return (0, enquiries_js_1.runSendEnquiry)(request.auth.uid, request.auth.token.email, (_b = request.data) !== null && _b !== void 0 ? _b : {});
+});
+/** Callable — emails a seller's reply to the buyer who enquired. */
+exports.replyToEnquiry = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a;
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Must be logged in");
+    }
+    await (0, enquiries_js_1.runReplyToEnquiry)(request.auth.uid, request.auth.token.email, (_a = request.data) !== null && _a !== void 0 ? _a : {});
+    return { success: true };
 });
 //# sourceMappingURL=index.js.map
