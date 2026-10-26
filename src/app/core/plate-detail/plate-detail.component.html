@@ -22,9 +22,6 @@
         @if (formatInfo(state.listing)?.label; as formatLabel) {
           <div class="plate-meta-row">
             <span>{{ formatLabel }}</span>
-            @if (state.listing.plateCategory) {
-              <span> · {{ state.listing.plateCategory }}</span>
-            }
           </div>
         }
         <div class="listed-date">Listed {{ state.listing.createdDate | date:'d MMMM y' }}</div>

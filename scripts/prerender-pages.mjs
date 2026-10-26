@@ -274,7 +274,7 @@ ${listings.map(l => `<li><a href="/plates-for-sale/${esc(l.plate)}/">${esc(l.pla
         key: l.plate,
         record: {
           plateCharacters: l.plateCharacters, askingPrice: l.askingPrice, meanings: l.meanings ?? '',
-          plateType: l.plateType ?? '', plateCategory: l.plateCategory ?? '', createdDate: l.createdDate ?? '',
+          plateType: l.plateType ?? '', createdDate: l.createdDate ?? '',
           meaningDescription: meaningDescriptions.get(l.plate) ?? undefined,
         },
       },
@@ -300,7 +300,7 @@ ${listings.map(l => `<li><a href="/plates-for-sale/${esc(l.plate)}/">${esc(l.pla
 <p><strong>Asking price: £${esc(l.askingPrice)}</strong></p>
 ${l.meanings ? `<p>Meaning: ${esc(l.meanings)}</p>` : ''}
 ${meaningDescriptions.has(l.plate) ? `<h2>What ${esc(display)} spells</h2>\n<p>${esc(meaningDescriptions.get(l.plate))}</p>` : ''}
-${l.plateType ? `<p>${esc(l.plateType)}${l.plateCategory ? ` · ${esc(l.plateCategory)}` : ''}</p>` : ''}
+${l.plateType ? `<p>${esc(l.plateType)}</p>` : ''}
 ${l.createdDate ? `<p>Listed ${esc(ukDate(new Date(l.createdDate)))}</p>` : ''}
 <p><a href="/">Get a free valuation for your own plate</a></p>`),
     }));
