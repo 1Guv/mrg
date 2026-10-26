@@ -156,11 +156,14 @@ async function main() {
 
   initializeApp({ credential: cert(serviceAccount) });
   const db = getFirestore();
-  const [articleSnap, newSnap, oldSnap] = await Promise.all([
+  const [articleSnap, newSnap, oldSnap, meaningSnap] = await Promise.all([
     db.collection('articles').get(),
     db.collection('plate-listings-new').where('isSold', '==', false).get(),
     db.collection('plate-listings').where('isSold', '==', false).get(),
+    db.collection('plate_meanings').get(),
   ]);
+  // AI-written "what it spells" text, keyed by plate (functions/src/plate-meanings.ts).
+  const meaningDescriptions = new Map(meaningSnap.docs.map(d => [d.id, d.data().description]));
 
   // Articles: the app resolves a slug with `where slug == x, limit 1`, which
   // returns the lowest document id; snapshot order is the same, so keep the first.
@@ -272,6 +275,7 @@ ${listings.map(l => `<li><a href="/plates-for-sale/${esc(l.plate)}/">${esc(l.pla
         record: {
           plateCharacters: l.plateCharacters, askingPrice: l.askingPrice, meanings: l.meanings ?? '',
           plateType: l.plateType ?? '', plateCategory: l.plateCategory ?? '', createdDate: l.createdDate ?? '',
+          meaningDescription: meaningDescriptions.get(l.plate) ?? undefined,
         },
       },
       schema: [
@@ -295,6 +299,7 @@ ${listings.map(l => `<li><a href="/plates-for-sale/${esc(l.plate)}/">${esc(l.pla
 <h1>${esc(display)} number plate for sale</h1>
 <p><strong>Asking price: £${esc(l.askingPrice)}</strong></p>
 ${l.meanings ? `<p>Meaning: ${esc(l.meanings)}</p>` : ''}
+${meaningDescriptions.has(l.plate) ? `<h2>What ${esc(display)} spells</h2>\n<p>${esc(meaningDescriptions.get(l.plate))}</p>` : ''}
 ${l.plateType ? `<p>${esc(l.plateType)}${l.plateCategory ? ` · ${esc(l.plateCategory)}` : ''}</p>` : ''}
 ${l.createdDate ? `<p>Listed ${esc(ukDate(new Date(l.createdDate)))}</p>` : ''}
 <p><a href="/">Get a free valuation for your own plate</a></p>`),
@@ -303,7 +308,8 @@ ${l.createdDate ? `<p>Listed ${esc(ukDate(new Date(l.createdDate)))}</p>` : ''}
 
   console.log(
     `prerender-pages: wrote ${STATIC_PAGES.length + 2 + articles.length + listings.length} pages ` +
-    `(${articles.length} articles, ${listings.length} plates, ${STATIC_PAGES.length + 2} app pages)`);
+    `(${articles.length} articles, ${listings.length} plates, ${STATIC_PAGES.length + 2} app pages); ` +
+    `${listings.filter(l => meaningDescriptions.has(l.plate)).length} plates have a meaning description`);
 }
 
 main().catch(err => {

@@ -1,6 +1,6 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, UpperCasePipe, DOCUMENT } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
 import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay, catchError, of, filter } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +14,10 @@ import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-
 import { PlateListing } from '../../models/plate-listing.model';
 import { normalisePlate } from '../../utils/normalise-plate';
 import { PrerenderDataService } from '../../services/prerender-data.service';
+import { PLATE_FORMAT_INFO, PlateFormatInfo, plateFormat } from '../../utils/plate-format';
+
+/** The embedded copy: display fields plus the AI-written description. */
+type PrerenderedPlate = PlateListing & { meaningDescription?: string };
 
 type ListingState =
   | { status: 'loading' }
@@ -24,7 +28,7 @@ type ListingState =
   selector: 'app-plate-detail',
   standalone: true,
   imports: [
-    AsyncPipe, DatePipe, UpperCasePipe,
+    AsyncPipe, DatePipe, UpperCasePipe, RouterLink,
     MatButtonModule, MatIconModule, MatDialogModule, MatSnackBarModule,
   ],
   templateUrl: './plate-detail.component.html',
@@ -52,7 +56,7 @@ export class PlateDetailComponent implements OnDestroy {
       // On a direct load the page carries its listing's display fields, so it
       // renders at once; the live listing (with the seller details Message
       // Seller needs) replaces it when Firestore answers.
-      const prerendered = this.prerenderData.get<PlateListing>('plate', normalisePlate(plate));
+      const prerendered = this.prerenderData.get<PrerenderedPlate>('plate', normalisePlate(plate));
       const initial: ListingState = prerendered
         ? { status: 'found', listing: prerendered }
         : { status: 'loading' };
@@ -74,8 +78,35 @@ export class PlateDetailComponent implements OnDestroy {
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
+  meaningDescription$: Observable<string | null> = this.route.paramMap.pipe(
+    switchMap(params => {
+      const plate = params.get('plate') ?? '';
+      const prerendered = this.prerenderData.get<PrerenderedPlate>('plate', normalisePlate(plate))?.meaningDescription ?? null;
+      return this.plateListingService.getMeaningDescription(plate).pipe(
+        map(description => description ?? prerendered),
+        catchError(() => of(prerendered)),
+        startWith(prerendered)
+      );
+    })
+  );
+
+  similarListings$: Observable<PlateListing[]> = this.listingState$.pipe(
+    switchMap(state => state.status === 'found'
+      ? this.plateListingService.getSimilar(state.listing).pipe(catchError(() => of([])))
+      : of([]))
+  );
+
   constructor() {
     this.sub = this.listingState$.subscribe();
+  }
+
+  formatInfo(listing: PlateListing): PlateFormatInfo | null {
+    const format = plateFormat(listing.plateCharacters);
+    return format ? PLATE_FORMAT_INFO[format] : null;
+  }
+
+  plateLink(listing: PlateListing): string[] {
+    return ['/plates-for-sale', normalisePlate(listing.plateCharacters)];
   }
 
   private setSeoTags(listing: PlateListing): void {

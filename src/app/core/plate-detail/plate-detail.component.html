@@ -19,9 +19,9 @@
             <span class="listing-meanings-text">{{ state.listing.meanings }}</span>
           </div>
         }
-        @if (state.listing.plateType) {
+        @if (formatInfo(state.listing)?.label; as formatLabel) {
           <div class="plate-meta-row">
-            <span>{{ state.listing.plateType }}</span>
+            <span>{{ formatLabel }}</span>
             @if (state.listing.plateCategory) {
               <span> · {{ state.listing.plateCategory }}</span>
             }
@@ -39,6 +39,48 @@
           </button>
         </div>
       </div>
+
+      <section class="plate-about">
+        @if (meaningDescription$ | async; as description) {
+          <h2>What {{ state.listing.plateCharacters | uppercase }} spells</h2>
+          <p>{{ description }}</p>
+        }
+
+        @if (formatInfo(state.listing); as info) {
+          <h2>{{ info.label }}</h2>
+          <p>{{ info.summary }}</p>
+          <p>{{ info.vehicleRule }}</p>
+        }
+
+        <div class="valuation-cta">
+          <p>Got a plate of your own? Find out what it's worth.</p>
+          <a mat-raised-button color="primary" routerLink="/">Get a free valuation</a>
+        </div>
+
+        @if (similarListings$ | async; as similar) {
+          @if (similar.length) {
+            <h2>Similar plates for sale</h2>
+            <ul class="similar-plates">
+              @for (other of similar; track other.plateCharacters) {
+                <li>
+                  <a [routerLink]="plateLink(other)">
+                    <span class="similar-plate">{{ other.plateCharacters | uppercase }}</span>
+                    <span class="similar-price">£{{ other.askingPrice }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        }
+
+        <h2>Buying this plate</h2>
+        <h3>How do I buy {{ state.listing.plateCharacters | uppercase }}?</h3>
+        <p>Use Message Seller to contact the seller and agree a price. The seller then transfers the registration to you through the DVLA.</p>
+        <h3>How does the transfer work?</h3>
+        <p>Registrations are transferred with the DVLA, usually online. The DVLA charges an £80 fee to move a registration onto a vehicle or onto a retention certificate.</p>
+        <h3>Do I need a vehicle to buy it?</h3>
+        <p>No. The registration can be held on a V778 retention certificate in your name until you are ready to put it on a vehicle.</p>
+      </section>
     </div>
   } @else {
     <div class="not-found">
