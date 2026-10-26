@@ -34,6 +34,7 @@ const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
 import {withFailureAlert} from "./failure-alerts";
+import {fillPlateMeanings} from "./plate-meanings.js";
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
@@ -796,6 +797,23 @@ export const scheduledNudgeEmails = onSchedule(
       runScheduledNudgeEmails(
         nudgeUnsubscribeSecret.value(), stripeSecretKey.value()
       ));
+  }
+);
+
+/**
+ * Hourly — writes AI descriptions for plates for sale that have none, up to
+ * 300 a run, so new listings and edited meanings are covered within the hour.
+ */
+export const scheduledPlateMeanings = onSchedule(
+  {
+    schedule: "every 60 minutes",
+    timeZone: "Europe/London",
+    timeoutSeconds: 540,
+    secrets: [geminiApiKey],
+  },
+  async () => {
+    await withFailureAlert("scheduledPlateMeanings", () =>
+      fillPlateMeanings(geminiApiKey.value(), 300));
   }
 );
 
