@@ -72,10 +72,21 @@ function jsonLd(data) {
 }
 
 /**
+ * The record a page shows, for the app to render from before Firestore answers
+ * (see PrerenderDataService). Without it Angular replaces the static content
+ * with a loading state, which Google can index as a soft 404.
+ * @param {{kind: string, key: string, record: object}} data
+ */
+function prerenderData(data) {
+  return `<script type="application/json" id="prerender-data">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`;
+}
+
+/**
  * Swap the shell's page-specific head tags and fill <app-root>.
  * @param {string} shell Built docs/index.html.
  * @param {{path: string, title: string, description: string, ogType?: string,
- *   noindex?: boolean, schema?: object[], body?: string}} page
+ *   noindex?: boolean, schema?: object[], body?: string,
+ *   data?: {kind: string, key: string, record: object}}} page
  * @return {string}
  */
 function render(shell, page) {
@@ -104,6 +115,7 @@ function render(shell, page) {
   // The homepage's WebApplication/WebSite schema describes "/" only.
   html = html.replace(/\s*<script type="application\/ld\+json">[\s\S]*?<\/script>/g, '');
   if (schema) html = html.replace('</head>', `  ${schema}\n</head>`);
+  if (page.data) html = html.replace('</head>', `  ${prerenderData(page.data)}\n</head>`);
   html = replace(html, /<app-root><\/app-root>/, `<app-root>${page.body ?? ''}</app-root>`);
   return html;
 }
@@ -158,7 +170,7 @@ async function main() {
     const a = doc.data();
     if (!a.slug || seenSlugs.has(a.slug)) continue;
     seenSlugs.add(a.slug);
-    articles.push({ ...a, publishedDate: a.publishedAt?.toDate?.() });
+    articles.push({ ...a, id: doc.id, publishedDate: a.publishedAt?.toDate?.() });
   }
   articles.sort((x, y) => (y.publishedDate?.getTime() ?? 0) - (x.publishedDate?.getTime() ?? 0));
 
@@ -199,6 +211,15 @@ ${articles.map(a => `<li><a href="/news/${esc(a.slug)}/">${esc(a.title)}</a> —
       title: a.metaTitle || `${a.title} | ${BRAND}`,
       description: a.metaDescription || a.title,
       ogType: 'article',
+      data: {
+        kind: 'article',
+        key: a.slug,
+        record: {
+          id: a.id, slug: a.slug, title: a.title, metaTitle: a.metaTitle, metaDescription: a.metaDescription,
+          category: a.category, content: a.content, readTimeMinutes: a.readTimeMinutes,
+          publishedAt: a.publishedDate?.toISOString(),
+        },
+      },
       schema: [
         {
           '@context': 'https://schema.org',
@@ -244,6 +265,15 @@ ${listings.map(l => `<li><a href="/plates-for-sale/${esc(l.plate)}/">${esc(l.pla
       title: `${l.plate} Number Plate For Sale | ${BRAND}`,
       description: desc,
       ogType: 'product',
+      // Display fields only: listings also hold the seller's email and phone.
+      data: {
+        kind: 'plate',
+        key: l.plate,
+        record: {
+          plateCharacters: l.plateCharacters, askingPrice: l.askingPrice, meanings: l.meanings ?? '',
+          plateType: l.plateType ?? '', plateCategory: l.plateCategory ?? '', createdDate: l.createdDate ?? '',
+        },
+      },
       schema: [
         {
           '@context': 'https://schema.org',

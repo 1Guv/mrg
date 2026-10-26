@@ -1,4 +1,6 @@
-@if (article$ | async; as article) {
+@if (articleState$ | async; as state) {
+@if (state.status === 'found') {
+@let article = state.article;
 
   <!-- Hero header — #f2f8f3 bg, centred title (matches Monzo block style) -->
   <div class="article-hero">
@@ -43,10 +45,15 @@
     </div>
   </div>
 
-} @else {
+} @else if (state.status === 'not-found') {
   <div class="article-not-found">
     <h2>Article not found</h2>
     <p>The article you're looking for doesn't exist or may have been removed.</p>
     <a routerLink="/news">← Back to Latest News</a>
   </div>
+} @else {
+  <div class="article-not-found">
+    <p class="text-muted">Loading...</p>
+  </div>
+}
 }

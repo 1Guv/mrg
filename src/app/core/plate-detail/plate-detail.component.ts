@@ -2,7 +2,7 @@ import { Component, OnDestroy, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, UpperCasePipe, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
-import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay, catchError, of } from 'rxjs';
+import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay, catchError, of, filter } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -13,6 +13,7 @@ import { MessageSellerDialogComponent } from '../../shared/message-seller-dialog
 import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 import { PlateListing } from '../../models/plate-listing.model';
 import { normalisePlate } from '../../utils/normalise-plate';
+import { PrerenderDataService } from '../../services/prerender-data.service';
 
 type ListingState =
   | { status: 'loading' }
@@ -39,6 +40,7 @@ export class PlateDetailComponent implements OnDestroy {
   private dialog = inject(MatDialog);
   private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
+  private prerenderData = inject(PrerenderDataService);
 
   private canonicalLink: HTMLLinkElement | null = null;
   private jsonLdScript: HTMLScriptElement | null = null;
@@ -47,6 +49,13 @@ export class PlateDetailComponent implements OnDestroy {
   listingState$: Observable<ListingState> = this.route.paramMap.pipe(
     switchMap(params => {
       const plate = params.get('plate') ?? '';
+      // On a direct load the page carries its listing's display fields, so it
+      // renders at once; the live listing (with the seller details Message
+      // Seller needs) replaces it when Firestore answers.
+      const prerendered = this.prerenderData.get<PlateListing>('plate', normalisePlate(plate));
+      const initial: ListingState = prerendered
+        ? { status: 'found', listing: prerendered }
+        : { status: 'loading' };
       return this.plateListingService.getByPlate(plate).pipe(
         tap(listing => { if (listing) this.setSeoTags(listing); }),
         map(listing =>
@@ -54,8 +63,12 @@ export class PlateDetailComponent implements OnDestroy {
             ? ({ status: 'found' as const, listing })
             : ({ status: 'not-found' as const })
         ),
-        catchError(() => of({ status: 'not-found' as const })),
-        startWith({ status: 'loading' as const })
+        // When Firestore can't connect (as in some crawlers) it reports an empty
+        // result from its offline cache rather than an error, so an embedded
+        // listing is only replaced by a real one, never by "not found".
+        filter(state => !(prerendered && state.status === 'not-found')),
+        catchError(() => of(prerendered ? initial : { status: 'not-found' as const })),
+        startWith(initial)
       );
     }),
     shareReplay({ bufferSize: 1, refCount: true })
