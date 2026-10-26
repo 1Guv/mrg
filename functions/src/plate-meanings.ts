@@ -40,7 +40,10 @@ function normalisePlate(plate: string): string {
  * @param {PendingPlate} p - The plate and its seller-given meanings.
  * @return {Promise<string>} The description.
  */
-export async function describePlate(apiKey: string, p: PendingPlate): Promise<string> {
+export async function describePlate(
+  apiKey: string,
+  p: PendingPlate
+): Promise<string> {
   /* eslint-disable max-len */
   const prompt = `You write short descriptions for a UK private number plate marketplace.
 
