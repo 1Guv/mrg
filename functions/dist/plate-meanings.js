@@ -80,8 +80,10 @@ What the seller says it reads as: ${p.meanings}
 Write 2 or 3 sentences (40–70 words, British English) for buyers explaining what this plate spells or reads as, and why someone might want it.
 - Base it only on the readings given. Plates use numbers as letters (1 = I, 4 = A, 5 = S, 8 = B, 0 = O), so you may say how the characters make the word.
 - Give a name's or word's meaning only when it is well established and you are certain of it for that exact spelling. Similar-sounding names often mean different things (Saeed is "happy", Shahid/Saheed is "witness"), so when in any doubt say only that it is a given name, or describe how it reads.
-- Vary the wording: do not open with "This distinctive plate" and avoid "cleverly".
-- Do not assume the buyer's religion, ethnicity or nationality, and do not mention celebrities, prices, value or investment.
+- Vary the wording: do not open with "This distinctive plate" and never use the word "cleverly".
+- Never label a name by religion, ethnicity or nationality (write "the given name Alok", not "the Hindu name Alok"), and never say who the plate suits by faith, heritage or national pride.
+- If a reading is itself a religious or national word (SIKH, KHALSA, HALAL, PAKISTAN), say what the word means in neutral terms and nothing about the buyer.
+- Do not mention celebrities, sport, prices, value or investment.
 - Plain text only: no emojis, markdown, quotes or headings.
 
 Respond ONLY with JSON: {"description": "..."}`;
