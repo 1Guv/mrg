@@ -3,19 +3,17 @@ import {
   Firestore,
   collection,
   collectionData,
-  addDoc,
   query,
-  where,
-  serverTimestamp
+  where
 } from '@angular/fire/firestore';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { PlateListing } from '../models/plate-listing.model';
-import { PlateListingService } from './plate-listing.service';
 
 export interface SellerEnquiry {
   id?: string;
-  plateId: number;
+  plateId: number | string;
   plateCharacters: string;
   enquiryType: string;
   message: string;
@@ -29,47 +27,18 @@ export interface SellerEnquiry {
 @Injectable({ providedIn: 'root' })
 export class SellerEnquiryService {
   private firestore = inject(Firestore);
-  private plateListingService = inject(PlateListingService);
+  private functions = inject(Functions);
 
-  async saveEnquiry(
-    listing: PlateListing,
-    enquiryType: string,
-    message: string,
-    buyerUid: string,
-    buyerEmail: string
-  ): Promise<void> {
-    const enquiriesRef = collection(this.firestore, 'seller_enquiries');
-    const mailRef = collection(this.firestore, 'mail');
-
-    await Promise.all([
-      addDoc(enquiriesRef, {
-        plateId: listing.id,
-        plateCharacters: listing.plateCharacters,
-        enquiryType,
-        message,
-        buyerUid,
-        buyerEmail,
-        sellerLCNumber: listing.lCNumber,
-        sellerEmail: listing.lCEmail,
-        submittedAt: serverTimestamp()
-      }),
-      addDoc(mailRef, {
-        to: [listing.lCEmail],
-        message: {
-          subject: `New enquiry for your plate ${listing.plateCharacters.toUpperCase()}`,
-          html: `
-            <h2>You have a new enquiry!</h2>
-            <p><strong>Plate:</strong> ${listing.plateCharacters.toUpperCase()}</p>
-            <p><strong>Listed at:</strong> £${listing.askingPrice}</p>
-            <p><strong>Enquiry type:</strong> ${enquiryType}</p>
-            <p><strong>Message:</strong> ${message}</p>
-            <p><strong>From:</strong> ${buyerEmail}</p>
-            <p><strong>Sent:</strong> ${new Date().toLocaleString('en-GB')}</p>
-          `
-        }
-      }),
-      this.plateListingService.incrementViews(String(listing.id), listing._collection)
-    ]);
+  /** Sends the enquiry to the seller; resolves to their WhatsApp number, if any. */
+  async sendEnquiry(listing: PlateListing, enquiryType: string, message: string): Promise<string | null> {
+    const fn = httpsCallable<object, { whatsappNumber: string | null }>(this.functions, 'sendEnquiry');
+    const result = await fn({
+      listingId: String(listing.id),
+      collection: listing._collection,
+      enquiryType,
+      message
+    });
+    return result.data.whatsappNumber;
   }
 
   getEnquiriesForSeller(email: string): Observable<SellerEnquiry[]> {
@@ -85,28 +54,7 @@ export class SellerEnquiryService {
   }
 
   async sendReply(enquiry: SellerEnquiry, replyMessage: string): Promise<void> {
-    const mailRef = collection(this.firestore, 'mail');
-    await addDoc(mailRef, {
-      to: [enquiry.buyerEmail],
-      message: {
-        subject: `Re: Your enquiry about ${enquiry.plateCharacters.toUpperCase()}`,
-        html: `
-          <h2>The seller has replied to your enquiry</h2>
-          <p><strong>Plate:</strong> ${enquiry.plateCharacters.toUpperCase()}</p>
-          <p><strong>Reply:</strong> ${this.escapeHtml(replyMessage)}</p>
-          <hr>
-          <p style="color:#888"><em>Your original message: ${this.escapeHtml(enquiry.message)}</em></p>
-        `
-      }
-    });
-  }
-
-  private escapeHtml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;');
+    const fn = httpsCallable<object, { success: boolean }>(this.functions, 'replyToEnquiry');
+    await fn({ enquiryId: enquiry.id, replyMessage });
   }
 }

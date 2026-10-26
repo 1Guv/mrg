@@ -5,6 +5,16 @@
     <div class="success-state">
       <mat-icon class="success-icon">check_circle</mat-icon>
       <p>Your message has been sent! The seller will be in touch.</p>
+      @if (whatsappNumber) {
+        <div class="whatsapp-row">
+          <span class="whatsapp-label">Prefer to chat? Message the seller on</span>
+          <a [href]="whatsappUrl" target="_blank" rel="noopener noreferrer"
+            class="whatsapp-link" mat-stroked-button>
+            <mat-icon>chat</mat-icon>
+            WhatsApp
+          </a>
+        </div>
+      }
     </div>
   } @else {
     <div class="plate-summary">
@@ -44,15 +54,6 @@
         <p class="error-message">{{ errorMessage }}</p>
       }
     </form>
-
-    <div class="whatsapp-row">
-      <span class="whatsapp-label">Or contact via</span>
-      <a [href]="whatsappUrl" target="_blank" rel="noopener noreferrer"
-        class="whatsapp-link" mat-stroked-button>
-        <mat-icon>chat</mat-icon>
-        WhatsApp
-      </a>
-    </div>
   }
 </mat-dialog-content>
 

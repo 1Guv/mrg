@@ -1,8 +1,5 @@
 export interface PlateListing {
   id: number;
-  lCName: string;
-  lCNumber: string;
-  lCEmail: string;
   initials: string;
   profiletPicUrl: string;
   profiletPicInitials: boolean;
@@ -16,8 +13,6 @@ export interface PlateListing {
   meanings: string;
   viewsPlaceholder: number | string;
   messageSeller: string;
-  plateListingAccName: string;
-  plateListingAccTelNumber: string;
   plateType: string;
   plateCategory: string;
   isSold: boolean;

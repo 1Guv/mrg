@@ -35,6 +35,11 @@ const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
 import {withFailureAlert} from "./failure-alerts";
 import {fillPlateMeanings} from "./plate-meanings.js";
+import {
+  contactRef,
+  runSendEnquiry,
+  runReplyToEnquiry,
+} from "./enquiries.js";
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
@@ -551,14 +556,11 @@ export const stripeWebhook = onRequest(
         }
       }
 
-      await db.collection("plate-listings-new").add({
+      const listingRef = db.collection("plate-listings-new").doc();
+      const batch = db.batch();
+      batch.set(listingRef, {
         plateCharacters: meta.plateCharacters,
         askingPrice: meta.askingPrice,
-        lCEmail: meta.email,
-        lCNumber: meta.phone,
-        lCName: meta.email,
-        plateListingAccName: meta.email,
-        plateListingAccTelNumber: meta.phone,
         meanings: meta.meanings,
         plateNegotiable: meta.negotiable === "true",
         sellerUid: meta.sellerUid,
@@ -578,6 +580,15 @@ export const stripeWebhook = onRequest(
         voucherCode: voucherCode || null,
         discountAppliedPence: discountAppliedPence || null,
       });
+      // Contact details go where only Cloud Functions can read them.
+      batch.set(contactRef(listingRef), {
+        lCEmail: meta.email,
+        lCNumber: meta.phone,
+        lCName: meta.email,
+        plateListingAccName: meta.email,
+        plateListingAccTelNumber: meta.phone,
+      });
+      await batch.commit();
     }
 
     response.status(200).send("ok");
@@ -859,5 +870,30 @@ export const getNudgeStatus = onCall(
       throw new HttpsError("unauthenticated", "Must be logged in");
     }
     return runGetNudgeStatus(request.auth.uid);
+  }
+);
+
+/** Callable — sends a buyer's enquiry to the seller of a listing. */
+export const sendEnquiry = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    if (!request.auth?.token.email) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+    return runSendEnquiry(
+      request.auth.uid, request.auth.token.email, request.data ?? {});
+  }
+);
+
+/** Callable — emails a seller's reply to the buyer who enquired. */
+export const replyToEnquiry = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+    await runReplyToEnquiry(
+      request.auth.uid, request.auth.token.email, request.data ?? {});
+    return {success: true};
   }
 );

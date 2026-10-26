@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { SellerEnquiryService } from './seller-enquiry.service';
 import { Firestore } from '@angular/fire/firestore';
-import { PlateListingService } from './plate-listing.service';
+import { Functions } from '@angular/fire/functions';
 
 describe('SellerEnquiryService', () => {
   let service: SellerEnquiryService;
@@ -11,7 +11,7 @@ describe('SellerEnquiryService', () => {
       providers: [
         SellerEnquiryService,
         { provide: Firestore, useValue: {} },
-        { provide: PlateListingService, useValue: { incrementViews: () => Promise.resolve() } }
+        { provide: Functions, useValue: {} }
       ]
     });
     service = TestBed.inject(SellerEnquiryService);

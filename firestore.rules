@@ -47,15 +47,17 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // Mail — authenticated users only (triggers real email sends via Firebase Extension)
+    // Mail — triggers real email sends via Firebase Extension. Clients may only
+    // send admin notifications; everything else goes through Cloud Functions.
     match /mail/{docId} {
-      allow create: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.to == ['guv.mr.valuations@gmail.com'];
       allow read, update, delete: if false;
     }
 
-    // Seller enquiries — authenticated users can create; sellers can read their own; admins can read all
+    // Seller enquiries — created by the sendEnquiry function; sellers can read their own; admins can read all
     match /seller_enquiries/{docId} {
-      allow create: if request.auth != null;
+      allow create: if false;
       allow read: if request.auth != null
         && (request.auth.token.email == resource.data.sellerEmail
             || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
@@ -73,6 +75,11 @@ service cloud.firestore {
         )
       );
       allow create, delete: if false;
+
+      // Seller contact details — Cloud Functions only
+      match /private/{docId} {
+        allow read, write: if false;
+      }
     }
 
     // Button metrics — public write (track clicks from guests too); admin read only
@@ -93,6 +100,11 @@ service cloud.firestore {
         )
       );
       allow create, delete: if false;
+
+      // Seller contact details — Cloud Functions only
+      match /private/{docId} {
+        allow read, write: if false;
+      }
     }
 
     // Buyer searches — public write; admin read only
