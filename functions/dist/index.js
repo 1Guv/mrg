@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -57,6 +57,7 @@ const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
 const failure_alerts_1 = require("./failure-alerts");
+const plate_meanings_js_1 = require("./plate-meanings.js");
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
@@ -656,6 +657,18 @@ exports.scheduledNudgeEmails = (0, scheduler_1.onSchedule)({
     secrets: [nudgeUnsubscribeSecret, stripeSecretKey],
 }, async () => {
     await (0, failure_alerts_1.withFailureAlert)("scheduledNudgeEmails", () => (0, nudge_emails_js_1.runScheduledNudgeEmails)(nudgeUnsubscribeSecret.value(), stripeSecretKey.value()));
+});
+/**
+ * Hourly — writes AI descriptions for plates for sale that have none, up to
+ * 300 a run, so new listings and edited meanings are covered within the hour.
+ */
+exports.scheduledPlateMeanings = (0, scheduler_1.onSchedule)({
+    schedule: "every 60 minutes",
+    timeZone: "Europe/London",
+    timeoutSeconds: 540,
+    secrets: [geminiApiKey],
+}, async () => {
+    await (0, failure_alerts_1.withFailureAlert)("scheduledPlateMeanings", () => (0, plate_meanings_js_1.fillPlateMeanings)(geminiApiKey.value(), 300));
 });
 /** One-click unsubscribe endpoint linked from nudge emails. */
 exports.unsubscribeNudge = (0, https_1.onRequest)({ maxInstances: 10, secrets: [nudgeUnsubscribeSecret] }, async (request, response) => {
