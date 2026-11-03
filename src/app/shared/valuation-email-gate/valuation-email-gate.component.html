@@ -5,13 +5,18 @@
   </div>
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="d-flex flex-column mt-3">
-    <p class="cabin-font-heading text-center mb-2">
-      @if (intent() === 'list') {
-        Where should we send your listing link?
-      } @else {
-        Get your exact valuation
-      }
-    </p>
+    @if (intent() === 'list') {
+      <p class="cabin-font-heading text-center mb-2">Where should we send your listing link?</p>
+    } @else {
+      <div class="locked-value text-center mb-3">
+        <span class="locked-label">Your exact valuation</span>
+        <span class="locked-figure-row">
+          <span class="locked-figure" aria-hidden="true">£{{ lockedFigure }}</span>
+          <span class="lock-icon" aria-hidden="true">🔒</span>
+        </span>
+        <span class="locked-hint">Enter your details to unlock it — free, sent in seconds</span>
+      </div>
+    }
 
     <mat-form-field appearance="outline">
       <mat-label>First name</mat-label>
@@ -43,12 +48,12 @@
   </form>
 
   @if (intent() === 'email') {
-    <p class="d-flex justify-content-center align-items-center gap-2 mt-3 mb-0">
-      <span class="text-muted small">or</span>
+    <div class="or-divider mt-3" aria-hidden="true">or</div>
+    <div class="text-center">
       <span class="list-now-btn-wrapper">
         <button mat-raised-button type="button" class="list-now-btn" (click)="chooseList()">List it</button>
         <span class="price-badge">£{{ plateListingService.listingFee }}</span>
       </span>
-    </p>
+    </div>
   }
 </mat-card>

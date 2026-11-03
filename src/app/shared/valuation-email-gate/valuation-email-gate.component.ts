@@ -45,6 +45,15 @@ export class ValuationEmailGateComponent implements OnInit {
   @Input({ required: true }) maxPrice = 0;
   @Input() valuation?: RegValuation;
 
+  /**
+   * Stands in for the price behind the blur, so the real figure is never in
+   * the page. Same number of digits as the price, which the range gives away.
+   */
+  get lockedFigure(): string {
+    const digits = Math.max(1, String(Math.round(this.price)).length);
+    return Number('8'.repeat(digits)).toLocaleString('en-GB');
+  }
+
   private fb = inject(FormBuilder);
   private gate = inject(ValuationGateService);
   private tracking = inject(ConversionTrackingService);

@@ -15,6 +15,57 @@
   }
 }
 
+.locked-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  .locked-label {
+    font-family: 'Cabin', Arial, sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .locked-figure-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .locked-figure {
+    font-family: 'Cabin', Arial, sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #2e7d32;
+    filter: blur(9px);
+    user-select: none;
+  }
+
+  .lock-icon { font-size: 1.6rem; }
+
+  .locked-hint {
+    font-size: 0.95rem;
+    color: #4b5563;
+  }
+}
+
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 0.875rem;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid #e5e7eb;
+  }
+}
+
 .list-now-btn-wrapper {
   position: relative;
   display: inline-block;
