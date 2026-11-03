@@ -4,12 +4,14 @@ import * as dns from "dns";
 import Stripe from "stripe";
 import {LISTING_FEE_GBP} from "./constants.js";
 import {mintNudgeVoucher} from "./vouchers.js";
+import {escapeHtml} from "./enquiries.js";
 
 const APP_URL = "https://mrvaluations.co.uk";
 const FUNCTIONS_BASE_URL =
   "https://us-central1-code-g-b8b6f.cloudfunctions.net";
 const MINUTES_30 = 30 * 60 * 1000;
 const HOURS_24 = 24 * 60 * 60 * 1000;
+const ADMIN_NOTIFY_EMAIL = "guv.mr.valuations@gmail.com";
 
 /**
  * Creates an HMAC-SHA256 token for the given email.
@@ -49,7 +51,7 @@ async function checkMxRecord(email: string): Promise<boolean> {
  * @param {number} amount The amount in GBP.
  * @return {string} Formatted price, e.g. "£1,250".
  */
-function formatPrice(amount: number): string {
+export function formatPrice(amount: number): string {
   return "£" + Number(amount).toLocaleString("en-GB", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
@@ -143,6 +145,64 @@ function buildEmailHtml(
 }
 
 /**
+ * Formats a number as a GBP price string with pence, as the admin
+ * notification has always shown it.
+ * @param {unknown} amount The amount in GBP.
+ * @return {string} Formatted price, e.g. "£1,250.00".
+ */
+function formatPricePence(amount: unknown): string {
+  return "£" + Number(amount ?? 0).toLocaleString("en-GB", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/**
+ * Queues the "New valuation" admin notification for an auto_valuations
+ * document. Only called for documents flagged adminNotify: "server"; older
+ * clients still send their own copy from the browser.
+ * @param {admin.firestore.DocumentData} data The document data.
+ */
+export async function runAdminValuationNotify(
+  data: admin.firestore.DocumentData
+): Promise<void> {
+  const registration = String(data["registration"] ?? "");
+  const firstName = String(data["firstName"] ?? "").trim();
+  const lastName = String(data["lastName"] ?? "").trim();
+  const name = [firstName, lastName].filter(Boolean).join(" ");
+  const email = String(data["email"] ?? "").trim();
+  const time = new Date().toLocaleString("en-GB", {timeZone: "Europe/London"});
+  // The email gate writes a second record for a valuation the admin has
+  // already been told about; label it as the lead it is, not a new valuation.
+  const isLead = data["source"] === "email_gate";
+  const subject = isLead ?
+    `New lead: ${registration}${firstName ? ` – ${firstName}` : ""}` :
+    `New Valuation: ${registration}`;
+  const heading = isLead ?
+    "Someone asked for their valuation by email" :
+    "New valuation on MRG";
+
+  /* eslint-disable max-len */
+  await admin.firestore().collection("mail").add({
+    to: [ADMIN_NOTIFY_EMAIL],
+    message: {
+      subject,
+      html: `
+        <h2>${heading}</h2>
+        <p><strong>Plate:</strong> ${escapeHtml(registration)}</p>
+        <p><strong>Type:</strong> ${escapeHtml(String(data["type"] ?? ""))}</p>
+        <p><strong>Valuation:</strong> ${formatPricePence(data["price"])}</p>
+        <p><strong>Min:</strong> ${formatPricePence(data["minPrice"])} &nbsp; <strong>Max:</strong> ${formatPricePence(data["maxPrice"])}</p>
+        ${name ? `<p><strong>Name:</strong> ${escapeHtml(name)}</p>` : ""}
+        <p><strong>User:</strong> ${email ? escapeHtml(email) : "Guest"}</p>
+        <p><strong>Time:</strong> ${time}</p>
+      `,
+    },
+  });
+  /* eslint-enable max-len */
+}
+
+/**
  * Seeds the nudge queue when a new auto_valuations document is created.
  * Creates a listing_nudge_queue entry if none exists for this email+plate.
  * @param {admin.firestore.DocumentData} data The document data.
@@ -169,7 +229,11 @@ export async function runOnAutoValuationCreated(
 
   if (!existing.empty) return;
 
-  const nextSendAt = new Date(savedAt.toMillis() + MINUTES_30);
+  // The valuation email has just gone out, so hold the first nudge for a day
+  // rather than sending a second email within minutes.
+  const firstDelay = data["valuationEmailSent"] === true ?
+    HOURS_24 : MINUTES_30;
+  const nextSendAt = new Date(savedAt.toMillis() + firstDelay);
 
   await db.collection("listing_nudge_queue").add({
     email,

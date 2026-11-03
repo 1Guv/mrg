@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.onUserCreated = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -59,6 +59,8 @@ const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
 const failure_alerts_1 = require("./failure-alerts");
 const plate_meanings_js_1 = require("./plate-meanings.js");
 const enquiries_js_1 = require("./enquiries.js");
+const valuation_email_js_1 = require("./valuation-email.js");
+const users_js_1 = require("./users.js");
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
@@ -647,12 +649,18 @@ exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({
     await (0, failure_alerts_1.withFailureAlert)("generateCelebrityArticle", () => (0, article_generator_js_1.runGenerateCelebrityArticle)(geminiApiKey.value()));
 });
 // ── Plate listing nudge emails ──────────────────────────────────────────────
-/** Seeds the nudge queue when a new auto_valuation is created. */
+/**
+ * Seeds the nudge queue when a new auto_valuation is created, and sends the
+ * admin notification for records flagged adminNotify: "server".
+ */
 exports.onAutoValuationCreated = (0, firestore_1.onDocumentCreated)("auto_valuations/{docId}", async (event) => {
     var _a, _b;
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data)
         return;
+    if (data["adminNotify"] === "server") {
+        await (0, nudge_emails_js_1.runAdminValuationNotify)(data);
+    }
     const savedAt = (_b = data["savedAt"]) !== null && _b !== void 0 ? _b : admin.firestore.Timestamp.now();
     await (0, nudge_emails_js_1.runOnAutoValuationCreated)(data, savedAt);
 });
@@ -725,5 +733,30 @@ exports.replyToEnquiry = (0, https_1.onCall)({ maxInstances: 10 }, async (reques
     }
     await (0, enquiries_js_1.runReplyToEnquiry)(request.auth.uid, request.auth.token.email, (_a = request.data) !== null && _a !== void 0 ? _a : {});
     return { success: true };
+});
+// ── Customer list ───────────────────────────────────────────────────────────
+/**
+ * Callable — the email gate on a valuation result. No login needed; rate
+ * limited per email and per IP.
+ */
+exports.captureValuationEmail = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a, _b;
+    const forwarded = String((_a = request.rawRequest.headers["x-forwarded-for"]) !== null && _a !== void 0 ? _a : "")
+        .split(",")[0].trim();
+    const ip = request.rawRequest.ip || forwarded;
+    return (0, valuation_email_js_1.runCaptureValuationEmail)((_b = request.data) !== null && _b !== void 0 ? _b : {}, ip);
+});
+/** Emails a passwordless sign-in link from our own sender. */
+exports.sendSignInLink = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a, _b;
+    const forwarded = String((_a = request.rawRequest.headers["x-forwarded-for"]) !== null && _a !== void 0 ? _a : "")
+        .split(",")[0].trim();
+    const ip = request.rawRequest.ip || forwarded;
+    await (0, valuation_email_js_1.runSendSignInLink)((_b = request.data) !== null && _b !== void 0 ? _b : {}, ip);
+    return { sent: true };
+});
+/** Adds every new Auth account to the users customer list. */
+exports.onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
+    await (0, users_js_1.runOnUserCreated)(user);
 });
 //# sourceMappingURL=index.js.map

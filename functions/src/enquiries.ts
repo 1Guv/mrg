@@ -38,7 +38,7 @@ export function contactRef(
  * @param {string} text - Text typed by a user.
  * @return {string} The text, safe to put in an email's HTML.
  */
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

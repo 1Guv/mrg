@@ -38,6 +38,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.APP_URL = void 0;
 exports.hmacToken = hmacToken;
+exports.formatPrice = formatPrice;
+exports.runAdminValuationNotify = runAdminValuationNotify;
 exports.runOnAutoValuationCreated = runOnAutoValuationCreated;
 exports.runScheduledNudgeEmails = runScheduledNudgeEmails;
 exports.runUnsubscribeNudge = runUnsubscribeNudge;
@@ -49,11 +51,13 @@ const dns = __importStar(require("dns"));
 const stripe_1 = __importDefault(require("stripe"));
 const constants_js_1 = require("./constants.js");
 const vouchers_js_1 = require("./vouchers.js");
+const enquiries_js_1 = require("./enquiries.js");
 const APP_URL = "https://mrvaluations.co.uk";
 exports.APP_URL = APP_URL;
 const FUNCTIONS_BASE_URL = "https://us-central1-code-g-b8b6f.cloudfunctions.net";
 const MINUTES_30 = 30 * 60 * 1000;
 const HOURS_24 = 24 * 60 * 60 * 1000;
+const ADMIN_NOTIFY_EMAIL = "guv.mr.valuations@gmail.com";
 /**
  * Creates an HMAC-SHA256 token for the given email.
  * @param {string} email The email address to sign.
@@ -174,6 +178,60 @@ function buildEmailHtml(firstName, registration, minPrice, maxPrice, unsubUrl, v
     /* eslint-enable max-len */
 }
 /**
+ * Formats a number as a GBP price string with pence, as the admin
+ * notification has always shown it.
+ * @param {unknown} amount The amount in GBP.
+ * @return {string} Formatted price, e.g. "£1,250.00".
+ */
+function formatPricePence(amount) {
+    return "£" + Number(amount !== null && amount !== void 0 ? amount : 0).toLocaleString("en-GB", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+}
+/**
+ * Queues the "New valuation" admin notification for an auto_valuations
+ * document. Only called for documents flagged adminNotify: "server"; older
+ * clients still send their own copy from the browser.
+ * @param {admin.firestore.DocumentData} data The document data.
+ */
+async function runAdminValuationNotify(data) {
+    var _a, _b, _c, _d, _e;
+    const registration = String((_a = data["registration"]) !== null && _a !== void 0 ? _a : "");
+    const firstName = String((_b = data["firstName"]) !== null && _b !== void 0 ? _b : "").trim();
+    const lastName = String((_c = data["lastName"]) !== null && _c !== void 0 ? _c : "").trim();
+    const name = [firstName, lastName].filter(Boolean).join(" ");
+    const email = String((_d = data["email"]) !== null && _d !== void 0 ? _d : "").trim();
+    const time = new Date().toLocaleString("en-GB", { timeZone: "Europe/London" });
+    // The email gate writes a second record for a valuation the admin has
+    // already been told about; label it as the lead it is, not a new valuation.
+    const isLead = data["source"] === "email_gate";
+    const subject = isLead ?
+        `New lead: ${registration}${firstName ? ` – ${firstName}` : ""}` :
+        `New Valuation: ${registration}`;
+    const heading = isLead ?
+        "Someone asked for their valuation by email" :
+        "New valuation on MRG";
+    /* eslint-disable max-len */
+    await admin.firestore().collection("mail").add({
+        to: [ADMIN_NOTIFY_EMAIL],
+        message: {
+            subject,
+            html: `
+        <h2>${heading}</h2>
+        <p><strong>Plate:</strong> ${(0, enquiries_js_1.escapeHtml)(registration)}</p>
+        <p><strong>Type:</strong> ${(0, enquiries_js_1.escapeHtml)(String((_e = data["type"]) !== null && _e !== void 0 ? _e : ""))}</p>
+        <p><strong>Valuation:</strong> ${formatPricePence(data["price"])}</p>
+        <p><strong>Min:</strong> ${formatPricePence(data["minPrice"])} &nbsp; <strong>Max:</strong> ${formatPricePence(data["maxPrice"])}</p>
+        ${name ? `<p><strong>Name:</strong> ${(0, enquiries_js_1.escapeHtml)(name)}</p>` : ""}
+        <p><strong>User:</strong> ${email ? (0, enquiries_js_1.escapeHtml)(email) : "Guest"}</p>
+        <p><strong>Time:</strong> ${time}</p>
+      `,
+        },
+    });
+    /* eslint-enable max-len */
+}
+/**
  * Seeds the nudge queue when a new auto_valuations document is created.
  * Creates a listing_nudge_queue entry if none exists for this email+plate.
  * @param {admin.firestore.DocumentData} data The document data.
@@ -195,7 +253,11 @@ async function runOnAutoValuationCreated(data, savedAt) {
         .get();
     if (!existing.empty)
         return;
-    const nextSendAt = new Date(savedAt.toMillis() + MINUTES_30);
+    // The valuation email has just gone out, so hold the first nudge for a day
+    // rather than sending a second email within minutes.
+    const firstDelay = data["valuationEmailSent"] === true ?
+        HOURS_24 : MINUTES_30;
+    const nextSendAt = new Date(savedAt.toMillis() + firstDelay);
     await db.collection("listing_nudge_queue").add({
         email,
         registration,

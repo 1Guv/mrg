@@ -19,6 +19,7 @@ import {
   runUnsubscribeNudge,
   runToggleNudgeEmails,
   runGetNudgeStatus,
+  runAdminValuationNotify,
   APP_URL,
 } from "./nudge-emails.js";
 import {
@@ -40,6 +41,11 @@ import {
   runSendEnquiry,
   runReplyToEnquiry,
 } from "./enquiries.js";
+import {
+  runCaptureValuationEmail,
+  runSendSignInLink,
+} from "./valuation-email.js";
+import {runOnUserCreated} from "./users.js";
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
@@ -784,12 +790,18 @@ export const generateCelebrityArticle = onSchedule(
 
 // ── Plate listing nudge emails ──────────────────────────────────────────────
 
-/** Seeds the nudge queue when a new auto_valuation is created. */
+/**
+ * Seeds the nudge queue when a new auto_valuation is created, and sends the
+ * admin notification for records flagged adminNotify: "server".
+ */
 export const onAutoValuationCreated = onDocumentCreated(
   "auto_valuations/{docId}",
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
+    if (data["adminNotify"] === "server") {
+      await runAdminValuationNotify(data);
+    }
     const savedAt = data["savedAt"] ?? admin.firestore.Timestamp.now();
     await runOnAutoValuationCreated(data, savedAt);
   }
@@ -897,3 +909,38 @@ export const replyToEnquiry = onCall(
     return {success: true};
   }
 );
+
+// ── Customer list ───────────────────────────────────────────────────────────
+
+/**
+ * Callable — the email gate on a valuation result. No login needed; rate
+ * limited per email and per IP.
+ */
+export const captureValuationEmail = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const forwarded =
+      String(request.rawRequest.headers["x-forwarded-for"] ?? "")
+        .split(",")[0].trim();
+    const ip = request.rawRequest.ip || forwarded;
+    return runCaptureValuationEmail(request.data ?? {}, ip);
+  }
+);
+
+/** Emails a passwordless sign-in link from our own sender. */
+export const sendSignInLink = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const forwarded =
+      String(request.rawRequest.headers["x-forwarded-for"] ?? "")
+        .split(",")[0].trim();
+    const ip = request.rawRequest.ip || forwarded;
+    await runSendSignInLink(request.data ?? {}, ip);
+    return {sent: true};
+  }
+);
+
+/** Adds every new Auth account to the users customer list. */
+export const onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
+  await runOnUserCreated(user);
+});

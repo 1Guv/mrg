@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CONTACT_FIELDS = exports.LISTING_COLLECTIONS = void 0;
 exports.contactRef = contactRef;
+exports.escapeHtml = escapeHtml;
 exports.runSendEnquiry = runSendEnquiry;
 exports.runReplyToEnquiry = runReplyToEnquiry;
 const admin = __importStar(require("firebase-admin"));
