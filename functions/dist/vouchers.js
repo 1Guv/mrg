@@ -33,7 +33,10 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RESULT_VOUCHER_EXPIRY_MS = void 0;
+exports.mintPlateVoucher = mintPlateVoucher;
 exports.mintNudgeVoucher = mintNudgeVoucher;
+exports.findResultVoucher = findResultVoucher;
 exports.createPublicVoucher = createPublicVoucher;
 exports.deactivateVoucher = deactivateVoucher;
 exports.resolveVoucherForCheckout = resolveVoucherForCheckout;
@@ -41,18 +44,21 @@ const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
 const NUDGE_PERCENT_OFF = 10;
 const NUDGE_EXPIRY_MS = 24 * 60 * 60 * 1000;
+exports.RESULT_VOUCHER_EXPIRY_MS = 48 * 60 * 60 * 1000;
 /**
- * Mints a single-use, 24-hour-expiring 10%-off Stripe promotion code for the
- * plate listing nudge email, and mirrors it into the `vouchers` collection.
+ * Mints a single-use 10%-off Stripe promotion code for listing one plate,
+ * and mirrors it into the `vouchers` collection.
  * @param {Stripe} stripe Stripe client.
  * @param {admin.firestore.Firestore} db Firestore instance.
- * @param {string} registration The plate registration this code is for.
- * @return {Promise<{code: string, expiresAt: admin.firestore.Timestamp}>}
- *   The generated code and its expiry.
+ * @param {object} opts registration; audience ("nudge" for nudge emails,
+ *   "result" for the valuation result page); expiryMs; and email, which
+ *   ties the voucher to a person so it can be found again.
+ * @return {Promise<PlateVoucher>} The generated code and its expiry.
  */
-async function mintNudgeVoucher(stripe, db, registration) {
+async function mintPlateVoucher(stripe, db, opts) {
+    var _a;
     const code = `PLATE10-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
-    const expiresAtMs = Date.now() + NUDGE_EXPIRY_MS;
+    const expiresAtMs = Date.now() + opts.expiryMs;
     const coupon = await stripe.coupons.create({
         percent_off: NUDGE_PERCENT_OFF,
         duration: "once",
@@ -64,19 +70,66 @@ async function mintNudgeVoucher(stripe, db, registration) {
         expires_at: Math.floor(expiresAtMs / 1000),
     });
     const expiresAt = admin.firestore.Timestamp.fromMillis(expiresAtMs);
+    const hours = Math.round(opts.expiryMs / (60 * 60 * 1000));
     await db.collection("vouchers").add({
         code,
         stripeCouponId: coupon.id,
         stripePromotionCodeId: promotionCode.id,
         percentOff: NUDGE_PERCENT_OFF,
-        description: `10% off listing ${registration} — first 24 hours only`,
-        audience: "nudge",
+        description: `10% off listing ${opts.registration} — first ${hours} hours only`,
+        audience: opts.audience,
+        registration: opts.registration,
+        email: (_a = opts.email) !== null && _a !== void 0 ? _a : null,
         expiresAt,
         active: true,
         createdAt: admin.firestore.Timestamp.now(),
-        createdBy: "nudge-system",
+        createdBy: opts.audience === "result" ? "result-page" : "nudge-system",
     });
-    return { code, expiresAt };
+    return { code, percentOff: NUDGE_PERCENT_OFF, expiresAt };
+}
+/**
+ * Mints the 24-hour voucher for a plate's first nudge email.
+ * @param {Stripe} stripe Stripe client.
+ * @param {admin.firestore.Firestore} db Firestore instance.
+ * @param {string} registration The plate registration this code is for.
+ * @param {string} email Who the nudge is going to.
+ * @return {Promise<PlateVoucher>} The generated code and its expiry.
+ */
+async function mintNudgeVoucher(stripe, db, registration, email) {
+    return mintPlateVoucher(stripe, db, {
+        registration, email, audience: "nudge", expiryMs: NUDGE_EXPIRY_MS,
+    });
+}
+/**
+ * The unexpired result-page voucher for an email and plate, if there is one.
+ * Equality filters only, so no composite index is needed.
+ * @param {admin.firestore.Firestore} db Firestore instance.
+ * @param {string} email Normalised email.
+ * @param {string} registration Plate, no spaces, upper case.
+ * @return {Promise<PlateVoucher | null>} The voucher, or null.
+ */
+async function findResultVoucher(db, email, registration) {
+    var _a;
+    const snap = await db.collection("vouchers")
+        .where("audience", "==", "result")
+        .where("email", "==", email)
+        .where("registration", "==", registration)
+        .where("active", "==", true)
+        .get();
+    const now = Date.now();
+    const live = snap.docs
+        .map((d) => d.data())
+        .filter((v) => v["expiresAt"]
+        .toMillis() > now)
+        .sort((a, b) => b["expiresAt"]
+        .toMillis() - a["expiresAt"].toMillis());
+    if (!live.length)
+        return null;
+    return {
+        code: live[0]["code"],
+        percentOff: Number((_a = live[0]["percentOff"]) !== null && _a !== void 0 ? _a : NUDGE_PERCENT_OFF),
+        expiresAt: live[0]["expiresAt"],
+    };
 }
 /**
  * Creates an admin-managed public voucher: a Stripe Coupon + Promotion Code,

@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserCreated = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.onUserCreated = exports.getResultVoucher = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -61,6 +61,7 @@ const plate_meanings_js_1 = require("./plate-meanings.js");
 const enquiries_js_1 = require("./enquiries.js");
 const valuation_email_js_1 = require("./valuation-email.js");
 const users_js_1 = require("./users.js");
+const list_now_js_1 = require("./list-now.js");
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
@@ -754,6 +755,42 @@ exports.sendSignInLink = (0, https_1.onCall)({ maxInstances: 10 }, async (reques
     const ip = request.rawRequest.ip || forwarded;
     await (0, valuation_email_js_1.runSendSignInLink)((_b = request.data) !== null && _b !== void 0 ? _b : {}, ip);
     return { sent: true };
+});
+/**
+ * @param {object} request - A callable request.
+ * @return {object} The caller's IP and, when signed in, uid and email.
+ */
+function callerOf(request) {
+    var _a, _b, _c, _d;
+    const forwarded = String((_a = request.rawRequest.headers["x-forwarded-for"]) !== null && _a !== void 0 ? _a : "")
+        .split(",")[0].trim();
+    return {
+        ip: request.rawRequest.ip || forwarded,
+        caller: {
+            uid: (_b = request.auth) === null || _b === void 0 ? void 0 : _b.uid,
+            email: (_d = (_c = request.auth) === null || _c === void 0 ? void 0 : _c.token.email) !== null && _d !== void 0 ? _d : null,
+        },
+    };
+}
+/** Real Plates for Sale searches matching a plate, for its result page. */
+exports.getBuyerDemand = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a;
+    const { ip, caller } = callerOf(request);
+    return (0, list_now_js_1.runGetBuyerDemand)((_a = request.data) !== null && _a !== void 0 ? _a : {}, caller, ip);
+});
+/** "Would you sell at this price?" on a revealed valuation. */
+exports.recordSellIntent = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a;
+    const { ip, caller } = callerOf(request);
+    return (0, list_now_js_1.runRecordSellIntent)((_a = request.data) !== null && _a !== void 0 ? _a : {}, caller, ip);
+});
+/** The 48-hour 10%-off voucher shown on a revealed valuation. */
+exports.getResultVoucher = (0, https_1.onCall)({ maxInstances: 10, secrets: [stripeSecretKey] }, async (request) => {
+    var _a;
+    const { ip, caller } = callerOf(request);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe = new stripe_1.default(stripeSecretKey.value());
+    return (0, list_now_js_1.runGetResultVoucher)((_a = request.data) !== null && _a !== void 0 ? _a : {}, caller, ip, stripe);
 });
 /** Adds every new Auth account to the users customer list. */
 exports.onUserCreated = functionsV1.auth.user().onCreate(async (user) => {

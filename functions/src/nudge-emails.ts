@@ -3,7 +3,8 @@ import * as crypto from "crypto";
 import * as dns from "dns";
 import Stripe from "stripe";
 import {LISTING_FEE_GBP, MINIMUM_PLATE_VALUE_GBP} from "./constants.js";
-import {mintNudgeVoucher} from "./vouchers.js";
+import {findResultVoucher, mintNudgeVoucher} from "./vouchers.js";
+import {findSellIntent, queueUpdateForIntent} from "./list-now.js";
 import {escapeHtml} from "./enquiries.js";
 
 const APP_URL = "https://mrvaluations.co.uk";
@@ -83,6 +84,8 @@ export function formatPrice(amount: number): string {
  * @param {number} maxPrice Maximum valuation price.
  * @param {string} unsubUrl Signed one-click unsubscribe URL.
  * @param {string | null} voucherCode First-send 10%-off code, or null.
+ * @param {admin.firestore.Timestamp | null} voucherExpiresAt When the code
+ *   stops working, or null.
  * @return {string} HTML string.
  */
 function buildEmailHtml(
@@ -91,7 +94,8 @@ function buildEmailHtml(
   minPrice: number,
   maxPrice: number,
   unsubUrl: string,
-  voucherCode: string | null
+  voucherCode: string | null,
+  voucherExpiresAt: admin.firestore.Timestamp | null = null
 ): string {
   /* eslint-disable max-len */
   const ctaUrl = voucherCode ?
@@ -101,7 +105,7 @@ function buildEmailHtml(
   const voucherBanner = voucherCode ? `
   <div style="background:#FFC200;border-radius:6px;padding:16px;margin:24px 0;text-align:center;">
     <p style="margin:0;font-weight:bold;color:#003399;">
-      List in the next 24 hours and get 10% off — already applied when you click below.
+      List ${voucherDeadline(voucherExpiresAt)} and get 10% off — already applied when you click below.
     </p>
   </div>` : "";
 
@@ -252,6 +256,10 @@ export async function runOnAutoValuationCreated(
     HOURS_24 : MINUTES_30;
   const nextSendAt = new Date(savedAt.toMillis() + firstDelay);
 
+  // The visitor may already have answered "Would you sell?" on the result.
+  const intent = await findSellIntent(email, registration);
+  const intentUpdate = intent ? queueUpdateForIntent(intent) : null;
+
   await db.collection("listing_nudge_queue").add({
     email,
     registration,
@@ -265,6 +273,7 @@ export async function runOnAutoValuationCreated(
     unsubscribed: false,
     unsubscribedAt: null,
     listed: false,
+    ...(intentUpdate ?? {}),
   });
 
   const ts = nextSendAt.toISOString();
@@ -272,8 +281,26 @@ export async function runOnAutoValuationCreated(
 }
 
 /**
+ * "in the next 24 hours", or "by Wed 5 Nov, 3:30pm" for longer vouchers, in
+ * UK time.
+ * @param {admin.firestore.Timestamp | null} expiresAt When the code expires.
+ * @return {string} The deadline wording.
+ */
+function voucherDeadline(expiresAt: admin.firestore.Timestamp | null): string {
+  if (!expiresAt) return "in the next 24 hours";
+  const ms = expiresAt.toMillis() - Date.now();
+  if (ms <= 25 * 60 * 60 * 1000) return "in the next 24 hours";
+  const when = expiresAt.toDate().toLocaleString("en-GB", {
+    timeZone: "Europe/London", weekday: "short", day: "numeric",
+    month: "short", hour: "numeric", minute: "2-digit", hour12: true,
+  });
+  return `by ${when}`;
+}
+
+/**
  * Processes all due nudge queue entries.
- * Sends emails and advances the next send time by 24 hours (once a day).
+ * Sends emails and advances the next send time by the entry's cadence
+ * (daily unless they chose "Maybe later").
  * @param {string} nudgeSecret HMAC secret for signing unsubscribe URLs.
  * @param {string} stripeSecretKey Stripe secret key, for minting the
  *   first-send 10%-off voucher.
@@ -352,15 +379,21 @@ export async function runScheduledNudgeEmails(
     const sendCount = sendCountBefore + 1;
 
     let voucherCode: string | null = null;
+    let voucherExpiresAt: admin.firestore.Timestamp | null = null;
     if (sendCountBefore === 0) {
       voucherCode = (entry["voucherCode"] as string) ?? null;
+      voucherExpiresAt =
+        (entry["voucherExpiresAt"] as admin.firestore.Timestamp) ?? null;
       if (!voucherCode) {
         try {
-          const minted = await mintNudgeVoucher(stripe, db, registration);
-          voucherCode = minted.code;
+          // Reuse the code shown on their result page while it's still live.
+          const voucher = await findResultVoucher(db, email, registration) ??
+            await mintNudgeVoucher(stripe, db, registration, email);
+          voucherCode = voucher.code;
+          voucherExpiresAt = voucher.expiresAt;
           await doc.ref.update({
-            voucherCode: minted.code,
-            voucherExpiresAt: minted.expiresAt,
+            voucherCode: voucher.code,
+            voucherExpiresAt: voucher.expiresAt,
           });
         } catch (err) {
           console.warn(
@@ -375,7 +408,8 @@ export async function runScheduledNudgeEmails(
       `${formatPrice(valuationMax)} — have you thought about listing it?`;
 
     const html = buildEmailHtml(
-      firstName, registration, valuationMin, valuationMax, unsubUrl, voucherCode
+      firstName, registration, valuationMin, valuationMax, unsubUrl,
+      voucherCode, voucherExpiresAt
     );
 
     await db.collection("mail").add({
@@ -386,8 +420,9 @@ export async function runScheduledNudgeEmails(
     await doc.ref.update({
       sendCount,
       lastSentAt: admin.firestore.Timestamp.now(),
+      // Daily, or weekly once they've said "Maybe later".
       nextSendAt: admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + HOURS_24)
+        new Date(Date.now() + HOURS_24 * (Number(entry["cadenceDays"]) || 1))
       ),
     });
 

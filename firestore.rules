@@ -16,6 +16,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // "Would you sell?" answers — written by the recordSellIntent function; admin read only
+    match /sell_intents/{docId} {
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow write: if false;
+    }
+
     // Rate limits — Cloud Functions only (admin SDK)
     match /rate_limits/{docId} {
       allow read, write: if false;

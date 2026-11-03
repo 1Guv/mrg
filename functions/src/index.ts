@@ -46,6 +46,11 @@ import {
   runSendSignInLink,
 } from "./valuation-email.js";
 import {runOnUserCreated} from "./users.js";
+import {
+  runGetBuyerDemand,
+  runGetResultVoucher,
+  runRecordSellIntent,
+} from "./list-now.js";
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
@@ -937,6 +942,56 @@ export const sendSignInLink = onCall(
     const ip = request.rawRequest.ip || forwarded;
     await runSendSignInLink(request.data ?? {}, ip);
     return {sent: true};
+  }
+);
+
+/**
+ * @param {object} request - A callable request.
+ * @return {object} The caller's IP and, when signed in, uid and email.
+ */
+function callerOf(request: {
+  rawRequest: {ip?: string; headers: Record<string, unknown>};
+  auth?: {uid: string; token: {email?: string}};
+}): {ip: string; caller: {uid?: string; email?: string | null}} {
+  const forwarded =
+    String(request.rawRequest.headers["x-forwarded-for"] ?? "")
+      .split(",")[0].trim();
+  return {
+    ip: request.rawRequest.ip || forwarded,
+    caller: {
+      uid: request.auth?.uid,
+      email: request.auth?.token.email ?? null,
+    },
+  };
+}
+
+/** Real Plates for Sale searches matching a plate, for its result page. */
+export const getBuyerDemand = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const {ip, caller} = callerOf(request);
+    return runGetBuyerDemand(request.data ?? {}, caller, ip);
+  }
+);
+
+/** "Would you sell at this price?" on a revealed valuation. */
+export const recordSellIntent = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const {ip, caller} = callerOf(request);
+    return runRecordSellIntent(request.data ?? {}, caller, ip);
+  }
+);
+
+/** The 48-hour 10%-off voucher shown on a revealed valuation. */
+export const getResultVoucher = onCall(
+  {maxInstances: 10, secrets: [stripeSecretKey]},
+  async (request) => {
+    const {ip, caller} = callerOf(request);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe = new (Stripe as any)(stripeSecretKey.value()) as
+      import("stripe").Stripe;
+    return runGetResultVoucher(request.data ?? {}, caller, ip, stripe);
   }
 );
 

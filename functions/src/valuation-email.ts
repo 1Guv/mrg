@@ -151,7 +151,7 @@ function parseInput(data: Record<string, unknown>): CaptureInput {
  * @param {string} value - The email or IP.
  * @return {string} A rate_limits document id that doesn't reveal the value.
  */
-function rateLimitId(kind: string, value: string): string {
+export function rateLimitId(kind: string, value: string): string {
   const hash = crypto.createHash("sha256").update(value).digest("hex");
   return `valuation-email_${kind}_${hash.slice(0, 40)}`;
 }
@@ -163,7 +163,7 @@ function rateLimitId(kind: string, value: string): string {
  *   document ids and their hourly caps.
  * @return {Promise<void>}
  */
-async function consumeRateLimits(
+export async function consumeRateLimits(
   limits: Array<{id: string, max: number}>
 ): Promise<void> {
   const db = admin.firestore();
