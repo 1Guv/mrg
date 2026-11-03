@@ -91,3 +91,66 @@
 }
 
 .anyway { font-weight: 600; }
+
+.value-panel {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #f2f8f3;
+  text-align: left;
+}
+
+.value-title {
+  margin: 0 0 10px;
+  font-family: 'Cabin', Arial, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+
+  &:not(:first-child) { margin-top: 16px; }
+}
+
+.value-list,
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #374151;
+  }
+}
+
+.tick {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2e7d32;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-num {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #2e7d32;
+  color: #2e7d32;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

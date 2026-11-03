@@ -20,7 +20,24 @@
         @if (voucher(); as v) {
           <p class="voucher-line">{{ v.percentOff }}% off — ends {{ v.expiresAt | date: 'EEE d MMM, h:mm a' }}</p>
         }
-        <p class="hint">You can change the price and details on the next step.</p>
+        <p class="hint">🔒 Secure one-off payment by Stripe · change the price and details on the next step</p>
+      </div>
+
+      <div class="value-panel">
+        <p class="value-title">What you get for £{{ fee }}</p>
+        <ul class="value-list">
+          <li><span class="tick">✓</span><span><strong>No commission</strong> — you keep 100% of the sale price</span></li>
+          <li><span class="tick">✓</span><span><strong>Listed until it sells</strong> — no renewal fees</span></li>
+          <li><span class="tick">✓</span><span><strong>Buyers message you through MR Valuations</strong> — your phone and email stay private</span></li>
+          <li><span class="tick">✓</span><span><strong>Change your price any time</strong> from your account</span></li>
+        </ul>
+
+        <p class="value-title">How it works</p>
+        <ol class="steps">
+          <li><span class="step-num">1</span><span>Publish your plate</span></li>
+          <li><span class="step-num">2</span><span>Buyers find it on Plates for Sale and Google</span></li>
+          <li><span class="step-num">3</span><span>They message you, you agree a price and transfer it through the DVLA</span></li>
+        </ol>
       </div>
     }
     @case ('later') {
