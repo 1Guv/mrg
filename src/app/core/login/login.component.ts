@@ -11,6 +11,7 @@ import { MatInput } from "@angular/material/input";
 import { MatIcon } from "@angular/material/icon";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { ValuationService } from "../../services/valuation.service";
+import { EmailLinkSignInService } from "../../services/email-link-sign-in.service";
 import { Subscription } from 'rxjs';
 import { RegValuation } from '../../models/reg.model';
 
@@ -44,7 +45,8 @@ export class LoginComponent implements OnDestroy {
     private router: Router,
     private formBuilder: FormBuilder,
     private snackBar: MatSnackBar,
-    private valuationService: ValuationService
+    private valuationService: ValuationService,
+    private emailLink: EmailLinkSignInService
   ) {
     this.createLoginForm();
 
@@ -93,6 +95,17 @@ export class LoginComponent implements OnDestroy {
       };
       this.errorMessage = messages[error?.code] ?? 'Google sign-in failed. Please try again.';
       this.snackBar.open(this.errorMessage, 'OK');
+    }
+  }
+
+  async onSendSignInLink() {
+    const email = String(this.loginForm.get('email')?.value ?? '').trim();
+    if (!email) return;
+    try {
+      await this.emailLink.sendLink(email, `${window.location.origin}/account-dashboard`);
+      this.snackBar.open('Check your inbox for a sign-in link', 'OK');
+    } catch {
+      this.snackBar.open('Could not send the link. Please check the address and try again.', 'OK');
     }
   }
 

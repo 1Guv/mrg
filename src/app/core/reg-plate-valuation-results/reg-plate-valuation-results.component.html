@@ -190,99 +190,113 @@
 
     <br>
 
-    <mat-card class="p-2 w-100 bg-warning">
-        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
-            <span class="cabin-font-heading">Current:</span>
-            <span class="bevel-plate">{{ currentPlate | uppercase }}</span>
-            <span class="cabin-font-text">£ {{ totalPoints * multiplier | number: '1.2-2' }}</span>
-        </div>
-        <hr>
-        <div class="pt-2 pb-2">
-            <span class="cabin-font-heading">Min:</span>
-            <span class="cabin-font-text-two">£ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min * 100 }}%)</span>
-        </div>
-        <div class="pt-2 pb-2">
-            <span class="cabin-font-heading">Max:</span>
-            <span class="cabin-font-text-two">£ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max * 100 }}%)</span>
-        </div>
-    </mat-card>
-
-    <p class="d-flex justify-content-center">
-      <span class="list-now-btn-wrapper">
-        <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
-        <span class="price-badge">£{{ plateListingService.listingFee }}</span>
-      </span>
-    </p>
-
-    <app-share-buttons [shareText]="shareText" />
-
-    <app-valuation-feedback
-      [registration]="currentPlate"
-      [valuation]="totalPoints * multiplier"
-      [popularityMultiplier]="popularityMultiplier.value" />
-
-    <app-plate-valuation-message-feedback
-      [registration]="currentPlate"
-      [valuation]="totalPoints * multiplier" />
-
-    <br>
-
-    @if (isDateOfPurchaseKnown && yearOfPurchasePrice.value !== null && yearOfPurchasePrice.value > 0) {
-        <br>
-        <mat-card class="p-2 w-100 text-bg-success">
-            <span>Percentage increase is <b>{{ (((totalPoints * multiplier) - yearOfPurchasePrice.value) / yearOfPurchasePrice.value) * 100 | number: '1.2-2' }}%</b> over {{ yearsOld }} years</span>
-        </mat-card>
-        <br>
-    }
-
-    @if (isDateOfPurchaseKnown && yearOfPurchasePrice.value !== null && yearOfPurchasePrice.value > 0) {
-        <mat-card class="p-2 w-100 text-bg-success">
-            <span>Possible potential profit is <b>£{{ (totalPoints * multiplier) - yearOfPurchasePrice.value | number: '1.2-2' }}</b></span>
-        </mat-card>
-        <br>
-    }
-
-    <mat-card>
-        <div class="d-flex flex-column align-items-center justify-content-center gap-2 bg-aquamarine rounded-4">
-            <hr>
-            <div class="d-flex flex-row align-items-center">
-                <label for="popularity-slider" class="form-label cabin-font-heading mb-0">Number Plate Popularity
-                    Multiplier</label>
-                <div class="ms-auto d-flex align-items-center">
-                    <span class="slider-value-circle">{{slider.value}}x</span>
-                </div>
+    @if (gate.unlocked()) {
+        <mat-card class="p-2 w-100 bg-warning">
+            <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+                <span class="cabin-font-heading">Current:</span>
+                <span class="bevel-plate">{{ currentPlate | uppercase }}</span>
+                <span class="cabin-font-text">£ {{ totalPoints * multiplier | number: '1.2-2' }}</span>
             </div>
+            <hr>
+            <div class="pt-2 pb-2">
+                <span class="cabin-font-heading">Min:</span>
+                <span class="cabin-font-text-two">£ {{ minPrice | number: '1.2-2' }} (- {{ MinMaxTotals.min * 100 }}%)</span>
+            </div>
+            <div class="pt-2 pb-2">
+                <span class="cabin-font-heading">Max:</span>
+                <span class="cabin-font-text-two">£ {{ maxPrice | number: '1.2-2' }} (+ {{ MinMaxTotals.max * 100 }}%)</span>
+            </div>
+        </mat-card>
+
+        <p class="d-flex justify-content-center">
+          <span class="list-now-btn-wrapper">
+            <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+            <span class="price-badge">£{{ plateListingService.listingFee }}</span>
+          </span>
+        </p>
+
+        <app-share-buttons [shareText]="shareText" />
+
+        <app-valuation-feedback
+          [registration]="currentPlate"
+          [valuation]="totalPoints * multiplier"
+          [popularityMultiplier]="popularityMultiplier.value" />
+
+        <app-plate-valuation-message-feedback
+          [registration]="currentPlate"
+          [valuation]="totalPoints * multiplier" />
+
+        <br>
+
+        @if (isDateOfPurchaseKnown && yearOfPurchasePrice.value !== null && yearOfPurchasePrice.value > 0) {
             <br>
-            <div>
-                <mat-slider id="popularity-slider" ngDefaultControl name="popularityMultiplier" class="w-100" min="1"
-                    max="10" step="1" showTickMarks discrete [formControl]="popularityMultiplier"
-                    (input)="onPopularityMultiplierChange($event)" [displayWith]="formatLabel"
-                    aria-label="Adjust popularity multiplier">
-                    <input label="Popularity Multiplier" title="Popularity Multiplier"
-                        placeholder="Popularity Multiplier" matSliderThumb #slider>
-                </mat-slider>
-            </div>
-            <hr>
-            <span class="cabin-font-heading">With Popularity Multiplier:</span>
-            <span class="cabin-font-heading">Total: {{ totalPointsWithPopularityMultiplier }} points</span>
-            <span class="cabin-font-text">£
-                {{ (totalPoints * multiplier) * (popularityMultiplier.value) | number: '1.2-2' }}</span>
+            <mat-card class="p-2 w-100 text-bg-success">
+                <span>Percentage increase is <b>{{ (((totalPoints * multiplier) - yearOfPurchasePrice.value) / yearOfPurchasePrice.value) * 100 | number: '1.2-2' }}%</b> over {{ yearsOld }} years</span>
+            </mat-card>
+            <br>
+        }
 
-            <span class="bevel-plate pb-3">{{ currentPlate | uppercase }}</span>
-        </div>
-    </mat-card>
+        @if (isDateOfPurchaseKnown && yearOfPurchasePrice.value !== null && yearOfPurchasePrice.value > 0) {
+            <mat-card class="p-2 w-100 text-bg-success">
+                <span>Possible potential profit is <b>£{{ (totalPoints * multiplier) - yearOfPurchasePrice.value | number: '1.2-2' }}</b></span>
+            </mat-card>
+            <br>
+        }
+
+        <mat-card>
+            <div class="d-flex flex-column align-items-center justify-content-center gap-2 bg-aquamarine rounded-4">
+                <hr>
+                <div class="d-flex flex-row align-items-center">
+                    <label for="popularity-slider" class="form-label cabin-font-heading mb-0">Number Plate Popularity
+                        Multiplier</label>
+                    <div class="ms-auto d-flex align-items-center">
+                        <span class="slider-value-circle">{{slider.value}}x</span>
+                    </div>
+                </div>
+                <br>
+                <div>
+                    <mat-slider id="popularity-slider" ngDefaultControl name="popularityMultiplier" class="w-100" min="1"
+                        max="10" step="1" showTickMarks discrete [formControl]="popularityMultiplier"
+                        (input)="onPopularityMultiplierChange($event)" [displayWith]="formatLabel"
+                        aria-label="Adjust popularity multiplier">
+                        <input label="Popularity Multiplier" title="Popularity Multiplier"
+                            placeholder="Popularity Multiplier" matSliderThumb #slider>
+                    </mat-slider>
+                </div>
+                <hr>
+                <span class="cabin-font-heading">With Popularity Multiplier:</span>
+                <span class="cabin-font-heading">Total: {{ totalPointsWithPopularityMultiplier }} points</span>
+                <span class="cabin-font-text">£
+                    {{ (totalPoints * multiplier) * (popularityMultiplier.value) | number: '1.2-2' }}</span>
+
+                <span class="bevel-plate pb-3">{{ currentPlate | uppercase }}</span>
+            </div>
+        </mat-card>
+    } @else {
+        <app-valuation-email-gate
+            [registration]="currentPlate"
+            [plateType]="currentPlateType"
+            [price]="totalPoints * multiplier"
+            [minPrice]="minPrice"
+            [maxPrice]="maxPrice"
+            [valuation]="gateValuation" />
+    }
 
     <p class="d-flex flex-column align-items-center pt-3 gap-2">
         <button mat-raised-button type="button" class="valuate-now" (click)="onResetPlateForm()">Start Over</button>
-        <span class="list-now-btn-wrapper">
-            <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
-            <span class="price-badge">£{{ plateListingService.listingFee }}</span>
-        </span>
+        @if (gate.unlocked()) {
+            <span class="list-now-btn-wrapper">
+                <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+                <span class="price-badge">£{{ plateListingService.listingFee }}</span>
+            </span>
+        }
     </p>
 
-    <p class="d-flex justify-content-center pt-3">
-        <button mat-raised-button type="button" class="valuate-now bg-info" (click)="onSaveValuation()">Save Valuation</button>
-    </p>
+    @if (gate.unlocked()) {
+        <p class="d-flex justify-content-center pt-3">
+            <button mat-raised-button type="button" class="valuate-now bg-info" (click)="onSaveValuation()">Save Valuation</button>
+        </p>
+    }
 
 
     <!-- <div class="pt-2 pb-5">

@@ -159,180 +159,192 @@
         [meaning]="getPlatePreview()"
         plateType="Current" />
       <hr>
-      <app-plate-breakdown-card>
+      @if (gate.unlocked()) {
+        <app-plate-breakdown-card>
 
-          <div class="d-flex justify-content-between">
-            <span class="cabin-font-heading">Base price:</span>
-            <span class="cabin-font-text-two">£ {{ basePrice | number: '1.2-2' }}</span>
-          </div>
+            <div class="d-flex justify-content-between">
+              <span class="cabin-font-heading">Base price:</span>
+              <span class="cabin-font-text-two">£ {{ basePrice | number: '1.2-2' }}</span>
+            </div>
 
-          <div class="d-flex justify-content-between align-items-center">
-            <span class="cabin-font-heading">Age identifier ({{ ageIdentifierYear }}):</span>
-            <span class="cabin-font-text-two">£ {{ ageYearBonus | number: '1.2-2' }}</span>
-          </div>
-
-          <hr>
-
-          <span class="cabin-font-heading">Age identifier match:</span>
-          @for (row of ageIdentifierBreakdown; track $index) {
             <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-text-two">
-                {{ row.digit }} → {{ row.chosenLetter }}
-                <span [class]="row.match ? 'text-success' : 'text-danger'">
-                  {{ row.match ? '✓ Match' : '✗ No match' }}
+              <span class="cabin-font-heading">Age identifier ({{ ageIdentifierYear }}):</span>
+              <span class="cabin-font-text-two">£ {{ ageYearBonus | number: '1.2-2' }}</span>
+            </div>
+
+            <hr>
+
+            <span class="cabin-font-heading">Age identifier match:</span>
+            @for (row of ageIdentifierBreakdown; track $index) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-text-two">
+                  {{ row.digit }} → {{ row.chosenLetter }}
+                  <span [class]="row.match ? 'text-success' : 'text-danger'">
+                    {{ row.match ? '✓ Match' : '✗ No match' }}
+                  </span>
                 </span>
-              </span>
-              <span class="cabin-font-text-two">£ {{ row.value | number: '1.2-2' }}</span>
-            </div>
-          }
+                <span class="cabin-font-text-two">£ {{ row.value | number: '1.2-2' }}</span>
+              </div>
+            }
 
-          @if (isDictionaryWord !== null) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">
-                Dictionary word:
-                <span [class]="isDictionaryWord ? 'text-success' : 'text-danger'">
-                  {{ isDictionaryWord ? '✓ Yes' : '✗ No' }}
+            @if (isDictionaryWord !== null) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">
+                  Dictionary word:
+                  <span [class]="isDictionaryWord ? 'text-success' : 'text-danger'">
+                    {{ isDictionaryWord ? '✓ Yes' : '✗ No' }}
+                  </span>
                 </span>
-              </span>
-              @if (isDictionaryWord) {
-                <span class="cabin-font-text-two text-success">£ {{ dictionaryBonus | number: '1.2-2' }}</span>
-              } @else {
-                <span class="cabin-font-text-two text-danger text-decoration-line-through">£ {{ dictionaryBonusPotential | number: '1.2-2' }}</span>
-              }
-            </div>
-          }
+                @if (isDictionaryWord) {
+                  <span class="cabin-font-text-two text-success">£ {{ dictionaryBonus | number: '1.2-2' }}</span>
+                } @else {
+                  <span class="cabin-font-text-two text-danger text-decoration-line-through">£ {{ dictionaryBonusPotential | number: '1.2-2' }}</span>
+                }
+              </div>
+            }
 
-          @if (firstCharBonus !== 0) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">First character ({{ form.get('char0')?.value }}):</span>
-              <span class="cabin-font-text-two" [class.text-success]="firstCharBonus > 0" [class.text-danger]="firstCharBonus < 0">
-                £ {{ firstCharBonus | number: '1.2-2' }}
-              </span>
-            </div>
-          }
-
-          @if (isWordOne !== null) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">
-                Word 1 ({{ wordOneText }}):
-                <span [class]="isWordOne ? 'text-success' : 'text-danger'">
-                  {{ isWordOne ? '✓ Yes' : '✗ No' }}
+            @if (firstCharBonus !== 0) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">First character ({{ form.get('char0')?.value }}):</span>
+                <span class="cabin-font-text-two" [class.text-success]="firstCharBonus > 0" [class.text-danger]="firstCharBonus < 0">
+                  £ {{ firstCharBonus | number: '1.2-2' }}
                 </span>
-              </span>
-              <span class="cabin-font-text-two" [class.text-success]="wordOneBonus > 0" [class.text-danger]="wordOneBonus < 0">
-                £ {{ wordOneBonus | number: '1.2-2' }}
-              </span>
-            </div>
-          }
+              </div>
+            }
 
-          @if (isWordTwo !== null) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">
-                Word 2 ({{ wordTwoText }}):
-                <span [class]="isWordTwo ? 'text-success' : 'text-danger'">
-                  {{ isWordTwo ? '✓ Yes' : '✗ No' }}
+            @if (isWordOne !== null) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">
+                  Word 1 ({{ wordOneText }}):
+                  <span [class]="isWordOne ? 'text-success' : 'text-danger'">
+                    {{ isWordOne ? '✓ Yes' : '✗ No' }}
+                  </span>
                 </span>
-              </span>
-              <span class="cabin-font-text-two" [class.text-success]="wordTwoBonus > 0" [class.text-danger]="wordTwoBonus < 0">
-                £ {{ wordTwoBonus | number: '1.2-2' }}
-              </span>
-            </div>
-          }
+                <span class="cabin-font-text-two" [class.text-success]="wordOneBonus > 0" [class.text-danger]="wordOneBonus < 0">
+                  £ {{ wordOneBonus | number: '1.2-2' }}
+                </span>
+              </div>
+            }
 
-          @if (nameOneMatch) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">Popular first name (word 1): <span class="text-success">{{ nameOneMatch }}</span></span>
-              <span class="cabin-font-text-two text-success">£ {{ nameOneBonus | number: '1.2-2' }}</span>
-            </div>
-          }
-          @if (surnameOneMatch) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">Popular surname (word 1): <span class="text-success">{{ surnameOneMatch }}</span></span>
-              <span class="cabin-font-text-two text-success">£ {{ surnameOneBonus | number: '1.2-2' }}</span>
-            </div>
-          }
-          @if (nameTwoMatch) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">Popular first name (word 2): <span class="text-success">{{ nameTwoMatch }}</span></span>
-              <span class="cabin-font-text-two text-success">£ {{ nameTwoBonus | number: '1.2-2' }}</span>
-            </div>
-          }
-          @if (surnameTwoMatch) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">Popular surname (word 2): <span class="text-success">{{ surnameTwoMatch }}</span></span>
-              <span class="cabin-font-text-two text-success">£ {{ surnameTwoBonus | number: '1.2-2' }}</span>
-            </div>
-          }
+            @if (isWordTwo !== null) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">
+                  Word 2 ({{ wordTwoText }}):
+                  <span [class]="isWordTwo ? 'text-success' : 'text-danger'">
+                    {{ isWordTwo ? '✓ Yes' : '✗ No' }}
+                  </span>
+                </span>
+                <span class="cabin-font-text-two" [class.text-success]="wordTwoBonus > 0" [class.text-danger]="wordTwoBonus < 0">
+                  £ {{ wordTwoBonus | number: '1.2-2' }}
+                </span>
+              </div>
+            }
 
-          @if (legalSpacingBonus !== 0) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">MOT legal spacing:</span>
-              <span class="cabin-font-text-two" [class.text-success]="legalSpacingBonus > 0" [class.text-danger]="legalSpacingBonus < 0">
-                £ {{ legalSpacingBonus | number: '1.2-2' }}
-              </span>
-            </div>
-          }
+            @if (nameOneMatch) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">Popular first name (word 1): <span class="text-success">{{ nameOneMatch }}</span></span>
+                <span class="cabin-font-text-two text-success">£ {{ nameOneBonus | number: '1.2-2' }}</span>
+              </div>
+            }
+            @if (surnameOneMatch) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">Popular surname (word 1): <span class="text-success">{{ surnameOneMatch }}</span></span>
+                <span class="cabin-font-text-two text-success">£ {{ surnameOneBonus | number: '1.2-2' }}</span>
+              </div>
+            }
+            @if (nameTwoMatch) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">Popular first name (word 2): <span class="text-success">{{ nameTwoMatch }}</span></span>
+                <span class="cabin-font-text-two text-success">£ {{ nameTwoBonus | number: '1.2-2' }}</span>
+              </div>
+            }
+            @if (surnameTwoMatch) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">Popular surname (word 2): <span class="text-success">{{ surnameTwoMatch }}</span></span>
+                <span class="cabin-font-text-two text-success">£ {{ surnameTwoBonus | number: '1.2-2' }}</span>
+              </div>
+            }
 
-          @if (oneWordBonus !== 0) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">1 word combination:</span>
-              <span class="cabin-font-text-two" [class.text-success]="oneWordBonus > 0" [class.text-danger]="oneWordBonus < 0">
-                £ {{ oneWordBonus | number: '1.2-2' }}
-              </span>
-            </div>
-          }
+            @if (legalSpacingBonus !== 0) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">MOT legal spacing:</span>
+                <span class="cabin-font-text-two" [class.text-success]="legalSpacingBonus > 0" [class.text-danger]="legalSpacingBonus < 0">
+                  £ {{ legalSpacingBonus | number: '1.2-2' }}
+                </span>
+              </div>
+            }
 
-          @if (specialCombinationBonus > 0) {
-            <div class="d-flex justify-content-between align-items-center special-combination">
-              <span class="cabin-font-heading">
-                ⭐ Special combination: <span>{{ specialCombinationMatch }}</span>
-              </span>
-              <span class="cabin-font-text-two">£ {{ specialCombinationBonus | number: '1.2-2' }}</span>
-            </div>
-          }
+            @if (oneWordBonus !== 0) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">1 word combination:</span>
+                <span class="cabin-font-text-two" [class.text-success]="oneWordBonus > 0" [class.text-danger]="oneWordBonus < 0">
+                  £ {{ oneWordBonus | number: '1.2-2' }}
+                </span>
+              </div>
+            }
 
-          @if (surnameBonus > 0) {
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="cabin-font-heading">
-                Popular surname: <span class="text-success">{{ surnameMatch }}</span>
-              </span>
-              <span class="cabin-font-text-two text-success">£ {{ surnameBonus | number: '1.2-2' }}</span>
-            </div>
-          }
+            @if (specialCombinationBonus > 0) {
+              <div class="d-flex justify-content-between align-items-center special-combination">
+                <span class="cabin-font-heading">
+                  ⭐ Special combination: <span>{{ specialCombinationMatch }}</span>
+                </span>
+                <span class="cabin-font-text-two">£ {{ specialCombinationBonus | number: '1.2-2' }}</span>
+              </div>
+            }
 
-      </app-plate-breakdown-card>
+            @if (surnameBonus > 0) {
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="cabin-font-heading">
+                  Popular surname: <span class="text-success">{{ surnameMatch }}</span>
+                </span>
+                <span class="cabin-font-text-two text-success">£ {{ surnameBonus | number: '1.2-2' }}</span>
+              </div>
+            }
 
-      <app-plate-valuation-totals
-        [totalPrice]="totalPrice"
-        [minPrice]="minPrice"
-        [maxPrice]="maxPrice" />
+        </app-plate-breakdown-card>
 
-      <p class="d-flex justify-content-center">
-        <span class="list-now-btn-wrapper">
-          <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
-          <span class="price-badge">£{{ plateListingService.listingFee }}</span>
-        </span>
-      </p>
+        <app-plate-valuation-totals
+          [totalPrice]="totalPrice"
+          [minPrice]="minPrice"
+          [maxPrice]="maxPrice" />
 
-      <app-share-buttons [shareText]="shareText" />
-      <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />
-      <app-plate-valuation-message-feedback
-        [registration]="registration"
-        [valuation]="totalPrice"
-        [plateMeaning]="getPlatePreview()" />
+        <p class="d-flex justify-content-center">
+          <span class="list-now-btn-wrapper">
+            <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+            <span class="price-badge">£{{ plateListingService.listingFee }}</span>
+          </span>
+        </p>
 
-      <p class="d-flex justify-content-center pt-3">
-        <button mat-raised-button type="button" class="valuate-now bg-info" (click)="onSaveValuation()">Save Valuation</button>
-      </p>
+        <app-share-buttons [shareText]="shareText" />
+        <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />
+        <app-plate-valuation-message-feedback
+          [registration]="registration"
+          [valuation]="totalPrice"
+          [plateMeaning]="getPlatePreview()" />
+
+        <p class="d-flex justify-content-center pt-3">
+          <button mat-raised-button type="button" class="valuate-now bg-info" (click)="onSaveValuation()">Save Valuation</button>
+        </p>
+      } @else {
+        <app-valuation-email-gate
+          [registration]="registration"
+          plateType="current"
+          [price]="totalPrice"
+          [minPrice]="minPrice"
+          [maxPrice]="maxPrice"
+          [valuation]="gateValuation" />
+      }
       <p class="d-flex justify-content-center pt-3">
         <button mat-raised-button type="button" class="valuate-now" (click)="onReset()">Start Over</button>
       </p>
-      <p class="d-flex justify-content-center pt-3">
-        <span class="list-now-btn-wrapper">
-          <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
-          <span class="price-badge">£{{ plateListingService.listingFee }}</span>
-        </span>
-      </p>
+      @if (gate.unlocked()) {
+        <p class="d-flex justify-content-center pt-3">
+          <span class="list-now-btn-wrapper">
+            <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
+            <span class="price-badge">£{{ plateListingService.listingFee }}</span>
+          </span>
+        </p>
+      }
     }
   </div>
 }

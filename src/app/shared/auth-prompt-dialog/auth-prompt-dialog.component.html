@@ -2,6 +2,24 @@
 
 <mat-dialog-content>
   <p class="prompt-message">{{ message }}</p>
+
+  @if (offerEmailLink) {
+    @if (linkSent()) {
+      <p class="prompt-message">Check your inbox: the link signs you in and brings you back here.</p>
+    } @else {
+      <p class="prompt-message mb-1">Or get a sign-in link by email, no password needed:</p>
+      <div class="d-flex gap-2 align-items-start">
+        <mat-form-field appearance="outline" class="flex-grow-1">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" autocomplete="email" [formControl]="linkEmail" (keyup.enter)="sendLink()">
+        </mat-form-field>
+        <button mat-stroked-button class="mt-2" [disabled]="linkEmail.invalid" (click)="sendLink()">Send link</button>
+      </div>
+      @if (linkError()) {
+        <p class="text-danger small">{{ linkError() }}</p>
+      }
+    }
+  }
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

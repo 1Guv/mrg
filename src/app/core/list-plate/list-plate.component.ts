@@ -11,8 +11,10 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { StripeService } from '../../services/stripe.service';
+import { EmailLinkSignInService } from '../../services/email-link-sign-in.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { PlateListingService } from '../../services/plate-listing.service';
+import { CHECKOUT_VALUE_STORAGE_KEY, NUDGE_VOUCHER_PERCENT_OFF } from '../../constants/listing-fee';
 import { AuthPromptDialogComponent, AuthPromptDialogData } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 
 @Component({
@@ -40,6 +42,7 @@ export class ListPlateComponent implements OnInit {
   private dialog = inject(MatDialog);
   plateListingService = inject(PlateListingService);
   private route = inject(ActivatedRoute);
+  private emailLink = inject(EmailLinkSignInService);
 
   form: FormGroup = this.fb.group({
     plateCharacters: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(8)]],
@@ -56,6 +59,7 @@ export class ListPlateComponent implements OnInit {
   valuationMin: number | null = null;
   valuationMax: number | null = null;
   voucherCode: string | null = null;
+  readonly voucherPercentOff = NUDGE_VOUCHER_PERCENT_OFF;
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;
@@ -69,6 +73,17 @@ export class ListPlateComponent implements OnInit {
     if (!isNaN(maxVal) && maxVal > 0) this.valuationMax = maxVal;
     if (params['voucher']) this.voucherCode = String(params['voucher']).toUpperCase();
 
+    const source = this.emailLink.hasLinkInUrl() ? 'email_link' :
+      params['voucher'] ? 'nudge' :
+      params['plate'] ? 'valuation' : 'direct';
+    this.tracking.listPlateViewed(source);
+
+    // A sign-in link in the URL is still being redeemed; wait so the visitor
+    // isn't asked to log in while that happens.
+    this.emailLink.ready.then(() => this.promptIfSignedOut());
+  }
+
+  private promptIfSignedOut(): void {
     this.authService.currentUser$.pipe(take(1)).subscribe(user => {
       if (!user) {
         this.dialog.open(AuthPromptDialogComponent, {
@@ -76,6 +91,7 @@ export class ListPlateComponent implements OnInit {
           data: {
             title: 'Sign in to list your plate',
             message: 'You need to be logged in to list a plate for sale. Please log in or create a free account to continue.',
+            offerEmailLink: true,
           } satisfies AuthPromptDialogData,
         });
       } else {
@@ -99,7 +115,15 @@ export class ListPlateComponent implements OnInit {
         negotiable: this.form.value.negotiable ?? false,
         voucherCode: this.voucherCode ?? undefined,
       });
-      this.tracking.checkoutStarted(this.plateListingService.listingFee, !!this.voucherCode);
+      const fee = this.voucherCode ?
+        this.plateListingService.listingFee * (100 - NUDGE_VOUCHER_PERCENT_OFF) / 100 :
+        this.plateListingService.listingFee;
+      this.tracking.checkoutStarted(fee, !!this.voucherCode);
+      try {
+        sessionStorage.setItem(CHECKOUT_VALUE_STORAGE_KEY, String(fee));
+      } catch {
+        // Storage can be blocked; the success page falls back to the full fee.
+      }
       window.location.href = url;
     } catch {
       this.errorMessage = 'Something went wrong. Please try again.';

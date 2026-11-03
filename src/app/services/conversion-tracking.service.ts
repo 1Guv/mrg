@@ -26,16 +26,36 @@ export class ConversionTrackingService {
     this.send('valuation_complete', { plate_type: plateType, value: Math.round(price), currency: 'GBP' });
   }
 
-  signedUp(method: 'valuation_dialog' | 'manual'): void {
+  signedUp(method: 'valuation_email' | 'manual'): void {
     this.send('sign_up', { method });
+  }
+
+  emailGateViewed(plateType: string): void {
+    this.send('email_gate_view', { plate_type: plateType });
+  }
+
+  emailGateSubmitted(intent: 'email' | 'list', hasConsent: boolean): void {
+    this.send('email_gate_submit', { intent, has_consent: hasConsent });
+  }
+
+  valuationEmailCaptured(plateType: string): void {
+    this.send('generate_lead', { lead_source: 'valuation_email', plate_type: plateType });
+  }
+
+  listNowClicked(loggedIn: boolean): void {
+    this.send('list_now_click', { logged_in: loggedIn });
+  }
+
+  listPlateViewed(source: 'valuation' | 'email_link' | 'nudge' | 'direct'): void {
+    this.send('list_plate_view', { source });
   }
 
   checkoutStarted(feePounds: number, hasVoucher: boolean): void {
     this.send('begin_checkout', { value: feePounds, currency: 'GBP', has_voucher: hasVoucher });
   }
 
-  listingPurchased(sessionId: string): void {
-    this.send('purchase', { transaction_id: sessionId, currency: 'GBP' });
+  listingPurchased(sessionId: string, valuePounds: number): void {
+    this.send('purchase', { transaction_id: sessionId, value: valuePounds, currency: 'GBP' });
   }
 
   enquirySent(enquiryType: string): void {

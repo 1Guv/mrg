@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   Auth,
   signInWithEmailAndPassword,
@@ -9,43 +9,21 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   FacebookAuthProvider,
-  getAdditionalUserInfo,
   UserCredential,
 } from '@angular/fire/auth';
-import { Firestore, collection, addDoc } from '@angular/fire/firestore';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   currentUser$= user(this.auth);
-  private firestore = inject(Firestore);
 
   constructor(private auth: Auth) {
   }
 
-  async saveUserProfile(uid: string, email: string, source: 'manual' | 'auto' | 'google' | 'facebook', extra?: { firstName?: string; lastName?: string; city?: string; plateMeaning?: string }) {
-    const ref = collection(this.firestore, 'users');
-    return addDoc(ref, {
-      uid,
-      email,
-      source,
-      registeredAt: new Date(),
-      ...extra
-    });
-  }
-
   async loginWithFacebook(): Promise<UserCredential> {
-    const result = await signInWithPopup(this.auth, new FacebookAuthProvider());
-    if (getAdditionalUserInfo(result)?.isNewUser) {
-      const { displayName, email, uid } = result.user;
-      const [firstName, ...rest] = (displayName ?? '').split(' ');
-      await this.saveUserProfile(uid, email ?? '', 'facebook', {
-        firstName,
-        lastName: rest.join(' ') || undefined,
-      });
-    }
-    return result;
+    // The users/{uid} record is written by the onUserCreated function.
+    return signInWithPopup(this.auth, new FacebookAuthProvider());
   }
 
   async login(email: string, password: string) {
@@ -53,16 +31,8 @@ export class AuthService {
   }
 
   async loginWithGoogle(): Promise<UserCredential> {
-    const result = await signInWithPopup(this.auth, new GoogleAuthProvider());
-    if (getAdditionalUserInfo(result)?.isNewUser) {
-      const { displayName, email, uid } = result.user;
-      const [firstName, ...rest] = (displayName ?? '').split(' ');
-      await this.saveUserProfile(uid, email ?? '', 'google', {
-        firstName,
-        lastName: rest.join(' ') || undefined,
-      });
-    }
-    return result;
+    // The users/{uid} record is written by the onUserCreated function.
+    return signInWithPopup(this.auth, new GoogleAuthProvider());
   }
 
   async register(email: string, password: string) {

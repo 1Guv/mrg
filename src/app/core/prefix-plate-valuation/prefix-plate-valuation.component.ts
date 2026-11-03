@@ -15,7 +15,9 @@ import { DictionaryService } from '../../services/dictionary.service';
 import { ValuationService } from '../../services/valuation.service';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
-import { PostValuationPromptService } from '../../services/post-valuation-prompt.service';
+import { ValuationGateService } from '../../services/valuation-gate.service';
+import { ConversionTrackingService } from '../../services/conversion-tracking.service';
+import { ValuationEmailGateComponent } from '../../shared/valuation-email-gate/valuation-email-gate.component';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
 import { ShareButtonsComponent } from '../../shared/share-buttons/share-buttons.component';
@@ -49,6 +51,7 @@ type PositionType = 'digit' | 'letter';
     PlateValuationHeaderComponent,
     PlateBreakdownCardComponent,
     PlateValuationTotalsComponent,
+    ValuationEmailGateComponent,
   ],
   templateUrl: './prefix-plate-valuation.component.html',
   styleUrl: './prefix-plate-valuation.component.scss',
@@ -64,7 +67,10 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private valuationService = inject(ValuationService);
   private router = inject(Router);
-  private postValuationPrompt = inject(PostValuationPromptService);
+  private tracking = inject(ConversionTrackingService);
+  gate = inject(ValuationGateService);
+  /** What the email gate saves to the visitor's dashboard once they sign up. */
+  gateValuation?: RegValuation;
   plateListingService = inject(PlateListingService);
   private subs = new Subscription();
 
@@ -377,6 +383,7 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
   }
 
   listNow(): void {
+    this.tracking.listNowClicked(this.gate.loggedIn());
     this.router.navigate(['/list-plate'], {
       queryParams: {
         plate: (this.registration ?? '').toUpperCase(),
@@ -434,7 +441,7 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
       this.maxPrice
     ).subscribe();
 
-    this.postValuationPrompt.promptIfNeeded();
+    this.gateValuation = this.buildValuation();
 
     this.subs.add(
       this.valuationService.addValuation(this.buildValuation()).pipe(

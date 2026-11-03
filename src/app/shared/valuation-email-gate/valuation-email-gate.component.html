@@ -1,0 +1,54 @@
+<mat-card class="gate-card mx-auto my-2 p-3">
+  <div class="range bg-warning rounded-3 p-3 text-center">
+    <span class="cabin-font-heading d-block">Estimated value</span>
+    <span class="cabin-font-text">£{{ minPrice | number: '1.0-0' }} – £{{ maxPrice | number: '1.0-0' }}</span>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="d-flex flex-column mt-3">
+    <p class="cabin-font-heading text-center mb-2">
+      @if (intent() === 'list') {
+        Where should we send your listing link?
+      } @else {
+        Get your exact valuation
+      }
+    </p>
+
+    <mat-form-field appearance="outline">
+      <mat-label>First name</mat-label>
+      <input matInput formControlName="firstName" autocomplete="given-name">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="email">
+    </mat-form-field>
+
+    <mat-checkbox formControlName="marketingConsent" class="mb-2">
+      Send me tips &amp; offers, and show me relevant ads
+    </mat-checkbox>
+
+    @if (errorMessage()) {
+      <p class="text-danger small">{{ errorMessage() }}</p>
+    }
+
+    <button mat-raised-button color="primary" type="submit" class="submit-btn" [disabled]="form.invalid || sending()">
+      @if (sending()) {
+        <mat-spinner diameter="20" />
+      } @else if (intent() === 'list') {
+        Continue to listing
+      } @else {
+        Email me my valuation
+      }
+    </button>
+  </form>
+
+  @if (intent() === 'email') {
+    <p class="d-flex justify-content-center align-items-center gap-2 mt-3 mb-0">
+      <span class="text-muted small">or</span>
+      <span class="list-now-btn-wrapper">
+        <button mat-raised-button type="button" class="list-now-btn" (click)="chooseList()">List it</button>
+        <span class="price-badge">£{{ plateListingService.listingFee }}</span>
+      </span>
+    </p>
+  }
+</mat-card>

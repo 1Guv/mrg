@@ -65,11 +65,10 @@ export class RegisterComponent {
   async onRegister() {
     if (this.registerForm.valid) {
       try {
-        const credential = await this.authService.register(
+        await this.authService.register(
           this.registerForm.get('email')?.value,
           this.registerForm.get('password')?.value
         );
-        await this.authService.saveUserProfile(credential.user.uid, credential.user.email ?? '', 'manual');
         this.tracking.signedUp('manual');
         await this.router.navigate(['/account-dashboard']);
       } catch (error) {

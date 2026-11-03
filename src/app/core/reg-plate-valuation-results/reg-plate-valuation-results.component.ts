@@ -21,7 +21,9 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { catchError, map, of, pipe, Subscription } from 'rxjs';
 import { ValuationService } from '../../services/valuation.service';
 import { AuthService } from '../../services/auth.service';
-import { PostValuationPromptService } from '../../services/post-valuation-prompt.service';
+import { ValuationGateService } from '../../services/valuation-gate.service';
+import { ConversionTrackingService } from '../../services/conversion-tracking.service';
+import { ValuationEmailGateComponent } from '../../shared/valuation-email-gate/valuation-email-gate.component';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -63,6 +65,7 @@ export const MY_FORMATS = {
       ShareButtonsComponent,
       ValuationFeedbackComponent,
       PlateValuationMessageFeedbackComponent,
+      ValuationEmailGateComponent,
     ],
     templateUrl: './reg-plate-valuation-results.component.html',
     styleUrl: './reg-plate-valuation-results.component.scss',
@@ -128,7 +131,10 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
 
   private valuationService = inject(ValuationService);
   private authService = inject(AuthService);
-  private postValuationPrompt = inject(PostValuationPromptService);
+  private tracking = inject(ConversionTrackingService);
+  gate = inject(ValuationGateService);
+  /** What the email gate saves to the visitor's dashboard once they sign up. */
+  gateValuation?: RegValuation;
   plateListingService = inject(PlateListingService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
@@ -162,6 +168,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
         this.calculateTotalWithPopularityMultiplier();
         if (data && !replaying) {
           setTimeout(() => this.el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+          this.gateValuation = this.createValuationObj();
           this.valuationService.autoSaveValuation(
             this.currentPlate?.toUpperCase(),
             this.totalPoints * this.multiplier,
@@ -363,6 +370,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   }
 
   listNow(): void {
+    this.tracking.listNowClicked(this.gate.loggedIn());
     this.router.navigate(['/list-plate'], {
       queryParams: {
         plate: this.currentPlate.toUpperCase(),

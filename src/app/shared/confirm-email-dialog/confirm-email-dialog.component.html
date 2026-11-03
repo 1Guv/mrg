@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>Confirm your email</h2>
+
+<mat-dialog-content>
+  <p class="prompt-message">For your security, please enter the email address this sign-in link was sent to.</p>
+  <mat-form-field appearance="outline" class="w-100">
+    <mat-label>Email</mat-label>
+    <input matInput type="email" autocomplete="email" [formControl]="email" (keyup.enter)="confirm()">
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="email.invalid" (click)="confirm()">Sign in</button>
+</mat-dialog-actions>

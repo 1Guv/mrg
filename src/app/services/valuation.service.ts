@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { RegValuation, UserDetails } from '../models/reg.model';
+import { RegValuation } from '../models/reg.model';
 import {
   Firestore,
   collection,
@@ -29,11 +29,6 @@ export class ValuationService {
   private tracking = inject(ConversionTrackingService);
 
   valuation = signal<Partial<RegValuation>>({});
-  userDetails = signal<UserDetails | null>(null);
-
-  setUserDetails(details: UserDetails | null) {
-    this.userDetails.set(details);
-  }
 
   setValuation(valuation: RegValuation) {
     this.valuation.set(valuation);
@@ -126,56 +121,21 @@ export class ValuationService {
 
   saveFeatureRequest(type: string, registration: string) {
     const ref = collection(this.firestore, 'feature_requests');
-    const details = this.userDetails();
     const payload: any = { type, registration, requestedAt: new Date() };
-    if (details) {
-      payload['firstName'] = details.firstName;
-      payload['lastName'] = details.lastName;
-      payload['email'] = details.email;
-      payload['city'] = details.city;
-      payload['plateMeaning'] = details.plateMeaning;
-    }
     return addDoc(ref, payload);
   }
 
   autoSaveValuation(registration: string, price: number, type: string, minPrice: number, maxPrice: number) {
     const ref = collection(this.firestore, 'auto_valuations');
-    const mailRef = collection(this.firestore, 'mail');
     this.tracking.valuationCompleted(type, price);
-    const details = this.userDetails();
-    const payload: any = { registration, price, type, minPrice, maxPrice, savedAt: new Date() };
-    if (details) {
-      payload['firstName'] = details.firstName;
-      payload['lastName'] = details.lastName;
-      payload['email'] = details.email;
-      payload['city'] = details.city;
-      payload['plateMeaning'] = details.plateMeaning;
-    }
+    // adminNotify tells onAutoValuationCreated to send the admin email; the
+    // client can't, because anonymous visitors may not write to mail.
+    const payload: any = { registration, price, type, minPrice, maxPrice, savedAt: new Date(), adminNotify: 'server' };
     return this.authService.currentUser$.pipe(
       take(1),
       switchMap((user) => {
         if (user) payload['userId'] = user.uid;
-        if (!payload['email'] && user?.email) payload['email'] = user.email;
-        const displayEmail = user?.email ?? details?.email ?? 'Guest';
-        const displayName = details ? `${details.firstName} ${details.lastName}` : (user ? user.email ?? user.uid : 'Guest');
-        addDoc(mailRef, {
-          to: ['guv.mr.valuations@gmail.com'],
-          message: {
-            subject: `New Valuation: ${registration}`,
-            html: `
-              <h2>New valuation on MRG</h2>
-              <p><strong>Plate:</strong> ${registration}</p>
-              <p><strong>Type:</strong> ${type}</p>
-              <p><strong>Valuation:</strong> £${price.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              <p><strong>Min:</strong> £${minPrice.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &nbsp; <strong>Max:</strong> £${maxPrice.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              ${details ? `<p><strong>Name:</strong> ${details.firstName} ${details.lastName}</p>
-              <p><strong>City:</strong> ${details.city}</p>
-              <p><strong>Plate Meaning:</strong> ${details.plateMeaning}</p>` : ''}
-              <p><strong>User:</strong> ${displayEmail}</p>
-              <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
-            `
-          }
-        }).catch(() => {}); // guests have no auth; mail write may fail — ignore silently
+        if (user?.email) payload['email'] = user.email;
         return addDoc(ref, payload);
       })
     );
@@ -207,7 +167,6 @@ export class ValuationService {
   savePlateSearch(registration: string, type: string, badge: string, frontBack: boolean, sendEmail = true) {
     const searchesRef = collection(this.firestore, 'plate_searches');
     const mailRef = collection(this.firestore, 'mail');
-    const details = this.userDetails();
     const payload: any = {
       registration,
       type,
@@ -215,19 +174,11 @@ export class ValuationService {
       frontBack,
       searchedAt: new Date()
     };
-    if (details) {
-      payload['firstName'] = details.firstName;
-      payload['lastName'] = details.lastName;
-      payload['email'] = details.email;
-      payload['city'] = details.city;
-      payload['plateMeaning'] = details.plateMeaning;
-    }
-
     return this.authService.currentUser$.pipe(
       take(1),
       switchMap((user) => {
         if (user) payload['userId'] = user.uid;
-        const displayEmail = user?.email ?? details?.email ?? 'Guest';
+        const displayEmail = user?.email ?? 'Guest';
         if (sendEmail) {
           addDoc(mailRef, {
             to: ['guv.mr.valuations@gmail.com'],
@@ -238,9 +189,6 @@ export class ValuationService {
                 <p><strong>Plate:</strong> ${registration}</p>
                 <p><strong>Type:</strong> ${type}</p>
                 <p><strong>Badge:</strong> ${badge}</p>
-                ${details ? `<p><strong>Name:</strong> ${details.firstName} ${details.lastName}</p>
-                <p><strong>City:</strong> ${details.city}</p>
-                <p><strong>Plate Meaning:</strong> ${details.plateMeaning}</p>` : ''}
                 <p><strong>User:</strong> ${displayEmail}</p>
                 <p><strong>Time:</strong> ${new Date().toLocaleString('en-GB')}</p>
               `

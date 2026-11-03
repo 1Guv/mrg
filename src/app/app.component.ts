@@ -1,4 +1,4 @@
-import {Component, HostListener} from '@angular/core';
+import {Component, HostListener, inject} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {HeaderMenuComponent} from "./core/header-menu/header-menu.component";
 import {MatSidenavContainer, MatSidenavModule} from "@angular/material/sidenav";
@@ -7,6 +7,7 @@ import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
 import {SideMenuComponent} from "./core/side-menu/side-menu.component";
 import {VoucherBannerComponent} from "./shared/voucher-banner/voucher-banner.component";
+import {EmailLinkSignInService} from "./services/email-link-sign-in.service";
 @Component({
     selector: 'app-root',
     imports: [RouterOutlet, HeaderMenuComponent, MatSidenavContainer, NgStyle, MatSidenavModule, MatButtonModule, MatIconModule, SideMenuComponent, VoucherBannerComponent],
@@ -17,6 +18,8 @@ export class AppComponent {
   title = 'mrg-app-v1';
   width80Percent: string = ''
   opened: boolean = false;
+  // Created at startup so a sign-in link is redeemed on whichever page it opens.
+  private emailLink = inject(EmailLinkSignInService);
 
   constructor() {
     this.setWidth();

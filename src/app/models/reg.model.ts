@@ -23,14 +23,6 @@ export interface NumberPlateTypeObj {
     example: NumberPlateTypeExamples;
 }
 
-export interface UserDetails {
-  firstName?: string;
-  lastName?: string;
-  email: string;
-  city?: string;
-  plateMeaning?: string;
-}
-
 export interface RegValuation {
     id?: string;
     type?: NumberPlateType;
