@@ -38,6 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.APP_URL = void 0;
 exports.hmacToken = hmacToken;
+exports.rangeWithMinimum = rangeWithMinimum;
 exports.formatPrice = formatPrice;
 exports.runAdminValuationNotify = runAdminValuationNotify;
 exports.runOnAutoValuationCreated = runOnAutoValuationCreated;
@@ -90,6 +91,19 @@ async function checkMxRecord(email) {
         }
         throw err;
     }
+}
+/**
+ * Valuations made before the app applied a minimum value can be zero or
+ * negative; email those at the minimum range instead.
+ * @param {number} min The stored minimum valuation.
+ * @param {number} max The stored maximum valuation.
+ * @return {{min: number, max: number}} The range to show.
+ */
+function rangeWithMinimum(min, max) {
+    if (!(max >= constants_js_1.MINIMUM_PLATE_VALUE_GBP.max)) {
+        return Object.assign({}, constants_js_1.MINIMUM_PLATE_VALUE_GBP);
+    }
+    return { min, max };
 }
 /**
  * Formats a number as a GBP price string.
@@ -336,8 +350,7 @@ async function runScheduledNudgeEmails(nudgeSecret, stripeSecretKey) {
         const unsubUrl = `${FUNCTIONS_BASE_URL}/unsubscribeNudge` +
             `?email=${encodeURIComponent(email)}&token=${token}`;
         const firstName = entry["firstName"] || "there";
-        const valuationMin = (_a = entry["valuationMin"]) !== null && _a !== void 0 ? _a : 0;
-        const valuationMax = (_b = entry["valuationMax"]) !== null && _b !== void 0 ? _b : 0;
+        const { min: valuationMin, max: valuationMax } = rangeWithMinimum((_a = entry["valuationMin"]) !== null && _a !== void 0 ? _a : 0, (_b = entry["valuationMax"]) !== null && _b !== void 0 ? _b : 0);
         const sendCountBefore = (_c = entry["sendCount"]) !== null && _c !== void 0 ? _c : 0;
         const sendCount = sendCountBefore + 1;
         let voucherCode = null;

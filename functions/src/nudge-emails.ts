@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import * as dns from "dns";
 import Stripe from "stripe";
-import {LISTING_FEE_GBP} from "./constants.js";
+import {LISTING_FEE_GBP, MINIMUM_PLATE_VALUE_GBP} from "./constants.js";
 import {mintNudgeVoucher} from "./vouchers.js";
 import {escapeHtml} from "./enquiries.js";
 
@@ -44,6 +44,23 @@ async function checkMxRecord(email: string): Promise<boolean> {
     }
     throw err;
   }
+}
+
+/**
+ * Valuations made before the app applied a minimum value can be zero or
+ * negative; email those at the minimum range instead.
+ * @param {number} min The stored minimum valuation.
+ * @param {number} max The stored maximum valuation.
+ * @return {{min: number, max: number}} The range to show.
+ */
+export function rangeWithMinimum(
+  min: number,
+  max: number
+): {min: number, max: number} {
+  if (!(max >= MINIMUM_PLATE_VALUE_GBP.max)) {
+    return {...MINIMUM_PLATE_VALUE_GBP};
+  }
+  return {min, max};
 }
 
 /**
@@ -328,8 +345,9 @@ export async function runScheduledNudgeEmails(
       `?email=${encodeURIComponent(email)}&token=${token}`;
 
     const firstName = (entry["firstName"] as string) || "there";
-    const valuationMin = (entry["valuationMin"] as number) ?? 0;
-    const valuationMax = (entry["valuationMax"] as number) ?? 0;
+    const {min: valuationMin, max: valuationMax} = rangeWithMinimum(
+      (entry["valuationMin"] as number) ?? 0,
+      (entry["valuationMax"] as number) ?? 0);
     const sendCountBefore = (entry["sendCount"] as number) ?? 0;
     const sendCount = sendCountBefore + 1;
 
