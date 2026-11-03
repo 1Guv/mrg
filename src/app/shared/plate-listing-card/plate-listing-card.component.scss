@@ -151,3 +151,10 @@
   color: white !important;
   padding: 0 2rem !important;
 }
+
+// A seller's own listing before it's published: shown as it will look, but
+// nothing works yet.
+.preview-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}

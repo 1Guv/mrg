@@ -13,7 +13,7 @@ import { AuthService } from '../../services/auth.service';
 import { PlateListing } from '../../models/plate-listing.model';
 import { normalisePlate } from '../../utils/normalise-plate';
 
-/** 'preview' is a seller's own listing before it's published: no Message Seller or sharing. */
+/** 'preview' is a seller's own listing before it's published: Message Seller and sharing show greyed out. */
 export type PlateCardVariant = 'sale' | 'sold' | 'preview';
 
 /**

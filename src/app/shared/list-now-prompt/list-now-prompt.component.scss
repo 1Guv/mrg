@@ -51,10 +51,14 @@
   font-weight: 700;
 }
 
+// The card's host is display: contents, so it takes this box's full width,
+// as it does in a Plates for Sale grid cell. Top padding leaves room for the
+// avatar and date that sit above the card.
 .preview {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
+  max-width: 420px;
+  margin: 0 auto 20px;
+  padding-top: 18px;
+  text-align: left;
 }
 
 .publish-btn {
