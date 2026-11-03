@@ -9,9 +9,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { ArticleService } from '../../services/article.service';
 import { Article } from '../../models/article.model';
 import { PrerenderDataService } from '../../services/prerender-data.service';
+import { PlateValueBoxComponent } from '../../shared/plate-value-box/plate-value-box.component';
+import { splitAfterParagraph } from './split-article-content';
+import { LISTING_FEE } from '../../constants/listing-fee';
 
 interface ArticleView extends Article {
   safeContent: SafeHtml;
+  /** The content either side of the mid-article valuation box; null for short articles. */
+  safeSplit: { top: SafeHtml; rest: SafeHtml } | null;
 }
 
 /** The embedded copy carries publishedAt as an ISO string. */
@@ -26,7 +31,7 @@ type ArticleState =
 @Component({
   selector: 'app-news-article',
   standalone: true,
-  imports: [AsyncPipe, DatePipe, TitleCasePipe, RouterLink, MatButtonModule, MatIconModule],
+  imports: [AsyncPipe, DatePipe, TitleCasePipe, RouterLink, MatButtonModule, MatIconModule, PlateValueBoxComponent],
   templateUrl: './news-article.component.html',
   styleUrl: './news-article.component.scss',
 })
@@ -37,6 +42,8 @@ export class NewsArticleComponent {
   private titleService = inject(Title);
   private metaService = inject(Meta);
   private prerenderData = inject(PrerenderDataService);
+
+  readonly listingFee = LISTING_FEE;
 
   articleState$: Observable<ArticleState> = this.route.paramMap.pipe(
     switchMap(params => {
@@ -79,6 +86,12 @@ export class NewsArticleComponent {
 
   private toView(a: Article): ArticleView {
     // Content is from our own Cloud Function — safe to trust.
-    return { ...a, safeContent: this.sanitizer.bypassSecurityTrustHtml(a.content) };
+    const trust = (html: string) => this.sanitizer.bypassSecurityTrustHtml(html);
+    const split = splitAfterParagraph(a.content, 2);
+    return {
+      ...a,
+      safeContent: trust(a.content),
+      safeSplit: split ? { top: trust(split.top), rest: trust(split.rest) } : null,
+    };
   }
 }

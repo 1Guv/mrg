@@ -26,20 +26,21 @@
     </div>
 
     <article class="article-body">
-      <div class="article-content" [innerHTML]="article.safeContent"></div>
+      @if (article.safeSplit; as split) {
+        <div class="article-content" [innerHTML]="split.top"></div>
+        <app-plate-value-box [articleSlug]="article.slug" />
+        <div class="article-content" [innerHTML]="split.rest"></div>
+      } @else {
+        <div class="article-content" [innerHTML]="article.safeContent"></div>
+      }
     </article>
 
     <div class="article-ctas">
-      <div class="cta-card">
-        <p class="cta-label">Free tool</p>
-        <h3>What's your plate worth?</h3>
-        <p>Get an instant free valuation — no sign-up needed.</p>
-        <a routerLink="/" mat-raised-button color="primary">Get free valuation →</a>
-      </div>
+      <app-plate-value-box class="cta-value-box" [articleSlug]="article.slug" />
       <div class="cta-card">
         <p class="cta-label">Marketplace</p>
         <h3>Ready to sell?</h3>
-        <p>List your plate in minutes. Free to list, no subscription.</p>
+        <p>List your plate in minutes for £{{ listingFee }} — no subscription.</p>
         <a routerLink="/list-plate" mat-stroked-button>List your plate →</a>
       </div>
     </div>

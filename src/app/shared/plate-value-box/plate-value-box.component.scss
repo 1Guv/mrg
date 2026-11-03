@@ -1,0 +1,62 @@
+:host { display: block; }
+
+.plate-value-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 24px;
+  margin: var(--plate-value-box-margin, 32px 0);
+  background: #f2f8f3;
+  font-family: 'Inter', sans-serif;
+
+  .box-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #6b7280;
+    margin: 0 0 8px;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 16px;
+  }
+}
+
+.box-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  button { flex: 0 0 auto; height: 52px; }
+}
+
+// Styled like a rear UK plate.
+.plate-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  height: 52px;
+  padding: 0 16px;
+  border: 2px solid #111827;
+  border-radius: 6px;
+  background: #ffd500;
+  color: #111827;
+  font-family: 'Cabin', Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+
+  &::placeholder { color: rgba(17, 24, 39, 0.35); }
+}
+
+.box-hint, .box-error {
+  font-size: 14px;
+  margin: 12px 0 0;
+}
+
+.box-hint { color: #6b7280; }
+.box-error { color: #c62828; }

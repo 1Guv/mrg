@@ -1,0 +1,15 @@
+<form class="plate-value-box" (ngSubmit)="onSubmit()">
+  <p class="box-label">Free valuation</p>
+  <h3>{{ heading }}</h3>
+  <div class="box-row">
+    <input class="plate-input" name="registration" [(ngModel)]="registration" (input)="error = ''"
+      placeholder="FA57 CAR" maxlength="8" autocomplete="off" autocapitalize="characters"
+      aria-label="Your number plate">
+    <button mat-raised-button color="primary" type="submit">Value it →</button>
+  </div>
+  @if (error) {
+    <p class="box-error">{{ error }}</p>
+  } @else {
+    <p class="box-hint">Instant and free — see what your plate is worth in seconds.</p>
+  }
+</form>
