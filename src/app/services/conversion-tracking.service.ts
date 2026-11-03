@@ -18,8 +18,9 @@ declare global {
  */
 @Injectable({ providedIn: 'root' })
 export class ConversionTrackingService {
-  valuationStarted(plateType: string): void {
-    this.send('valuation_start', { plate_type: plateType });
+  /** source/article say where the plate was entered when it wasn't the homepage form. */
+  valuationStarted(plateType: string, origin?: { source: string; article?: string }): void {
+    this.send('valuation_start', { plate_type: plateType, ...(origin ?? {}) });
   }
 
   valuationCompleted(plateType: string, price: number): void {

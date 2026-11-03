@@ -23,10 +23,11 @@ import { MatCardModule } from '@angular/material/card';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
 import { MatDialog } from '@angular/material/dialog';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TrackClickDirective } from '../../directives/track-click.directive';
 import { AuthService } from '../../services/auth.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
+import { detectPlateType } from '../../regex-plate-patterns/detect-plate-type';
 @Component({
   selector: 'reg-plate-main',
   standalone: true,
@@ -53,7 +54,11 @@ export class RegPlateMainComponent implements OnInit {
 
   dialog: MatDialog = inject(MatDialog);
   router: Router = inject(Router);
+  private route = inject(ActivatedRoute);
   private tracking = inject(ConversionTrackingService);
+
+  /** Where a ?plate= link came from, for the valuation_start event. */
+  private origin?: { source: string; article?: string };
 
   types: Array<NumberPlateTypeObj> = [
     { value: NumberPlateType.Current, example: NumberPlateTypeExamples.currentEg },
@@ -128,6 +133,28 @@ export class RegPlateMainComponent implements OnInit {
         this.sharedPlateDataService.setCurrentPlateData(null);
       }
     });
+
+    this.startFromLink();
+  }
+
+  /**
+   * Links like /?plate=FA57CAR&source=article&article=<slug> fill in the plate
+   * and start the valuation, so visitors from articles skip the form.
+   */
+  private startFromLink() {
+    const params = this.route.snapshot.queryParamMap;
+    const plate = detectPlateType(params.get('plate') ?? '');
+    if (!plate) return;
+
+    const source = params.get('source');
+    const article = params.get('article');
+    this.origin = source ? { source, ...(article ? { article } : {}) } : undefined;
+
+    this.registrationForm.get('type')?.setValue(this.types.find(t => t.value === plate.type));
+    this.registrationForm.get('registration')?.setValue(plate.registration);
+    // Drop the params so a refresh doesn't start it again.
+    this.router.navigate([], { queryParams: {}, replaceUrl: true });
+    this.onSubmit();
   }
 
   async onSubmit() {
@@ -144,7 +171,8 @@ export class RegPlateMainComponent implements OnInit {
     }
 
     const type = this.registrationForm.get('type')?.value?.value;
-    this.tracking.valuationStarted(type ?? 'unknown');
+    this.tracking.valuationStarted(type ?? 'unknown', this.origin);
+    this.origin = undefined;
     if (type === NumberPlateType.Current) {
       const registration = this.registrationForm.get('registration')?.value?.toUpperCase().replace(/\s/g, '') ?? '';
       this.sharedPlateDataService.setCurrentPlatePending(registration);
