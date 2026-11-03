@@ -24,6 +24,8 @@ import { DictionaryService } from '../../services/dictionary.service';
 import { forkJoin, Observable, of } from 'rxjs';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
 import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messages.model';
+import { priceValuation, ValuationReason } from '../../formulas/minimum-value';
+import { MinimumValueNoticeComponent } from '../../shared/minimum-value-notice/minimum-value-notice.component';
 import { ValuationGateService } from '../../services/valuation-gate.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { ValuationEmailGateComponent } from '../../shared/valuation-email-gate/valuation-email-gate.component';
@@ -59,6 +61,7 @@ const POSITION_LABELS = [
     PlateBreakdownCardComponent,
     PlateValuationTotalsComponent,
     ValuationEmailGateComponent,
+    MinimumValueNoticeComponent,
   ],
   templateUrl: './current-plate-valuation.component.html',
   styleUrl: './current-plate-valuation.component.scss'
@@ -89,6 +92,9 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
   isCalculating = false;
   basePrice = CurrentReg.start;
   totalPrice = 0;
+  /** What the options add up to; totalPrice may be raised to the minimum. */
+  calculatedPrice = 0;
+  belowMinimum = false;
   ageIdentifierBreakdown: { digit: string; chosenLetter: string; match: boolean; value: number }[] = [];
   oneWordBonus: number = 0;
   legalSpacingBonus: number = 0;
@@ -293,8 +299,7 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
         this.totalPrice += this.calcSpacingWordBonuses(spacing, allChars[0], isWordOne, isWordTwo);
         this.totalPrice += this.calcSurnameBonus();
         this.totalPrice += this.calcSpecialCombinationBonus();
-        this.minPrice = this.totalPrice * 0.25;
-        this.maxPrice = this.totalPrice * 1.25;
+        this.applyMinimumValue();
         this.isCalculating = false;
         this.showResults = true;
         this.cdr.detectChanges();
@@ -332,6 +337,41 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
     this.savedValuationId = null;
     this.sharedPlateDataService.setCurrentPlatePending(null);
     this.numberPlateFormService.triggerReset();
+  }
+
+  private applyMinimumValue(): void {
+    const priced = priceValuation(this.totalPrice);
+    this.calculatedPrice = priced.calculatedPrice;
+    this.belowMinimum = priced.belowMinimum;
+    this.totalPrice = priced.price;
+    this.minPrice = priced.minPrice;
+    this.maxPrice = priced.maxPrice;
+  }
+
+  onChangeAnswers(): void {
+    this.showResults = false;
+  }
+
+  /** The options that pulled the value down, for the minimum-value notice. */
+  get minimumValueReasons(): ValuationReason[] {
+    const reasons: ValuationReason[] = [];
+    if (this.legalSpacingBonus < 0) {
+      const label = this.form.get('wordCombination')?.value === 3 ?
+        'Reading the plate as 3 words' :
+        'Not using the road-legal 4+3 spacing';
+      reasons.push({ label, amount: this.legalSpacingBonus });
+    }
+    if (this.wordOneBonus < 0) reasons.push({ label: `"${this.wordOneText}" isn't a dictionary word`, amount: this.wordOneBonus });
+    if (this.wordTwoBonus < 0) reasons.push({ label: `"${this.wordTwoText}" isn't a dictionary word`, amount: this.wordTwoBonus });
+    if (this.firstCharBonus < 0) reasons.push({ label: "The first character isn't an X", amount: this.firstCharBonus });
+    const ageMisses = this.ageIdentifierBreakdown.filter(a => !a.match);
+    if (ageMisses.length) {
+      reasons.push({
+        label: "Letters that don't match the plate's age numbers",
+        amount: ageMisses.reduce((sum, a) => sum + a.value, 0),
+      });
+    }
+    return reasons;
   }
 
   listNow(): void {

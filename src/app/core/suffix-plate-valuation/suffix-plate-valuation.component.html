@@ -124,6 +124,12 @@
         [meaning]="getPlatePreview()"
         plateType="Suffix" />
       <hr>
+      @if (belowMinimum) {
+        <app-minimum-value-notice
+          [calculatedPrice]="calculatedPrice"
+          [reasons]="minimumValueReasons"
+          (changeAnswers)="onChangeAnswers()" />
+      }
       @if (gate.unlocked()) {
         <app-plate-breakdown-card>
 

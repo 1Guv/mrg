@@ -1,0 +1,13 @@
+.notice-card {
+  width: 100%;
+  max-width: 400px;
+  border-left: 4px solid #f9a825;
+
+  @media (min-width: 768px) {
+    max-width: 600px;
+  }
+
+  ul {
+    padding-left: 1.25rem;
+  }
+}

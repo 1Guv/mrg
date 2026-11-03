@@ -15,6 +15,8 @@ import { DictionaryService } from '../../services/dictionary.service';
 import { ValuationService } from '../../services/valuation.service';
 import { NumberPlateType, RegValuation } from '../../models/reg.model';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
+import { priceValuation, ValuationReason } from '../../formulas/minimum-value';
+import { MinimumValueNoticeComponent } from '../../shared/minimum-value-notice/minimum-value-notice.component';
 import { ValuationGateService } from '../../services/valuation-gate.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { ValuationEmailGateComponent } from '../../shared/valuation-email-gate/valuation-email-gate.component';
@@ -52,6 +54,7 @@ type PositionType = 'digit' | 'letter';
     PlateBreakdownCardComponent,
     PlateValuationTotalsComponent,
     ValuationEmailGateComponent,
+    MinimumValueNoticeComponent,
   ],
   templateUrl: './prefix-plate-valuation.component.html',
   styleUrl: './prefix-plate-valuation.component.scss',
@@ -96,6 +99,9 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
   // Results
   basePrice = PrefixReg.start;
   totalPrice = 0;
+  /** What the options add up to; totalPrice may be raised to the minimum. */
+  calculatedPrice = 0;
+  belowMinimum = false;
   minPrice = 0;
   maxPrice = 0;
   ageYearBonus = 0;
@@ -325,8 +331,7 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
         this.totalPrice += this.nameOneBonus + this.nameTwoBonus
           + this.surnameOneBonus + this.surnameTwoBonus;
 
-        this.minPrice = this.totalPrice * 0.25;
-        this.maxPrice = this.totalPrice * 1.25;
+        this.applyMinimumValue();
 
         this.isCalculating = false;
         this.showResults = true;
@@ -380,6 +385,29 @@ export class PrefixPlateValuationComponent implements OnInit, OnDestroy {
     this.resetResults();
     this.sharedPlateDataService.setPrefixPlatePending(null);
     this.numberPlateFormService.triggerReset();
+  }
+
+  private applyMinimumValue(): void {
+    const priced = priceValuation(this.totalPrice);
+    this.calculatedPrice = priced.calculatedPrice;
+    this.belowMinimum = priced.belowMinimum;
+    this.totalPrice = priced.price;
+    this.minPrice = priced.minPrice;
+    this.maxPrice = priced.maxPrice;
+  }
+
+  onChangeAnswers(): void {
+    this.showResults = false;
+  }
+
+  /** The options that pulled the value down, for the minimum-value notice. */
+  get minimumValueReasons(): ValuationReason[] {
+    const reasons: ValuationReason[] = [];
+    if (this.wordBonus < 0) reasons.push({ label: `"${this.wordOneText}" isn't a dictionary word`, amount: this.wordBonus });
+    if (this.wordOneBonus < 0) reasons.push({ label: `"${this.wordOneText}" isn't a dictionary word`, amount: this.wordOneBonus });
+    if (this.wordTwoBonus < 0) reasons.push({ label: `"${this.wordTwoText}" isn't a dictionary word`, amount: this.wordTwoBonus });
+    if (this.legalSpacingBonus < 0) reasons.push({ label: "Spacing that isn't road-legal", amount: this.legalSpacingBonus });
+    return reasons;
   }
 
   listNow(): void {

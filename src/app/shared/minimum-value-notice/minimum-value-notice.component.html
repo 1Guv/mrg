@@ -1,0 +1,20 @@
+<mat-card class="notice-card mx-auto my-2 p-3">
+  <p class="cabin-font-heading mb-2">Your answers came to £{{ calculatedPrice | number: '1.0-0' }}</p>
+
+  @if (reasons.length) {
+    <p class="mb-1">These choices lowered the value:</p>
+    <ul class="mb-2">
+      @for (reason of reasons; track reason.label) {
+        <li>{{ reason.label }} <span class="text-danger">(£{{ reason.amount | number: '1.0-0' }})</span></li>
+      }
+    </ul>
+  }
+
+  <p class="mb-2">
+    Because of this, your plate is valued at the minimum of
+    <strong>£{{ minimum.min }} – £{{ minimum.max }}</strong>.
+  </p>
+  <p class="small text-muted mb-2">If buyers would read your plate differently, changing your answers may give a higher value.</p>
+
+  <button mat-stroked-button type="button" (click)="changeAnswers.emit()">Change my answers</button>
+</mat-card>
