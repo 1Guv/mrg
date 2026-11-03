@@ -1,7 +1,7 @@
 
 import { Component, OnDestroy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { Router, RouterLink, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms";
 import { AuthService } from "../../services/auth.service";
 import { catchError, map, of } from "rxjs";
@@ -14,6 +14,7 @@ import { ValuationService } from "../../services/valuation.service";
 import { EmailLinkSignInService } from "../../services/email-link-sign-in.service";
 import { Subscription } from 'rxjs';
 import { RegValuation } from '../../models/reg.model';
+import { safeReturnUrl } from '../../utils/return-url';
 
 @Component({
   selector: 'app-login',
@@ -39,6 +40,8 @@ export class LoginComponent implements OnDestroy {
   fieldTextType = false;
   errorMessage = '';
   subscriptions: Subscription[] = [];
+  /** Where to go once signed in: the page that sent them here, or their dashboard. */
+  afterLogin: string;
 
   constructor(
     private authService: AuthService,
@@ -46,17 +49,17 @@ export class LoginComponent implements OnDestroy {
     private formBuilder: FormBuilder,
     private snackBar: MatSnackBar,
     private valuationService: ValuationService,
-    private emailLink: EmailLinkSignInService
+    private emailLink: EmailLinkSignInService,
+    route: ActivatedRoute
   ) {
+    this.afterLogin = safeReturnUrl(route.snapshot.queryParamMap.get('returnUrl')) ?? '/account-dashboard';
     this.createLoginForm();
 
     this.subscriptions.push(
       this.authService.currentUser$
         .pipe(
           map((user: any) => {
-            !!user
-              ? this.router.navigate(['/account-dashboard'])
-              : this.router.navigate(['/login']);
+            if (user) this.router.navigateByUrl(this.afterLogin);
           })
         )
         .subscribe()
@@ -66,7 +69,7 @@ export class LoginComponent implements OnDestroy {
   async onFacebookLogin() {
     try {
       await this.authService.loginWithFacebook();
-      await this.router.navigate(['/account-dashboard']);
+      await this.router.navigateByUrl(this.afterLogin);
     } catch (error: any) {
       if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') return;
       console.error('Facebook sign-in error:', error?.code, error);
@@ -84,7 +87,7 @@ export class LoginComponent implements OnDestroy {
   async onGoogleLogin() {
     try {
       await this.authService.loginWithGoogle();
-      await this.router.navigate(['/account-dashboard']);
+      await this.router.navigateByUrl(this.afterLogin);
     } catch (error: any) {
       if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') return;
       console.error('Google sign-in error:', error?.code, error);
@@ -102,7 +105,7 @@ export class LoginComponent implements OnDestroy {
     const email = String(this.loginForm.get('email')?.value ?? '').trim();
     if (!email) return;
     try {
-      await this.emailLink.sendLink(email, `${window.location.origin}/account-dashboard`);
+      await this.emailLink.sendLink(email, `${window.location.origin}${this.afterLogin}`);
       this.snackBar.open('Check your inbox for a sign-in link', 'OK');
     } catch {
       this.snackBar.open('Could not send the link. Please check the address and try again.', 'OK');
@@ -129,7 +132,7 @@ export class LoginComponent implements OnDestroy {
           });
         } else {
           this.valuationService.resetValuation();
-          await this.router.navigate(['/account-dashboard']);
+          await this.router.navigateByUrl(this.afterLogin);
         }
       } catch (error: any) {
         this.handleError(error);

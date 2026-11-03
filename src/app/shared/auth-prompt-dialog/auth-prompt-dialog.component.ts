@@ -48,11 +48,12 @@ export class AuthPromptDialogComponent {
 
   goToLogin(): void {
     this.dialogRef.close();
-    this.router.navigate(['/login']);
+    // Come back to this page, e.g. the listing form with the plate filled in.
+    this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
   }
 
   goToRegister(): void {
     this.dialogRef.close();
-    this.router.navigate(['/register']);
+    this.router.navigate(['/register'], { queryParams: { returnUrl: this.router.url } });
   }
 }

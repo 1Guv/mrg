@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import {MatButton, MatIconButton} from "@angular/material/button";
@@ -10,6 +10,7 @@ import {MatError, MatFormField, MatHint, MatLabel, MatSuffix} from "@angular/mat
 import {MatIcon} from "@angular/material/icon";
 import {MatInput} from "@angular/material/input";
 import { passwordMatchValidator } from '../../form-validators/validator-password-match';
+import { safeReturnUrl } from '../../utils/return-url';
 
 @Component({
   selector: 'app-register',
@@ -47,7 +48,8 @@ export class RegisterComponent {
     private authService: AuthService,
     private router: Router,
     private formBuilder: FormBuilder,
-    private tracking: ConversionTrackingService
+    private tracking: ConversionTrackingService,
+    private route: ActivatedRoute
   ) {
     this.createRegisterForm();
   }
@@ -70,7 +72,8 @@ export class RegisterComponent {
           this.registerForm.get('password')?.value
         );
         this.tracking.signedUp('manual');
-        await this.router.navigate(['/account-dashboard']);
+        const returnUrl = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+        await this.router.navigateByUrl(returnUrl ?? '/account-dashboard');
       } catch (error) {
         console.error('Registration failed:', error);
       }
