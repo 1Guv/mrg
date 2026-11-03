@@ -22,6 +22,9 @@ import { catchError, map, of, pipe, Subscription } from 'rxjs';
 import { ValuationService } from '../../services/valuation.service';
 import { AuthService } from '../../services/auth.service';
 import { ValuationGateService } from '../../services/valuation-gate.service';
+import { ListNowService } from '../../services/list-now.service';
+import { ListNowPromptComponent } from '../../shared/list-now-prompt/list-now-prompt.component';
+import { VoucherDeadlineComponent } from '../../shared/voucher-deadline/voucher-deadline.component';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { ValuationEmailGateComponent } from '../../shared/valuation-email-gate/valuation-email-gate.component';
 import { PlateListingService } from '../../services/plate-listing.service';
@@ -66,6 +69,8 @@ export const MY_FORMATS = {
       ValuationFeedbackComponent,
       PlateValuationMessageFeedbackComponent,
       ValuationEmailGateComponent,
+      ListNowPromptComponent,
+      VoucherDeadlineComponent,
     ],
     templateUrl: './reg-plate-valuation-results.component.html',
     styleUrl: './reg-plate-valuation-results.component.scss',
@@ -133,6 +138,7 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private tracking = inject(ConversionTrackingService);
   gate = inject(ValuationGateService);
+  private listNowService = inject(ListNowService);
   /** What the email gate saves to the visitor's dashboard once they sign up. */
   gateValuation?: RegValuation;
   plateListingService = inject(PlateListingService);
@@ -369,14 +375,17 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
     this.feedbackAgreed = null;
   }
 
-  listNow(): void {
+  async listNow(): Promise<void> {
     this.tracking.listNowClicked(this.gate.loggedIn());
+    const plate = this.currentPlate.toUpperCase();
+    const voucher = await this.listNowService.voucher(plate);
     this.router.navigate(['/list-plate'], {
       queryParams: {
-        plate: this.currentPlate.toUpperCase(),
+        plate,
         price: (this.totalPoints * this.multiplier).toFixed(2),
         min: this.minPrice.toFixed(2),
         max: this.maxPrice.toFixed(2),
+        ...this.listNowService.voucherParams(voucher),
       },
     });
   }

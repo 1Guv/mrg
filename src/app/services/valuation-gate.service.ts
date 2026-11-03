@@ -40,6 +40,8 @@ export class ValuationGateService {
 
   private user = toSignal(this.authService.currentUser$, { initialValue: null });
   private emailGiven = signal(false);
+  /** The email given at the gate this session, for calls made before sign-in completes. */
+  readonly givenEmail = signal<string | null>(null);
 
   readonly unlocked = computed(() => !!this.user() || this.emailGiven());
   readonly loggedIn = computed(() => !!this.user());
@@ -56,6 +58,7 @@ export class ValuationGateService {
     // Firebase doesn't have to ask for it again.
     this.emailLink.rememberEmail(request.email);
     this.emailGiven.set(true);
+    this.givenEmail.set(request.email.trim().toLowerCase());
 
     if (data.customToken) {
       await signInWithCustomToken(this.auth, data.customToken);

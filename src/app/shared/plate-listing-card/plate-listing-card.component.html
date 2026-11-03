@@ -35,15 +35,17 @@
       </button>
     }
 
-    <div class="share-buttons-wrapper">
-      @if (variant() === 'sold') {
-        <app-share-buttons
-          [shareText]="listing().plateCharacters + ' — Sold for £' + listing().soldPrice" />
-      } @else {
-        <app-share-buttons
-          [shareText]="listing().plateCharacters + ' — £' + listing().askingPrice"
-          [viewListingLink]="['/plates-for-sale', normalisePlate(listing().plateCharacters)]" />
-      }
-    </div>
+    @if (variant() !== 'preview') {
+      <div class="share-buttons-wrapper">
+        @if (variant() === 'sold') {
+          <app-share-buttons
+            [shareText]="listing().plateCharacters + ' — Sold for £' + listing().soldPrice" />
+        } @else {
+          <app-share-buttons
+            [shareText]="listing().plateCharacters + ' — £' + listing().askingPrice"
+            [viewListingLink]="['/plates-for-sale', normalisePlate(listing().plateCharacters)]" />
+        }
+      </div>
+    }
   </mat-card>
 </div>

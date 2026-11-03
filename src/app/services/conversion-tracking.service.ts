@@ -47,6 +47,15 @@ export class ConversionTrackingService {
     this.send('list_now_click', { logged_in: loggedIn });
   }
 
+  /** "Would you sell at this price?" on a revealed valuation. */
+  sellIntentAnswered(answer: 'yes' | 'later' | 'curious', plateType: string): void {
+    this.send('sell_intent', { answer, plate_type: plateType });
+  }
+
+  listPreviewPublishClicked(hasVoucher: boolean): void {
+    this.send('list_preview_publish', { has_voucher: hasVoucher });
+  }
+
   listPlateViewed(source: 'valuation' | 'email_link' | 'nudge' | 'direct'): void {
     this.send('list_plate_view', { source });
   }

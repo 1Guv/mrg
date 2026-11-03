@@ -228,12 +228,12 @@
           [minPrice]="minPrice"
           [maxPrice]="maxPrice" />
 
-        <p class="d-flex justify-content-center mt-4">
-          <span class="list-now-btn-wrapper">
-            <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
-            <span class="price-badge">£{{ plateListingService.listingFee }}</span>
-          </span>
-        </p>
+        <app-list-now-prompt class="d-block mt-4"
+          [registration]="registration"
+          [plateType]="'prefix'"
+          [price]="totalPrice"
+          [minPrice]="minPrice"
+          [maxPrice]="maxPrice" />
 
         <app-share-buttons [shareText]="shareText" />
         <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />
@@ -263,6 +263,7 @@
             <button mat-raised-button type="button" class="list-now-btn" (click)="listNow()">List Now</button>
             <span class="price-badge">£{{ plateListingService.listingFee }}</span>
           </span>
+          <app-voucher-deadline [registration]="registration" />
         </p>
       }
     }

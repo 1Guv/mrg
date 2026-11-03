@@ -13,7 +13,8 @@ import { AuthService } from '../../services/auth.service';
 import { PlateListing } from '../../models/plate-listing.model';
 import { normalisePlate } from '../../utils/normalise-plate';
 
-export type PlateCardVariant = 'sale' | 'sold';
+/** 'preview' is a seller's own listing before it's published: no Message Seller or sharing. */
+export type PlateCardVariant = 'sale' | 'sold' | 'preview';
 
 /**
  * A single plate listing card.

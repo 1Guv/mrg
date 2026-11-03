@@ -1,0 +1,46 @@
+<div class="list-now-prompt">
+  @if (demand() > 0) {
+    <p class="demand">🔥 <strong>{{ demand() }} buyers</strong> searched for plates like {{ plate() }} in the last 30 days</p>
+  }
+
+  @switch (answer()) {
+    @case ('yes') {
+      <p class="prompt-heading">Here's your listing, ready to go</p>
+      <div class="preview">
+        <app-plate-listing-card [listing]="preview()" variant="preview" />
+      </div>
+      <div class="text-center">
+        <button mat-raised-button type="button" class="publish-btn" (click)="publish()">
+          @if (voucher()) {
+            Publish for £{{ discountedFee() | number: '1.0-2' }} <s class="was">£{{ fee }}</s>
+          } @else {
+            Publish for £{{ fee }}
+          }
+        </button>
+        @if (voucher(); as v) {
+          <p class="voucher-line">{{ v.percentOff }}% off — ends {{ v.expiresAt | date: 'EEE d MMM, h:mm a' }}</p>
+        }
+        <p class="hint">You can change the price and details on the next step.</p>
+      </div>
+    }
+    @case ('later') {
+      <p class="prompt-reply">No problem — we'll check in weekly and tell you if demand for plates like {{ plate() }} picks up.</p>
+      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
+    }
+    @case ('curious') {
+      <p class="prompt-reply">Thanks — we won't send you selling reminders for {{ plate() }}.</p>
+      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
+    }
+    @default {
+      <p class="prompt-heading">Would you sell {{ plate() }} for £{{ price() | number: '1.0-0' }}?</p>
+      <div class="answers">
+        <button mat-raised-button type="button" class="answer-yes" (click)="choose('yes')">Yes</button>
+        <button mat-stroked-button type="button" (click)="choose('later')">Maybe later</button>
+        <button mat-stroked-button type="button" (click)="choose('curious')">Just curious</button>
+      </div>
+      @if (voucher(); as v) {
+        <p class="voucher-line">{{ v.percentOff }}% off listing until {{ v.expiresAt | date: 'EEE d MMM, h:mm a' }}</p>
+      }
+    }
+  }
+</div>

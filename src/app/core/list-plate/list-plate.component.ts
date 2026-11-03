@@ -71,9 +71,14 @@ export class ListPlateComponent implements OnInit {
     if (!isNaN(minVal) && minVal > 0) this.valuationMin = minVal;
     const maxVal = Number(params['max']);
     if (!isNaN(maxVal) && maxVal > 0) this.valuationMax = maxVal;
-    if (params['voucher']) this.voucherCode = String(params['voucher']).toUpperCase();
+    // Result-page vouchers say when they expire; drop one that has, so the
+    // page doesn't promise a discount Stripe will refuse.
+    const voucherExpires = Number(params['voucherExpires']);
+    const voucherLive = !voucherExpires || voucherExpires > Date.now();
+    if (params['voucher'] && voucherLive) this.voucherCode = String(params['voucher']).toUpperCase();
 
     const source = this.emailLink.hasLinkInUrl() ? 'email_link' :
+      params['from'] === 'result' ? 'valuation' :
       params['voucher'] ? 'nudge' :
       params['plate'] ? 'valuation' : 'direct';
     this.tracking.listPlateViewed(source);

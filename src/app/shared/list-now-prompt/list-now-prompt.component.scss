@@ -1,0 +1,89 @@
+:host { display: block; }
+
+.list-now-prompt {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+
+  @media (min-width: 768px) {
+    max-width: 600px;
+  }
+}
+
+.demand {
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff4e5;
+  color: #8a4b00;
+  font-size: 0.95rem;
+}
+
+.prompt-heading {
+  font-family: 'Cabin', Arial, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.prompt-reply {
+  margin: 0 0 8px;
+  color: #374151;
+}
+
+.answers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+
+  button { min-width: 110px; }
+}
+
+.answer-yes {
+  background-color: #2e7d32;
+  color: #fff;
+  font-weight: 700;
+}
+
+.preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.publish-btn {
+  padding: 0.75rem 2rem;
+  background-color: #2e7d32;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 2rem;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.45);
+
+  .was {
+    margin-left: 6px;
+    font-weight: 400;
+    opacity: 0.75;
+  }
+}
+
+.voucher-line {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.hint {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.anyway { font-weight: 600; }
