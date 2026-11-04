@@ -13,6 +13,7 @@ import {
 } from '../../services/list-now.service';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { ValuationGateService } from '../../services/valuation-gate.service';
+import { feeShare } from '../../utils/fee-share';
 import { StatsStripComponent } from '../stats-strip/stats-strip.component';
 
 /**
@@ -65,6 +66,8 @@ export class ListNowPromptComponent {
   readonly plate = computed(() => this.registration().replace(/\s/g, '').toUpperCase());
   /** The asking price the preview suggests, to the nearest £10. */
   readonly askingPrice = computed(() => Math.max(10, Math.round(this.price() / 10) * 10));
+  /** "3%": the fee against the asking price the preview suggests. */
+  readonly feeShare = computed(() => feeShare(this.fee, this.askingPrice()));
   readonly discountedFee = computed(() => {
     const v = this.voucher();
     return v ? Math.round(this.fee * (100 - v.percentOff)) / 100 : this.fee;
