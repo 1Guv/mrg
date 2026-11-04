@@ -66,6 +66,7 @@ export class ListPlateComponent implements OnInit {
     const prefill: Record<string, string> = {};
     if (params['plate']) prefill['plateCharacters'] = String(params['plate']).toUpperCase();
     if (params['price']) prefill['askingPrice'] = String(params['price']);
+    if (params['meaning']) prefill['meanings'] = String(params['meaning']).slice(0, 80);
     if (Object.keys(prefill).length) this.form.patchValue(prefill);
     const minVal = Number(params['min']);
     if (!isNaN(minVal) && minVal > 0) this.valuationMin = minVal;

@@ -24,6 +24,100 @@
   font-size: 0.95rem;
 }
 
+.meaning {
+  margin: 0 0 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.meaning-heading {
+  margin: 0 0 10px;
+  font-weight: 700;
+  color: #111827;
+
+  .optional {
+    font-weight: 400;
+    color: #6b7280;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.chip {
+  padding: 6px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover { border-color: #2e7d32; }
+
+  &.selected {
+    border-color: #2e7d32;
+    background: #e8f5e9;
+    color: #1b5e20;
+    font-weight: 600;
+  }
+}
+
+.meaning-form {
+  display: flex;
+  gap: 8px;
+  max-width: 420px;
+  margin: 12px auto 0;
+}
+
+.meaning-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+
+  &:focus {
+    outline: 2px solid #2e7d32;
+    outline-offset: -1px;
+  }
+}
+
+.meaning-save {
+  background-color: #2e7d32;
+  color: #fff;
+}
+
+.meaning-hint {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.meaning-saved {
+  margin: 0;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.meaning-edit {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #6b7280;
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .prompt-heading {
   font-family: 'Cabin', Arial, sans-serif;
   font-size: 1.25rem;

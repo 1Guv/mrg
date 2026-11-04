@@ -4,6 +4,13 @@ import { ValuationGateService } from './valuation-gate.service';
 
 export type SellIntent = 'yes' | 'later' | 'curious';
 
+export type MeaningCategory = 'name' | 'word' | 'car' | 'business' | 'date' | 'other';
+
+export interface PlateMeaning {
+  category: MeaningCategory;
+  text: string;
+}
+
 export interface ResultVoucher {
   code: string;
   percentOff: number;
@@ -25,6 +32,7 @@ export class ListNowService {
   private demand = new Map<string, Promise<number>>();
   private vouchers = new Map<string, Promise<ResultVoucher | null>>();
   private intents = new Map<string, SellIntent>();
+  private meanings = new Map<string, PlateMeaning>();
 
   /** Matching buyer searches in the last 30 days; 0 when too few to show. */
   buyerDemand(registration: string): Promise<number> {
@@ -62,6 +70,22 @@ export class ListNowService {
       await fn({ registration: reg, answer, ...this.email() });
     } catch {
       // The answer still shapes this page; the nudge schedule just stays as is.
+    }
+  }
+
+  meaning(registration: string): PlateMeaning | null {
+    return this.meanings.get(this.key(registration)) ?? null;
+  }
+
+  async recordMeaning(registration: string, meaning: PlateMeaning): Promise<void> {
+    const reg = this.key(registration);
+    this.meanings.set(reg, meaning);
+    const fn = httpsCallable<{ registration: string; category: MeaningCategory; text: string; email?: string },
+      { recorded: boolean }>(this.functions, 'recordPlateMeaning');
+    try {
+      await fn({ registration: reg, ...meaning, ...this.email() });
+    } catch {
+      // The meaning still pre-fills their listing; we just don't keep a copy.
     }
   }
 

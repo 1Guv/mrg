@@ -226,6 +226,53 @@ export async function runRecordSellIntent(
   return {recorded: true};
 }
 
+// ── Plate meaning ────────────────────────────────────────────────────────────
+
+export type MeaningCategory =
+  "name" | "word" | "car" | "business" | "date" | "other";
+const MEANING_CATEGORIES: MeaningCategory[] =
+  ["name", "word", "car", "business", "date", "other"];
+const MEANING_MAX_LENGTH = 80;
+
+/**
+ * Records what a plate means to its owner, asked under a revealed valuation.
+ * Last answer wins. The text also pre-fills their listing on the client.
+ * @param {Record<string, unknown>} data - registration, category, optional
+ *   text, and email when the caller isn't signed in.
+ * @param {Caller} caller - The signed-in user, if any.
+ * @param {string} ip - For rate limiting.
+ * @return {Promise<{recorded: boolean}>} Whether there was an email to
+ *   record it against.
+ */
+export async function runRecordPlateMeaning(
+  data: Record<string, unknown>,
+  caller: Caller,
+  ip: string
+): Promise<{recorded: boolean}> {
+  const registration = parseRegistration(data["registration"]);
+  const category = data["category"] as MeaningCategory;
+  if (!MEANING_CATEGORIES.includes(category)) {
+    throw new HttpsError("invalid-argument", "Invalid category");
+  }
+  const text = String(data["text"] ?? "").trim().slice(0, MEANING_MAX_LENGTH);
+  await limitByIp(ip, "plate-meaning-ip", 20);
+
+  const email = callerEmail(data, caller);
+  if (!email) return {recorded: false};
+
+  await admin.firestore().collection("plate_meanings")
+    .doc(sellIntentId(email, registration))
+    .set({
+      email,
+      uid: caller.uid ?? null,
+      registration,
+      category,
+      text,
+      answeredAt: admin.firestore.Timestamp.now(),
+    });
+  return {recorded: true};
+}
+
 // ── Result-page voucher ──────────────────────────────────────────────────────
 
 /**

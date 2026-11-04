@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserCreated = exports.getResultVoucher = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -783,6 +783,12 @@ exports.recordSellIntent = (0, https_1.onCall)({ maxInstances: 10 }, async (requ
     var _a;
     const { ip, caller } = callerOf(request);
     return (0, list_now_js_1.runRecordSellIntent)((_a = request.data) !== null && _a !== void 0 ? _a : {}, caller, ip);
+});
+/** "What does this plate mean?" on a revealed valuation. */
+exports.recordPlateMeaning = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a;
+    const { ip, caller } = callerOf(request);
+    return (0, list_now_js_1.runRecordPlateMeaning)((_a = request.data) !== null && _a !== void 0 ? _a : {}, caller, ip);
 });
 /** The 48-hour 10%-off voucher shown on a revealed valuation. */
 exports.getResultVoucher = (0, https_1.onCall)({ maxInstances: 10, secrets: [stripeSecretKey] }, async (request) => {

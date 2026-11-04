@@ -52,6 +52,10 @@ export class ConversionTrackingService {
     this.send('sell_intent', { answer, plate_type: plateType });
   }
 
+  plateMeaningGiven(category: string, hasText: boolean, plateType: string): void {
+    this.send('plate_meaning', { category, has_text: hasText, plate_type: plateType });
+  }
+
   listPreviewPublishClicked(hasVoucher: boolean): void {
     this.send('list_preview_publish', { has_voucher: hasVoucher });
   }

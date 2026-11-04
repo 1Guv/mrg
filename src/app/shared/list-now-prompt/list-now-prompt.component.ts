@@ -7,7 +7,10 @@ import { PlateListingCardComponent } from '../plate-listing-card/plate-listing-c
 import { PlateListing } from '../../models/plate-listing.model';
 import { AuthService } from '../../services/auth.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
-import { ListNowService, ResultVoucher, SellIntent } from '../../services/list-now.service';
+import { FormsModule } from '@angular/forms';
+import {
+  ListNowService, MeaningCategory, PlateMeaning, ResultVoucher, SellIntent
+} from '../../services/list-now.service';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { ValuationGateService } from '../../services/valuation-gate.service';
 
@@ -19,7 +22,7 @@ import { ValuationGateService } from '../../services/valuation-gate.service';
 @Component({
   selector: 'app-list-now-prompt',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, MatButtonModule, PlateListingCardComponent],
+  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, PlateListingCardComponent],
   templateUrl: './list-now-prompt.component.html',
   styleUrl: './list-now-prompt.component.scss'
 })
@@ -36,6 +39,23 @@ export class ListNowPromptComponent {
   readonly price = input.required<number>();
   readonly minPrice = input.required<number>();
   readonly maxPrice = input.required<number>();
+
+  readonly meaningCategories: { value: MeaningCategory; label: string; example: string }[] = [
+    { value: 'name', label: 'Name / initials', example: 'e.g. Yolanda\'s initials' },
+    { value: 'word', label: 'Word', example: 'e.g. spells BOSS' },
+    { value: 'car', label: 'Car / model', example: 'e.g. Porsche 911' },
+    { value: 'business', label: 'Business', example: 'e.g. Smith Plumbing' },
+    { value: 'date', label: 'Date / age', example: 'e.g. born 1985' },
+    { value: 'other', label: 'Other', example: 'e.g. lucky number' },
+  ];
+
+  /** The chip tapped, before the meaning is saved. */
+  readonly meaningCategory = signal<MeaningCategory | null>(null);
+  meaningText = '';
+  /** Saved for this plate this session; pre-fills the preview and the listing. */
+  readonly meaning = signal<PlateMeaning | null>(null);
+  readonly meaningExample = computed(() =>
+    this.meaningCategories.find(c => c.value === this.meaningCategory())?.example ?? '');
 
   readonly answer = signal<SellIntent | null>(null);
   readonly demand = signal(0);
@@ -61,7 +81,7 @@ export class ListNowPromptComponent {
     plateBestOffer: false,
     offersOver: false,
     orNearestOffer: false,
-    meanings: '',
+    meanings: this.meaning()?.text ?? '',
     viewsPlaceholder: 0,
     messageSeller: '',
     plateType: this.plateType(),
@@ -74,6 +94,10 @@ export class ListNowPromptComponent {
     effect(() => {
       const reg = this.plate();
       this.answer.set(this.listNow.answer(reg));
+      const saved = this.listNow.meaning(reg);
+      this.meaning.set(saved);
+      this.meaningCategory.set(saved?.category ?? null);
+      this.meaningText = saved?.text ?? '';
       this.demand.set(0);
       this.voucher.set(null);
       this.listNow.buyerDemand(reg).then(n => { if (reg === this.plate()) this.demand.set(n); });
@@ -85,6 +109,19 @@ export class ListNowPromptComponent {
     this.answer.set(answer);
     this.tracking.sellIntentAnswered(answer, this.plateType());
     this.listNow.recordAnswer(this.plate(), answer);
+  }
+
+  saveMeaning(): void {
+    const category = this.meaningCategory();
+    if (!category) return;
+    const meaning = { category, text: this.meaningText.trim().slice(0, 80) };
+    this.meaning.set(meaning);
+    this.tracking.plateMeaningGiven(category, !!meaning.text, this.plateType());
+    this.listNow.recordMeaning(this.plate(), meaning);
+  }
+
+  editMeaning(): void {
+    this.meaning.set(null);
   }
 
   publish(): void {
@@ -105,6 +142,7 @@ export class ListNowPromptComponent {
         price: price.toFixed(2),
         min: this.minPrice().toFixed(2),
         max: this.maxPrice().toFixed(2),
+        ...(this.meaning()?.text ? { meaning: this.meaning()!.text } : {}),
         ...this.listNow.voucherParams(this.voucher()),
       },
     });

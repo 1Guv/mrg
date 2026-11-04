@@ -49,6 +49,7 @@ import {runOnUserCreated} from "./users.js";
 import {
   runGetBuyerDemand,
   runGetResultVoucher,
+  runRecordPlateMeaning,
   runRecordSellIntent,
 } from "./list-now.js";
 
@@ -980,6 +981,15 @@ export const recordSellIntent = onCall(
   async (request) => {
     const {ip, caller} = callerOf(request);
     return runRecordSellIntent(request.data ?? {}, caller, ip);
+  }
+);
+
+/** "What does this plate mean?" on a revealed valuation. */
+export const recordPlateMeaning = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const {ip, caller} = callerOf(request);
+    return runRecordPlateMeaning(request.data ?? {}, caller, ip);
   }
 );
 

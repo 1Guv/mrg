@@ -3,6 +3,33 @@
     <p class="demand">🔥 <strong>{{ demand() }} buyers</strong> searched for plates like {{ plate() }} in the last 30 days</p>
   }
 
+  <div class="meaning">
+    @if (meaning(); as m) {
+      <p class="meaning-saved">
+        ✓ Thanks{{ m.text ? ' — "' + m.text + '" will be on your listing' : '' }}
+        <button type="button" class="meaning-edit" (click)="editMeaning()">Edit</button>
+      </p>
+    } @else {
+      <p class="meaning-heading">What does {{ plate() }} mean? <span class="optional">(optional)</span></p>
+      <div class="chips" role="radiogroup" [attr.aria-label]="'What ' + plate() + ' means'">
+        @for (c of meaningCategories; track c.value) {
+          <button type="button" class="chip" role="radio"
+            [class.selected]="meaningCategory() === c.value"
+            [attr.aria-checked]="meaningCategory() === c.value"
+            (click)="meaningCategory.set(c.value)">{{ c.label }}</button>
+        }
+      </div>
+      @if (meaningCategory()) {
+        <form class="meaning-form" (ngSubmit)="saveMeaning()">
+          <input class="meaning-input" name="meaningText" [(ngModel)]="meaningText" maxlength="80"
+            [placeholder]="meaningExample()" aria-label="What it means">
+          <button mat-flat-button type="submit" class="meaning-save">Save</button>
+        </form>
+        <p class="meaning-hint">Helps buyers see why this plate is special</p>
+      }
+    }
+  </div>
+
   @switch (answer()) {
     @case ('yes') {
       <p class="prompt-heading">Here's your listing, ready to go</p>

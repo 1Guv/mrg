@@ -39,6 +39,7 @@ exports.runGetBuyerDemand = runGetBuyerDemand;
 exports.queueUpdateForIntent = queueUpdateForIntent;
 exports.findSellIntent = findSellIntent;
 exports.runRecordSellIntent = runRecordSellIntent;
+exports.runRecordPlateMeaning = runRecordPlateMeaning;
 exports.runGetResultVoucher = runGetResultVoucher;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
@@ -216,6 +217,42 @@ async function runRecordSellIntent(data, caller, ip) {
         await Promise.all(entries.docs.map((d) => d.ref.update(update)));
     }
     console.log(`sell-intent: ${registration} ${answer} for ${(0, users_js_1.maskEmail)(email)}`);
+    return { recorded: true };
+}
+const MEANING_CATEGORIES = ["name", "word", "car", "business", "date", "other"];
+const MEANING_MAX_LENGTH = 80;
+/**
+ * Records what a plate means to its owner, asked under a revealed valuation.
+ * Last answer wins. The text also pre-fills their listing on the client.
+ * @param {Record<string, unknown>} data - registration, category, optional
+ *   text, and email when the caller isn't signed in.
+ * @param {Caller} caller - The signed-in user, if any.
+ * @param {string} ip - For rate limiting.
+ * @return {Promise<{recorded: boolean}>} Whether there was an email to
+ *   record it against.
+ */
+async function runRecordPlateMeaning(data, caller, ip) {
+    var _a, _b;
+    const registration = parseRegistration(data["registration"]);
+    const category = data["category"];
+    if (!MEANING_CATEGORIES.includes(category)) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid category");
+    }
+    const text = String((_a = data["text"]) !== null && _a !== void 0 ? _a : "").trim().slice(0, MEANING_MAX_LENGTH);
+    await limitByIp(ip, "plate-meaning-ip", 20);
+    const email = callerEmail(data, caller);
+    if (!email)
+        return { recorded: false };
+    await admin.firestore().collection("plate_meanings")
+        .doc(sellIntentId(email, registration))
+        .set({
+        email,
+        uid: (_b = caller.uid) !== null && _b !== void 0 ? _b : null,
+        registration,
+        category,
+        text,
+        answeredAt: admin.firestore.Timestamp.now(),
+    });
     return { recorded: true };
 }
 // ── Result-page voucher ──────────────────────────────────────────────────────
