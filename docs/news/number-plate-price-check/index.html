@@ -9,14 +9,19 @@
     }
   </script>
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XRSRVZ3GTC"></script>
+  <!-- Google tag (gtag.js). Not loaded on localhost, so local testing
+       doesn't count as real visitors; gtag() still exists and just queues. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-XRSRVZ3GTC');
+    if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+      var gaScript = document.createElement('script');
+      gaScript.async = true;
+      gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-XRSRVZ3GTC';
+      document.head.appendChild(gaScript);
+      gtag('js', new Date());
+      gtag('config', 'G-XRSRVZ3GTC');
+    }
   </script>
 
   <script async src="https://aromatic-caribou-889.convex.site/api/a/am_ZhhwKJ3ggWZzy-0U"></script>
@@ -113,9 +118,9 @@
 <p><a href="/">What's your plate worth? Get a free instant valuation</a></p>
 <h2>Related articles</h2>
 <ul>
+<li><a href="/news/numberplate-valuation/">What&#39;s Your Number Plate REALLY Worth? 💰</a></li>
 <li><a href="/news/how-to-value-number-plate-five-years-later/">Bought a Plate 5 Years Ago? How to Value It Now! 💰</a></li>
 <li><a href="/news/whats-my-plate-worth-instant/">What&#39;s My Plate Worth Instantly? Get Your FREE UK Valuation! 💰✨</a></li>
-<li><a href="/news/instant-car-price-number-plate-app/">Get Your Car&#39;s Value Instantly with a Number Plate App! 🚗</a></li>
 </ul>
 </main></app-root>
 <link rel="modulepreload" href="chunk-BFTN6H2K.js"><script src="polyfills-B6TNHZQ6.js" type="module"></script><script src="scripts-Z6VWI63P.js" defer></script><script src="main-4KDMEMWM.js" type="module"></script></body>

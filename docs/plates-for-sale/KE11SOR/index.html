@@ -9,14 +9,19 @@
     }
   </script>
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XRSRVZ3GTC"></script>
+  <!-- Google tag (gtag.js). Not loaded on localhost, so local testing
+       doesn't count as real visitors; gtag() still exists and just queues. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-XRSRVZ3GTC');
+    if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+      var gaScript = document.createElement('script');
+      gaScript.async = true;
+      gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-XRSRVZ3GTC';
+      document.head.appendChild(gaScript);
+      gtag('js', new Date());
+      gtag('config', 'G-XRSRVZ3GTC');
+    }
   </script>
 
   <script async src="https://aromatic-caribou-889.convex.site/api/a/am_ZhhwKJ3ggWZzy-0U"></script>

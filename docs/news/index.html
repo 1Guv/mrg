@@ -9,14 +9,19 @@
     }
   </script>
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XRSRVZ3GTC"></script>
+  <!-- Google tag (gtag.js). Not loaded on localhost, so local testing
+       doesn't count as real visitors; gtag() still exists and just queues. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-XRSRVZ3GTC');
+    if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+      var gaScript = document.createElement('script');
+      gaScript.async = true;
+      gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-XRSRVZ3GTC';
+      document.head.appendChild(gaScript);
+      gtag('js', new Date());
+      gtag('config', 'G-XRSRVZ3GTC');
+    }
   </script>
 
   <script async src="https://aromatic-caribou-889.convex.site/api/a/am_ZhhwKJ3ggWZzy-0U"></script>
@@ -73,6 +78,7 @@
 <nav><a href="/">Free valuation</a> · <a href="/plates-for-sale/">Plates for sale</a> · <a href="/news/">News</a> · <a href="/list-plate/">Sell your plate</a></nav>
 <h1>Number plate news and guides</h1>
 <ul>
+<li><a href="/news/numberplate-valuation/">What&#39;s Your Number Plate REALLY Worth? 💰</a> — 4 November 2026<br>Discover the true value of your UK number plate with MrValuations. Get a free valuation and explore our marketplace today! 🚗✨</li>
 <li><a href="/news/how-to-value-number-plate-five-years-later/">Bought a Plate 5 Years Ago? How to Value It Now! 💰</a> — 4 November 2026<br>Got a cherished number plate you bought years ago? Discover how to get an accurate, free valuation for your UK private plate at MrValuations.co.uk today!</li>
 <li><a href="/news/erling-haaland-number-plate-dreams/">Erling Haaland: What Number Plate Should the Goal Machine Drive? 🤖🚗</a> — 3 November 2026<br>Uncover hilarious and fitting personalised number plate ideas for Erling Haaland, from &#39;The Robot&#39; to his goal-scoring prowess!</li>
 <li><a href="/news/whats-my-plate-worth-instant/">What&#39;s My Plate Worth Instantly? Get Your FREE UK Valuation! 💰✨</a> — 3 November 2026<br>Discover your UK number plate&#39;s hidden value instantly with Mr Valuations. Get a free, accurate appraisal and see what your plate is really worth!</li>
