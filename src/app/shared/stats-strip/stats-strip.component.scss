@@ -1,0 +1,45 @@
+:host { display: block; }
+
+.stats-strip {
+  display: flex;
+  justify-content: center;
+  max-width: 480px;
+  margin: 16px auto 0;
+  padding: 12px 8px;
+  list-style: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+
+  li {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 8px;
+
+    & + li { border-left: 1px solid #e5e7eb; }
+  }
+}
+
+.stat-number {
+  font-family: 'Cabin', Arial, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.stats-line {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+
+  strong { color: #374151; }
+
+  .stat { white-space: nowrap; }
+}

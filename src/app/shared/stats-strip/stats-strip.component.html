@@ -1,0 +1,15 @@
+@if (stats(); as s) {
+  @if (compact()) {
+    <p class="stats-line">
+      <span class="stat"><strong>{{ s.platesForSale | number }}</strong> plates for sale</span> ·
+      <span class="stat"><strong>{{ s.platesValued | number }}</strong> valued</span> ·
+      <span class="stat"><strong>{{ s.members | number }}</strong> members</span>
+    </p>
+  } @else {
+    <ul class="stats-strip" aria-label="MR Valuations in numbers">
+      <li><span class="stat-number">{{ s.platesForSale | number }}</span><span class="stat-label">plates for sale</span></li>
+      <li><span class="stat-number">{{ s.platesValued | number }}</span><span class="stat-label">plates valued</span></li>
+      <li><span class="stat-number">{{ s.members | number }}</span><span class="stat-label">members</span></li>
+    </ul>
+  }
+}

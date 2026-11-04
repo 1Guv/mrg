@@ -9,11 +9,13 @@ import { ListNowBannerComponent } from '../../shared/list-now-banner/list-now-ba
 import { ModeToggleComponent, HomeMode } from '../../shared/mode-toggle/mode-toggle.component';
 import { PlatesPreviewComponent } from '../../shared/plates-preview/plates-preview.component';
 import { LatestArticleBannerComponent } from '../../shared/latest-article-banner/latest-article-banner.component';
+import { StatsStripComponent } from '../../shared/stats-strip/stats-strip.component';
 
 @Component({
     selector: 'app-main-section',
     standalone: true,
     imports: [
+        StatsStripComponent,
         RegPlateMainComponent,
         RegPlateValuationResultsComponent,
         CurrentPlateValuationComponent,

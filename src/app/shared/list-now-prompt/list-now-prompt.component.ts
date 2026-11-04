@@ -13,6 +13,7 @@ import {
 } from '../../services/list-now.service';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { ValuationGateService } from '../../services/valuation-gate.service';
+import { StatsStripComponent } from '../stats-strip/stats-strip.component';
 
 /**
  * Sits under a revealed valuation in place of a bare "List Now" button:
@@ -22,7 +23,7 @@ import { ValuationGateService } from '../../services/valuation-gate.service';
 @Component({
   selector: 'app-list-now-prompt',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, PlateListingCardComponent],
+  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, PlateListingCardComponent, StatsStripComponent],
   templateUrl: './list-now-prompt.component.html',
   styleUrl: './list-now-prompt.component.scss'
 })

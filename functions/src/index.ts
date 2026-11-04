@@ -52,6 +52,7 @@ import {
   runRecordPlateMeaning,
   runRecordSellIntent,
 } from "./list-now.js";
+import {runRefreshPublicStats} from "./public-stats.js";
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = defineSecret("NUDGE_UNSUBSCRIBE_SECRET");
@@ -810,6 +811,16 @@ export const onAutoValuationCreated = onDocumentCreated(
     }
     const savedAt = data["savedAt"] ?? admin.firestore.Timestamp.now();
     await runOnAutoValuationCreated(data, savedAt);
+  }
+);
+
+/** Daily — recounts the real numbers shown in the site's trust strip. */
+export const refreshPublicStats = onSchedule(
+  {schedule: "every day 03:00", timeZone: "Europe/London"},
+  async () => {
+    await withFailureAlert("refreshPublicStats", async () => {
+      await runRefreshPublicStats();
+    });
   }
 );
 

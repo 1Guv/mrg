@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -62,6 +62,7 @@ const enquiries_js_1 = require("./enquiries.js");
 const valuation_email_js_1 = require("./valuation-email.js");
 const users_js_1 = require("./users.js");
 const list_now_js_1 = require("./list-now.js");
+const public_stats_js_1 = require("./public-stats.js");
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const nudgeUnsubscribeSecret = (0, params_1.defineSecret)("NUDGE_UNSUBSCRIBE_SECRET");
 const socialSecretNames = [
@@ -664,6 +665,12 @@ exports.onAutoValuationCreated = (0, firestore_1.onDocumentCreated)("auto_valuat
     }
     const savedAt = (_b = data["savedAt"]) !== null && _b !== void 0 ? _b : admin.firestore.Timestamp.now();
     await (0, nudge_emails_js_1.runOnAutoValuationCreated)(data, savedAt);
+});
+/** Daily — recounts the real numbers shown in the site's trust strip. */
+exports.refreshPublicStats = (0, scheduler_1.onSchedule)({ schedule: "every day 03:00", timeZone: "Europe/London" }, async () => {
+    await (0, failure_alerts_1.withFailureAlert)("refreshPublicStats", async () => {
+        await (0, public_stats_js_1.runRefreshPublicStats)();
+    });
 });
 /** Runs every 15 minutes — sends due nudge emails and advances queue timers. */
 exports.scheduledNudgeEmails = (0, scheduler_1.onSchedule)({

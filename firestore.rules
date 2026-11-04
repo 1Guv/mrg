@@ -169,6 +169,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Trust-strip numbers — publicly readable; written only by refreshPublicStats
+    match /public_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Meta (used keywords, generation log) — Cloud Function only (admin SDK)
     match /meta/{docId} {
       allow read, write: if false;

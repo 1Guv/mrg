@@ -16,11 +16,13 @@ import { ConversionTrackingService } from '../../services/conversion-tracking.se
 import { PlateListingService } from '../../services/plate-listing.service';
 import { CHECKOUT_VALUE_STORAGE_KEY, NUDGE_VOUCHER_PERCENT_OFF } from '../../constants/listing-fee';
 import { AuthPromptDialogComponent, AuthPromptDialogData } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
+import { StatsStripComponent } from '../../shared/stats-strip/stats-strip.component';
 
 @Component({
   selector: 'app-list-plate',
   standalone: true,
   imports: [
+    StatsStripComponent,
     CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,

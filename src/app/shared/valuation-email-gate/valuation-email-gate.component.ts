@@ -14,6 +14,7 @@ import { ConversionTrackingService } from '../../services/conversion-tracking.se
 import { PlateListingService } from '../../services/plate-listing.service';
 import { ValuationGateService } from '../../services/valuation-gate.service';
 import { CheckInboxDialogComponent } from './check-inbox-dialog.component';
+import { StatsStripComponent } from '../stats-strip/stats-strip.component';
 
 /**
  * Shown under a valuation for visitors who are not signed in: the range is
@@ -25,6 +26,7 @@ import { CheckInboxDialogComponent } from './check-inbox-dialog.component';
   selector: 'app-valuation-email-gate',
   standalone: true,
   imports: [
+    StatsStripComponent,
     DecimalPipe,
     ReactiveFormsModule,
     MatButtonModule,
