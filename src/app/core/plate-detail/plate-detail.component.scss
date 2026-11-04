@@ -140,11 +140,8 @@
 }
 
 .valuation-cta {
-  margin: 1.75rem 0;
-  padding: 1.25rem;
-  border-radius: 16px;
-  background: #f2f8f3;
-  text-align: center;
+  display: block;
+  --plate-value-box-margin: 1.75rem 0;
 }
 
 .similar-plates {

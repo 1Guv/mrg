@@ -49,10 +49,7 @@
           <p>{{ info.vehicleRule }}</p>
         }
 
-        <div class="valuation-cta">
-          <p>Got a plate of your own? Find out what it's worth.</p>
-          <a mat-raised-button color="primary" routerLink="/">Get a free valuation</a>
-        </div>
+        <app-plate-value-box class="valuation-cta" source="plate_page" heading="Got a plate of your own? See what it's worth" />
 
         @if (similarListings$ | async; as similar) {
           @if (similar.length) {

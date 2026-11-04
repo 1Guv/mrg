@@ -10,6 +10,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { AuthService } from '../../services/auth.service';
 import { MessageSellerDialogComponent } from '../../shared/message-seller-dialog/message-seller-dialog.component';
+import { PlateValueBoxComponent } from '../../shared/plate-value-box/plate-value-box.component';
 import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 import { PlateListing } from '../../models/plate-listing.model';
 import { normalisePlate } from '../../utils/normalise-plate';
@@ -30,6 +31,7 @@ type ListingState =
   imports: [
     AsyncPipe, DatePipe, UpperCasePipe, RouterLink,
     MatButtonModule, MatIconModule, MatDialogModule, MatSnackBarModule,
+    PlateValueBoxComponent,
   ],
   templateUrl: './plate-detail.component.html',
   styleUrl: './plate-detail.component.scss',

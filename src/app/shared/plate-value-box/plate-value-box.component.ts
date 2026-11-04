@@ -5,8 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { detectPlateType } from '../../regex-plate-patterns/detect-plate-type';
 
 /**
- * "What's your plate worth?" reg box for article pages. Sends the visitor to
- * the homepage with the plate filled in, where the valuation starts at once.
+ * "What's your plate worth?" reg box for article and plate-for-sale pages.
+ * Sends the visitor to the homepage with the plate filled in, where the
+ * valuation starts at once.
  */
 @Component({
   selector: 'app-plate-value-box',
@@ -18,7 +19,9 @@ import { detectPlateType } from '../../regex-plate-patterns/detect-plate-type';
 export class PlateValueBoxComponent {
   private router = inject(Router);
 
-  @Input({ required: true }) articleSlug = '';
+  /** Where the box is, for tracking: article or plate_page. */
+  @Input() source = 'article';
+  @Input() articleSlug = '';
   @Input() heading = "What's your plate worth?";
 
   registration = '';
@@ -32,7 +35,11 @@ export class PlateValueBoxComponent {
     }
     this.error = '';
     this.router.navigate(['/'], {
-      queryParams: { plate: plate.registration, source: 'article', article: this.articleSlug }
+      queryParams: {
+        plate: plate.registration,
+        source: this.source,
+        ...(this.articleSlug ? { article: this.articleSlug } : {}),
+      }
     });
   }
 }
