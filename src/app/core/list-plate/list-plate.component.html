@@ -1,7 +1,7 @@
 <div class="container-fluid main-bg-c">
   <div class="list-plate-container">
     <h1 class="cabin-font-sketch text-center">List Your Plate</h1>
-    <p class="text-center text-muted mb-2">One-off £{{ plateListingService.listingFee }} listing fee — listed until sold.</p>
+    <p class="text-center text-muted mb-2">One-off £{{ plateListingService.listingFee }} listing fee — no commission, no markup, listed until sold.</p>
     <app-stats-strip class="mb-4" [compact]="true" />
 
     @if (voucherCode) {
@@ -34,10 +34,14 @@
           You can adjust the price above.
         </p>
       }
+      @if (feeShare; as share) {
+        <p class="valuation-hint text-muted">The £{{ plateListingService.listingFee }} fee is {{ share }} of your asking price.</p>
+      }
 
       <mat-form-field appearance="outline" class="full-field">
         <mat-label>Phone number</mat-label>
         <input matInput type="tel" formControlName="phone" placeholder="e.g. 07700 900000">
+        <mat-hint>Buyers who message you can also WhatsApp you on this number</mat-hint>
         <mat-error>Phone number is required</mat-error>
       </mat-form-field>
 

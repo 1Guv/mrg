@@ -14,6 +14,7 @@ import { StripeService } from '../../services/stripe.service';
 import { EmailLinkSignInService } from '../../services/email-link-sign-in.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { PlateListingService } from '../../services/plate-listing.service';
+import { feeShare } from '../../utils/fee-share';
 import { CHECKOUT_VALUE_STORAGE_KEY, NUDGE_VOUCHER_PERCENT_OFF } from '../../constants/listing-fee';
 import { AuthPromptDialogComponent, AuthPromptDialogData } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 import { StatsStripComponent } from '../../shared/stats-strip/stats-strip.component';
@@ -63,6 +64,11 @@ export class ListPlateComponent implements OnInit {
   voucherCode: string | null = null;
   readonly voucherPercentOff = NUDGE_VOUCHER_PERCENT_OFF;
 
+  /** "3%": the fee against the asking price as they type it. */
+  get feeShare(): string | null {
+    return feeShare(this.plateListingService.listingFee, Number(this.form.value.askingPrice));
+  }
+
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;
     const prefill: Record<string, string> = {};
@@ -104,8 +110,14 @@ export class ListPlateComponent implements OnInit {
         });
       } else {
         this.form.patchValue({ email: user.email ?? '' });
+        if (!this.form.value.initials) this.form.patchValue({ initials: this.initialsOf(user.displayName) });
       }
     });
+  }
+
+  private initialsOf(name: string | null | undefined): string {
+    const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
+    return words.map(w => w[0]).join('').slice(0, 3).toUpperCase();
   }
 
   async onSubmit(): Promise<void> {
