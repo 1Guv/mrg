@@ -13,17 +13,20 @@ import { PlateListing } from '../../models/plate-listing.model';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { Subject, Subscription, take } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ListNowBannerComponent } from '../../shared/list-now-banner/list-now-banner.component';
 import { PlateListingCardComponent } from '../../shared/plate-listing-card/plate-listing-card.component';
 import { TrackClickDirective } from '../../directives/track-click.directive';
 import { Firestore, addDoc, collection, serverTimestamp } from '@angular/fire/firestore';
 
+type GridItem = PlateListing | 'sell';
+const SELL_SLOT_INDEX = 3;
+
 @Component({
   selector: 'app-plates-for-sale',
   standalone: true,
-  imports: [MatIconModule, MatTabsModule, MatButtonModule, BenefitCardComponent, RecentlySoldComponent, ScrollingModule, MatFormFieldModule, MatInputModule, FormsModule, ListNowBannerComponent, TrackClickDirective, PlateListingCardComponent],
+  imports: [MatIconModule, MatTabsModule, MatButtonModule, BenefitCardComponent, RecentlySoldComponent, ScrollingModule, MatFormFieldModule, MatInputModule, FormsModule, ListNowBannerComponent, TrackClickDirective, PlateListingCardComponent, RouterLink],
   templateUrl: './plates-for-sale.component.html',
   styleUrl: './plates-for-sale.component.scss'
 })
@@ -56,9 +59,14 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
     return this.allListings.filter(p => p.isSold);
   }
 
-  get listingRows(): PlateListing[][] {
-    const items = this.filteredListings;
-    const rows: PlateListing[][] = [];
+  /**
+   * The Buy grid, two to a row, with a "Your plate could be here" card in the
+   * fourth slot when nobody is searching.
+   */
+  get listingRows(): GridItem[][] {
+    const items: GridItem[] = [...this.filteredListings];
+    if (!this.searchTerm.trim() && items.length >= SELL_SLOT_INDEX) items.splice(SELL_SLOT_INDEX, 0, 'sell');
+    const rows: GridItem[][] = [];
     for (let i = 0; i < items.length; i += 2) {
       rows.push(items.slice(i, i + 2));
     }
@@ -114,6 +122,8 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
     return index;
   }
 
+
+  readonly listingFee = this.plateListingService.listingFee;
 
   constructor() {
     this.plateListingService.getAll().subscribe(listings => {

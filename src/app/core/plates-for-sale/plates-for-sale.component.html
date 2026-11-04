@@ -69,8 +69,17 @@
                 } @else {
                     <cdk-virtual-scroll-viewport itemSize="420" minBufferPx="840" maxBufferPx="1260" class="listings-viewport">
                         <div *cdkVirtualFor="let row of listingRows; trackBy: trackRow; templateCacheSize: 0" class="listings-row">
-                            @for (listing of row; track listing.id) {
-                                <app-plate-listing-card [listing]="listing" />
+                            @for (listing of row; track listing === 'sell' ? 'sell' : listing.id) {
+                                @if (listing === 'sell') {
+                                    <div class="sell-slot">
+                                        <span class="sell-slot-plate">YOUR REG</span>
+                                        <p class="sell-slot-title">Your plate could be here</p>
+                                        <p class="sell-slot-text">Value it free, then list it for £{{ listingFee }} — no commission, listed until it sells.</p>
+                                        <a mat-raised-button class="sell-slot-btn" routerLink="/" appTrackClick="grid-sell-slot">Value my plate</a>
+                                    </div>
+                                } @else {
+                                    <app-plate-listing-card [listing]="listing" />
+                                }
                             }
                         </div>
                     </cdk-virtual-scroll-viewport>
