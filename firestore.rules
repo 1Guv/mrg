@@ -16,13 +16,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // "Would you sell?" answers — written by the recordSellIntent function; admin read only
-    match /plate_meanings/{docId} {
+    // "What does this plate mean?" answers (with emails) — written by the
+    // recordPlateMeaning function; admin read only. Not plate_meanings, which is public.
+    match /owner_plate_meanings/{docId} {
       allow read: if request.auth != null
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
       allow write: if false;
     }
 
+    // "Would you sell?" answers — written by the recordSellIntent function; admin read only
     match /sell_intents/{docId} {
       allow read: if request.auth != null
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));

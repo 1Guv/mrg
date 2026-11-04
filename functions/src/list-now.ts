@@ -236,7 +236,8 @@ const MEANING_MAX_LENGTH = 80;
 
 /**
  * Records what a plate means to its owner, asked under a revealed valuation.
- * Last answer wins. The text also pre-fills their listing on the client.
+ * Last answer wins. Kept apart from plate_meanings, which is public and
+ * feeds the plate pages. The text also pre-fills their listing on the client.
  * @param {Record<string, unknown>} data - registration, category, optional
  *   text, and email when the caller isn't signed in.
  * @param {Caller} caller - The signed-in user, if any.
@@ -260,7 +261,7 @@ export async function runRecordPlateMeaning(
   const email = callerEmail(data, caller);
   if (!email) return {recorded: false};
 
-  await admin.firestore().collection("plate_meanings")
+  await admin.firestore().collection("owner_plate_meanings")
     .doc(sellIntentId(email, registration))
     .set({
       email,
