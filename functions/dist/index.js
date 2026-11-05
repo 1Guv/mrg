@@ -632,18 +632,21 @@ exports.triggerArticleGeneration = (0, https_1.onRequest)({
         response.status(500).json({ error: msg });
     }
 });
-/** Daily SEO article generation: picks best GSC keyword, calls Gemini. */
+/**
+ * SEO article on Sun, Mon, Wed and Fri: picks best GSC keyword, calls Gemini.
+ * Shares the week with the celebrity article, so the site gets one a day.
+ */
 exports.generateDailyArticle = (0, scheduler_1.onSchedule)({
-    schedule: "0 8,14 * * *",
+    schedule: "0 8 * * 0,1,3,5",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [geminiApiKey],
 }, async () => {
     await (0, failure_alerts_1.withFailureAlert)("generateDailyArticle", () => (0, article_generator_js_1.runGenerateDailyArticle)(geminiApiKey.value()));
 });
-/** Nightly celebrity article: grounded Gemini search + real-time valuations. */
+/** Celebrity article on Tue, Thu and Sat: grounded search + valuations. */
 exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({
-    schedule: "0 21 * * *",
+    schedule: "0 21 * * 2,4,6",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
     secrets: [geminiApiKey],
