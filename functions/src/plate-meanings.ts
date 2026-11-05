@@ -109,14 +109,18 @@ export async function fillPlateMeanings(
     existing.docs.map((d) => [d.id, String(d.data().meanings ?? "")]));
 
   // New listings first, matching the order the site resolves duplicates in.
+  // Only the first listing of a plate counts: comparing a later duplicate
+  // with different meanings rewrote the description every run, both ways.
   const pending = new Map<string, PendingPlate>();
+  const seen = new Set<string>();
   for (const snap of listingSnaps) {
     for (const doc of snap.docs) {
       const {plateCharacters, meanings} = doc.data();
       if (!plateCharacters || !String(meanings ?? "").trim()) continue;
       const plate = normalisePlate(String(plateCharacters));
-      if (pending.has(plate) || describedFrom.has(plate) &&
-        describedFrom.get(plate) === String(meanings).trim()) continue;
+      if (seen.has(plate)) continue;
+      seen.add(plate);
+      if (describedFrom.get(plate) === String(meanings).trim()) continue;
       pending.set(plate, {
         plate,
         display: String(plateCharacters).toUpperCase(),

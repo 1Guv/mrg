@@ -123,15 +123,20 @@ async function fillPlateMeanings(apiKey, max) {
     ]);
     const describedFrom = new Map(existing.docs.map((d) => { var _a; return [d.id, String((_a = d.data().meanings) !== null && _a !== void 0 ? _a : "")]; }));
     // New listings first, matching the order the site resolves duplicates in.
+    // Only the first listing of a plate counts: comparing a later duplicate
+    // with different meanings rewrote the description every run, both ways.
     const pending = new Map();
+    const seen = new Set();
     for (const snap of listingSnaps) {
         for (const doc of snap.docs) {
             const { plateCharacters, meanings } = doc.data();
             if (!plateCharacters || !String(meanings !== null && meanings !== void 0 ? meanings : "").trim())
                 continue;
             const plate = normalisePlate(String(plateCharacters));
-            if (pending.has(plate) || describedFrom.has(plate) &&
-                describedFrom.get(plate) === String(meanings).trim())
+            if (seen.has(plate))
+                continue;
+            seen.add(plate);
+            if (describedFrom.get(plate) === String(meanings).trim())
                 continue;
             pending.set(plate, {
                 plate,
