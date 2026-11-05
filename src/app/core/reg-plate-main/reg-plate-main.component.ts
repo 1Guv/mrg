@@ -24,7 +24,6 @@ import { VALUATION_LOADING_MESSAGES } from '../../models/valuation-loading-messa
 import { MatDialog } from '@angular/material/dialog';
 import { LoadingValuationMessagesComponent } from '../dialogs/loading-valuation-messages/loading-valuation-messages.component';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TrackClickDirective } from '../../directives/track-click.directive';
 import { AuthService } from '../../services/auth.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { detectPlateType } from '../../regex-plate-patterns/detect-plate-type';
@@ -43,8 +42,7 @@ import { detectPlateType } from '../../regex-plate-patterns/detect-plate-type';
     MatIconModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    MatCardModule,
-    TrackClickDirective
+    MatCardModule
   ],
   templateUrl: './reg-plate-main.component.html',
   styleUrls: ['./reg-plate-main.component.scss']

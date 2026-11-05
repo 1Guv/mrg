@@ -1,9 +1,24 @@
 <div class="container-fluid main-bg-c">
   <section class="d-flex flex-column align-items-center min-vh-100 pt-3">
-    <h1 class="cabin-font-sketch mt-4 text-center responsive-heading">Fully <span class="highlight-text">Automated</span> Number Plate Valuations</h1>
-    <h6 class="pt-4 text-center margin-override text-center">A <span class="emphasis-text">smarter</span> way to value your plate — <span class="emphasis-text">no waiting, no hassle</span>.</h6>
+    <h1 class="cabin-font-sketch mt-3 mt-md-4 text-center responsive-heading">Fully <span class="highlight-text">Automated</span> Number Plate Valuations</h1>
+    <h6 class="text-center tagline">A <span class="emphasis-text">smarter</span> way to value your plate<br><span class="promise">No
+      <span class="promise-words" aria-hidden="true"><span>waiting</span><span>hassle</span><span>call backs</span><span>cost</span></span>
+      <span class="visually-hidden">waiting, no hassle, no call backs, no cost</span>
+    </span></h6>
 
-    <app-mode-toggle [mode]="mode()" (modeChange)="mode.set($event)" />
+    <app-mode-toggle class="mb-3" [mode]="mode()" (modeChange)="mode.set($event)" />
+
+    @if (mode() === 'valuations') {
+      <reg-plate-main class="hero-card"></reg-plate-main>
+      <a mat-stroked-button routerLink="/plates-for-sale" class="plates-for-sale-btn" appTrackClick="plates-for-sale-btn">Plates for sale</a>
+      <app-stats-strip class="w-100 px-3" />
+      <app-current-plate-valuation class="w-100"></app-current-plate-valuation>
+      <app-prefix-plate-valuation class="w-100"></app-prefix-plate-valuation>
+      <app-suffix-plate-valuation class="w-100"></app-suffix-plate-valuation>
+      <reg-plate-valuation-results class="w-100"></reg-plate-valuation-results>
+    } @else {
+      <app-plates-preview class="w-100" />
+    }
 
     <app-latest-article-banner />
 
@@ -43,17 +58,6 @@
 
       </div>
     </div>
-
-    @if (mode() === 'valuations') {
-      <reg-plate-main class="w-100"></reg-plate-main>
-      <app-stats-strip class="w-100 px-3" />
-      <app-current-plate-valuation class="w-100"></app-current-plate-valuation>
-      <app-prefix-plate-valuation class="w-100"></app-prefix-plate-valuation>
-      <app-suffix-plate-valuation class="w-100"></app-suffix-plate-valuation>
-      <reg-plate-valuation-results class="w-100"></reg-plate-valuation-results>
-    } @else {
-      <app-plates-preview class="w-100" />
-    }
 
     <app-list-now-banner class="w-100 mt-3"></app-list-now-banner>
   </section>

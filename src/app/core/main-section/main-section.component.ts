@@ -10,6 +10,9 @@ import { ModeToggleComponent, HomeMode } from '../../shared/mode-toggle/mode-tog
 import { PlatesPreviewComponent } from '../../shared/plates-preview/plates-preview.component';
 import { LatestArticleBannerComponent } from '../../shared/latest-article-banner/latest-article-banner.component';
 import { StatsStripComponent } from '../../shared/stats-strip/stats-strip.component';
+import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { TrackClickDirective } from '../../directives/track-click.directive';
 
 @Component({
     selector: 'app-main-section',
@@ -25,6 +28,9 @@ import { StatsStripComponent } from '../../shared/stats-strip/stats-strip.compon
         ModeToggleComponent,
         PlatesPreviewComponent,
         LatestArticleBannerComponent,
+        RouterLink,
+        MatButtonModule,
+        TrackClickDirective,
     ],
     templateUrl: './main-section.component.html',
     styleUrl: './main-section.component.scss'
