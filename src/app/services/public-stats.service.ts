@@ -10,7 +10,7 @@ export interface PublicStats {
 }
 
 /**
- * The real numbers behind the trust strip, recounted daily by the
+ * The real numbers behind the trust strip, recounted hourly by the
  * refreshPublicStats function. Null until loaded, or if they can't be read.
  */
 @Injectable({ providedIn: 'root' })

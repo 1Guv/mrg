@@ -666,8 +666,8 @@ exports.onAutoValuationCreated = (0, firestore_1.onDocumentCreated)("auto_valuat
     const savedAt = (_b = data["savedAt"]) !== null && _b !== void 0 ? _b : admin.firestore.Timestamp.now();
     await (0, nudge_emails_js_1.runOnAutoValuationCreated)(data, savedAt);
 });
-/** Daily — recounts the real numbers shown in the site's trust strip. */
-exports.refreshPublicStats = (0, scheduler_1.onSchedule)({ schedule: "every day 03:00", timeZone: "Europe/London" }, async () => {
+/** Hourly — recounts the real numbers shown in the site's trust strip. */
+exports.refreshPublicStats = (0, scheduler_1.onSchedule)({ schedule: "every 60 minutes", timeZone: "Europe/London" }, async () => {
     await (0, failure_alerts_1.withFailureAlert)("refreshPublicStats", async () => {
         await (0, public_stats_js_1.runRefreshPublicStats)();
     });

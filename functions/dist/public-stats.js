@@ -37,7 +37,7 @@ exports.runRefreshPublicStats = runRefreshPublicStats;
 const admin = __importStar(require("firebase-admin"));
 /**
  * The real numbers shown in the trust strip on the site: plates for sale,
- * plates valued and members. Counted once a day into public_stats/summary,
+ * plates valued and members. Counted every hour into public_stats/summary,
  * which anyone can read, so pages never count collections themselves.
  */
 const LISTING_COLLECTIONS = ["plate-listings-new", "plate-listings"];

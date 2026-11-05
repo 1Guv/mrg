@@ -814,9 +814,9 @@ export const onAutoValuationCreated = onDocumentCreated(
   }
 );
 
-/** Daily — recounts the real numbers shown in the site's trust strip. */
+/** Hourly — recounts the real numbers shown in the site's trust strip. */
 export const refreshPublicStats = onSchedule(
-  {schedule: "every day 03:00", timeZone: "Europe/London"},
+  {schedule: "every 60 minutes", timeZone: "Europe/London"},
   async () => {
     await withFailureAlert("refreshPublicStats", async () => {
       await runRefreshPublicStats();
