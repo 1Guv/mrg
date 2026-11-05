@@ -682,11 +682,11 @@ exports.scheduledNudgeEmails = (0, scheduler_1.onSchedule)({
     await (0, failure_alerts_1.withFailureAlert)("scheduledNudgeEmails", () => (0, nudge_emails_js_1.runScheduledNudgeEmails)(nudgeUnsubscribeSecret.value(), stripeSecretKey.value()));
 });
 /**
- * Hourly — writes AI descriptions for plates for sale that have none, up to
- * 300 a run, so new listings and edited meanings are covered within the hour.
+ * Daily — writes AI descriptions for plates for sale that have none, up to
+ * 300 a run, so new listings and edited meanings are covered within a day.
  */
 exports.scheduledPlateMeanings = (0, scheduler_1.onSchedule)({
-    schedule: "every 60 minutes",
+    schedule: "every day 03:00",
     timeZone: "Europe/London",
     timeoutSeconds: 540,
     secrets: [geminiApiKey],

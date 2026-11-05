@@ -841,12 +841,12 @@ export const scheduledNudgeEmails = onSchedule(
 );
 
 /**
- * Hourly — writes AI descriptions for plates for sale that have none, up to
- * 300 a run, so new listings and edited meanings are covered within the hour.
+ * Daily — writes AI descriptions for plates for sale that have none, up to
+ * 300 a run, so new listings and edited meanings are covered within a day.
  */
 export const scheduledPlateMeanings = onSchedule(
   {
-    schedule: "every 60 minutes",
+    schedule: "every day 03:00",
     timeZone: "Europe/London",
     timeoutSeconds: 540,
     secrets: [geminiApiKey],
