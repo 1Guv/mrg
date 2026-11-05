@@ -210,58 +210,90 @@ function malformed(
 
 // ── Gemini call ──────────────────────────────────────────────────────────────
 
+// ── Shared article rules ─────────────────────────────────────────────────────
+
+/* eslint-disable max-len */
 /**
- * Call Gemini 2.5 Flash to generate a full SEO article for the given keyword.
- * @param {string} geminiApiKey - Gemini API key.
- * @param {string} keyword - Target keyword.
- * @return {Promise<GeminiArticlePayload>} Parsed article payload from Gemini.
+ * Writing rules every article prompt shares. Facts must come from the
+ * search results so nothing is made up, and Gemini is shown the titles
+ * already published so it doesn't repeat them.
+ * @param {string[]} existingTitles - Titles of published articles.
+ * @return {string} Prompt section listing the rules.
  */
-async function callGeminiOnce(
-  geminiApiKey: string,
-  keyword: string
-): Promise<GeminiArticlePayload> {
-  /* eslint-disable max-len */
-  const prompt = `You are an expert SEO content writer for the UK number plate market. Write a short, punchy, visually rich SEO blog article targeting the keyword: "${keyword}".
-
-The article is for mrvaluations.co.uk — free number plate valuations and a marketplace to list plates for sale.
-
-Requirements:
-- Tone: fun, helpful, authoritative — aimed at UK car owners
-- Maximum 300 words of body content (not counting HTML markup or attributes)
-- Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
+function articleRules(existingTitles: string[]): string {
+  return `Requirements:
+- Write in UK English for UK car owners: helpful, confident and plain-spoken
+- 600–900 words of body content (not counting HTML markup), organised under clear <h2> headings
+- Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc. No images and no inline styles
+- Only state facts, prices, dates and statistics you found in the search results. If you can't confirm something, leave it out
+- Give the reader something useful: practical tips, real examples, or what the news means for plate owners
+- No emojis in the body. At most one emoji, in the title
 - When giving number plate examples, ONLY use realistic UK plate formats:
   - Current (2001–present): two letters, two digits, three letters — e.g. AB12 CDE
   - Prefix (1983–2001): one letter, one to three digits, three letters — e.g. A123 BCD
   - Suffix (1963–1983): three letters, one to three digits, one letter — e.g. ABC 123D
   - Dateless: any combination of 1–4 digits and 1–3 letters — e.g. 1 AB, 123 ABC
   - Never invent formats that don't match one of the above
-- Sprinkle relevant emojis naturally into headings and body text (e.g. 🚗 🔢 💰 ✨ 🏆)
-- Use emoji as inline icons where appropriate (e.g. ✅ for list items, 👉 for CTAs)
-- Include 1–2 relevant inline images using picsum.photos:
-  <img src="https://picsum.photos/seed/{topic-word}/800/400" alt="{descriptive alt}" style="width:100%;border-radius:12px;margin:24px 0">
-  — pick seed words related to the article topic (e.g. "car", "plates", "road", "luxury", "racing")
-- Include at least 2 internal CTAs woven naturally into the content:
+- Include 2 internal links woven naturally into the content:
   1. One linking to / (e.g. <a href="/">get a free valuation</a>)
   2. One linking to /list-plate (e.g. <a href="/list-plate">list your plate for sale</a>)
-- At the very end of the article, include an "expert author" callout using this exact HTML structure (fill in the placeholders):
-  <div style="display:flex;align-items:center;gap:16px;padding:20px;background:#f9fafb;border-radius:12px;margin-top:40px;border:1px solid #e5e7eb">
-    <img src="https://images.unsplash.com/photo-{PHOTO_ID}?w=120&h=120&fit=crop&crop=face" alt="{Name}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #e5e7eb">
-    <div>
-      <p style="font-weight:700;margin:0 0 2px;font-size:15px">{Full Name}</p>
-      <p style="color:#6b7280;margin:0;font-size:13px">{Fancy Job Title}</p>
-    </div>
-  </div>
-  — For PHOTO_ID, pick ONE of these real Unsplash photo IDs of people with sunglasses (choose randomly, male or female):
-    Male options: 1506794778202-cad84cf45f1d, 1507003211169-0a1dd7228f2d, 1500648767791-00dcc994a43e
-    Female options: 1529626455594-4ff0802cfb7e, 1488426862026-3ee34a7d66df, 1531746020798-e6953c6e8e04
-  — Invent a glamorous-sounding full name (e.g. "Sebastian Hartley-Cross", "Camille Dubois-Laurent")
-  — Invent a very fancy made-up job title (e.g. "Chief Plate Intelligence Officer", "Head of Automotive Prestige Strategy", "Director of Vehicular Identity")
+- Do not add an author name, byline or sign-off — the site adds its own
 - The content field must be a complete self-contained HTML article wrapped in <article> tags
+- These titles are already published. Pick a different angle so the article is not a repeat of any of them:
+${existingTitles.map((t) => `  - ${t}`).join("\n")}`;
+}
+/* eslint-enable max-len */
+
+/** Honest byline added to every article in place of an invented author. */
+const TEAM_BYLINE =
+  "<p style=\"margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;" +
+  "color:#6b7280;font-size:13px\">By the Mr Valuations team · " +
+  "researched with AI and Google Search</p>";
+
+/**
+ * Append the team byline inside the closing </article> tag.
+ * @param {string} html - Article HTML wrapped in <article> tags.
+ * @return {string} The HTML with the byline added.
+ */
+function withByline(html: string): string {
+  return /<\/article>\s*$/i.test(html) ?
+    html.replace(/<\/article>\s*$/i, `${TEAM_BYLINE}</article>`) :
+    `${html}${TEAM_BYLINE}`;
+}
+
+/**
+ * Titles of every published article, for the prompts' do-not-repeat list.
+ * @return {Promise<string[]>} The titles.
+ */
+async function publishedTitles(): Promise<string[]> {
+  const snap = await admin.firestore().collection("articles")
+    .select("title").get();
+  return snap.docs.map((d) => String(d.data().title ?? "")).filter(Boolean);
+}
+
+/**
+ * Call Gemini 2.5 Flash to generate a full SEO article for the given keyword.
+ * @param {string} geminiApiKey - Gemini API key.
+ * @param {string} keyword - Target keyword.
+ * @param {string[]} existingTitles - Titles already published.
+ * @return {Promise<GeminiArticlePayload>} Parsed article payload from Gemini.
+ */
+async function callGeminiOnce(
+  geminiApiKey: string,
+  keyword: string,
+  existingTitles: string[]
+): Promise<GeminiArticlePayload> {
+  /* eslint-disable max-len */
+  const prompt = `Search the web for up-to-date, accurate information about: "${keyword}".
+
+Then write an SEO blog article targeting that keyword for mrvaluations.co.uk — free number plate valuations and a marketplace to list plates for sale. Answer what someone searching "${keyword}" actually wants to know.
+
+${articleRules(existingTitles)}
 
 Respond ONLY with valid JSON in this exact shape (no markdown fences):
 {
   "slug": "url-friendly-slug-matching-keyword",
-  "title": "Engaging Article Title with an emoji",
+  "title": "Clear, specific article title",
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "Compelling meta description under 155 chars",
   "category": "valuations or plates or cars",
@@ -279,7 +311,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
       url,
       {
         contents: [{parts: [{text: prompt}]}],
-        generationConfig: {responseMimeType: "application/json"},
+        tools: [{google_search: {}}],
       },
       {headers: {"x-goog-api-key": geminiApiKey}, timeout: 240000}
     );
@@ -298,7 +330,11 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   }
 
   const candidate = response.data?.candidates?.[0];
-  let rawText = candidate?.content?.parts?.[0]?.text;
+  // With grounding enabled, text may appear in any part
+  const kParts: Array<{text?: string}> = candidate?.content?.parts ?? [];
+  let rawText = kParts.find(
+    (p) => typeof p.text === "string" && p.text.trim() !== ""
+  )?.text;
   if (typeof rawText !== "string" || rawText.trim() === "") {
     throw new MalformedGeminiResponse(
       "article-generator: Gemini returned no usable text. " +
@@ -349,7 +385,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
 
 const GROUNDED_TOPICS = [
   {
-    search: "latest UK private number plate auction results record prices 2025",
+    search: "latest UK private number plate auction results record prices",
     category: "plates" as ArticleCategory,
   },
   {
@@ -358,7 +394,7 @@ const GROUNDED_TOPICS = [
     category: "valuations" as ArticleCategory,
   },
   {
-    search: "latest UK car news new model launches registrations 2025",
+    search: "latest UK car news new model launches registrations",
     category: "cars" as ArticleCategory,
   },
 ];
@@ -368,58 +404,30 @@ const GROUNDED_TOPICS = [
  * on one of the rotating fallback topics.
  * @param {string} geminiApiKey - Gemini API key.
  * @param {number} topicIndex - Index into GROUNDED_TOPICS (cycles 0→1→2→0).
+ * @param {string[]} existingTitles - Titles already published.
  * @return {Promise<GeminiArticlePayload>} Parsed article payload.
  */
 async function callGeminiGroundedOnce(
   geminiApiKey: string,
-  topicIndex: number
+  topicIndex: number,
+  existingTitles: string[]
 ): Promise<GeminiArticlePayload> {
   const idx = topicIndex % GROUNDED_TOPICS.length;
-  const {search, category} = GROUNDED_TOPICS[idx];
+  const {category} = GROUNDED_TOPICS[idx];
+  const search = `${GROUNDED_TOPICS[idx].search} ${new Date().getFullYear()}`;
 
   /* eslint-disable max-len */
   const prompt = `Search the web for the most recent and interesting news about: "${search}".
 
-Write a short, punchy, visually rich news blog article about what you find for mrvaluations.co.uk — a UK site offering free number plate valuations and a marketplace to list plates for sale.
+Write a news blog article about what you find for mrvaluations.co.uk — a UK site offering free number plate valuations and a marketplace to list plates for sale.
 
-Requirements:
-- Tone: fun, helpful, authoritative — aimed at UK car owners
-- Maximum 300 words of body content (not counting HTML markup or attributes)
-- Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
-- When giving number plate examples, ONLY use realistic UK plate formats:
-  - Current (2001–present): two letters, two digits, three letters — e.g. AB12 CDE
-  - Prefix (1983–2001): one letter, one to three digits, three letters — e.g. A123 BCD
-  - Suffix (1963–1983): three letters, one to three digits, one letter — e.g. ABC 123D
-  - Dateless: any combination of 1–4 digits and 1–3 letters — e.g. 1 AB, 123 ABC
-  - Never invent formats that don't match one of the above
-- Sprinkle relevant emojis naturally into headings and body text (e.g. 🚗 🔢 💰 ✨ 🏆)
-- Use emoji as inline icons where appropriate (e.g. ✅ for list items, 👉 for CTAs)
-- Include 1–2 relevant inline images using picsum.photos:
-  <img src="https://picsum.photos/seed/{topic-word}/800/400" alt="{descriptive alt}" style="width:100%;border-radius:12px;margin:24px 0">
-  — pick seed words related to the article topic (e.g. "car", "plates", "road", "luxury", "racing")
-- Include at least 2 internal CTAs woven naturally into the content:
-  1. One linking to / (e.g. <a href="/">get a free valuation</a>)
-  2. One linking to /list-plate (e.g. <a href="/list-plate">list your plate for sale</a>)
-- At the very end of the article, include an "expert author" callout using this exact HTML structure:
-  <div style="display:flex;align-items:center;gap:16px;padding:20px;background:#f9fafb;border-radius:12px;margin-top:40px;border:1px solid #e5e7eb">
-    <img src="https://images.unsplash.com/photo-{PHOTO_ID}?w=120&h=120&fit=crop&crop=face" alt="{Name}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #e5e7eb">
-    <div>
-      <p style="font-weight:700;margin:0 0 2px;font-size:15px">{Full Name}</p>
-      <p style="color:#6b7280;margin:0;font-size:13px">{Fancy Job Title}</p>
-    </div>
-  </div>
-  — For PHOTO_ID, pick ONE of these real Unsplash photo IDs of people with sunglasses (choose randomly, male or female):
-    Male options: 1506794778202-cad84cf45f1d, 1507003211169-0a1dd7228f2d, 1500648767791-00dcc994a43e
-    Female options: 1529626455594-4ff0802cfb7e, 1488426862026-3ee34a7d66df, 1531746020798-e6953c6e8e04
-  — Invent a glamorous-sounding full name (e.g. "Sebastian Hartley-Cross", "Camille Dubois-Laurent")
-  — Invent a very fancy made-up job title (e.g. "Chief Plate Intelligence Officer", "Head of Automotive Prestige Strategy")
+${articleRules(existingTitles)}
 - The category for this article is: "${category}"
-- The content field must be a complete self-contained HTML article wrapped in <article> tags
 
 Respond ONLY with valid JSON in this exact shape (no markdown fences):
 {
   "slug": "url-friendly-slug-based-on-topic",
-  "title": "Engaging News Article Title with an emoji",
+  "title": "Clear, specific news title",
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "Compelling meta description under 155 chars",
   "category": "${category}",
@@ -494,53 +502,34 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
  * Call Gemini 2.5 Flash with Google Search grounding to find a trending
  * celebrity and write a fun personalised-plate article about them.
  * @param {string} geminiApiKey - Gemini API key.
+ * @param {string[]} existingTitles - Titles already published.
  * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity article payload.
  */
 async function callGeminiCelebrityOnce(
-  geminiApiKey: string
+  geminiApiKey: string,
+  existingTitles: string[]
 ): Promise<GeminiCelebrityPayload> {
   /* eslint-disable max-len */
   const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well.
 
 Write a fun, witty, light-hearted blog article for mrvaluations.co.uk about what personalised UK number plate that celebrity should have. The site offers free number plate valuations and a marketplace to list plates for sale.
 
-Tone: like a celebrity gossip column meets car culture — playful, tongue-in-cheek, engaging.
+Tone: like a celebrity gossip column meets car culture — playful and engaging, but every fact about the celebrity must come from the search results.
 
-Requirements:
-- Maximum 300 words of body content (not counting HTML markup or attributes)
-- Use proper HTML tags: <h2>, <p>, <ul>, <li>, <strong> etc.
-- Sprinkle relevant emojis throughout (⭐ 🚗 💰 🏆 📸 🎬 ⚽)
-- Mention what cars the celebrity is known for driving (if known), then pivot to plates
+${articleRules(existingTitles)}
+- Mention what cars the celebrity is known for driving (only if the search results say so), then pivot to plates
 - Suggest exactly 4 personalised plate ideas for the celebrity — one in each UK format:
   - Current (2001–present): two letters + two digits + three letters — e.g. DB07 ECK (use initials + year + name-related letters)
   - Prefix (1983–2001): one letter + 1–3 digits + three letters — e.g. D1 VID or B3CKS
   - Suffix (1963–1983): three letters + 1–3 digits + one letter — e.g. DAV 1D or BEK 5S
   - Dateless: 1–4 digits + 1–3 letters OR 1–3 letters + 1–4 digits — e.g. DB 1 or 1 DB
 - For each plate explain the connection to their name, nickname, or something they are famous for
-- Include a "Could you own it?" note for each plate — comment on rarity and roughly what it might fetch at auction
-- Include at least 2 internal CTAs:
-  1. One linking to / (e.g. <a href="/">get a free valuation</a>) — use naturally in context
-  2. One linking to /list-plate (e.g. <a href="/list-plate">list your plate for sale</a>)
-- Include 1 inline image using picsum.photos:
-  <img src="https://picsum.photos/seed/{celebrity-related-word}/800/400" alt="{alt}" style="width:100%;border-radius:12px;margin:24px 0">
-- At the very end include the expert author callout:
-  <div style="display:flex;align-items:center;gap:16px;padding:20px;background:#f9fafb;border-radius:12px;margin-top:40px;border:1px solid #e5e7eb">
-    <img src="https://images.unsplash.com/photo-{PHOTO_ID}?w=120&h=120&fit=crop&crop=face" alt="{Name}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;border:3px solid #e5e7eb">
-    <div>
-      <p style="font-weight:700;margin:0 0 2px;font-size:15px">{Full Name}</p>
-      <p style="color:#6b7280;margin:0;font-size:13px">{Fancy Job Title}</p>
-    </div>
-  </div>
-  Male photo IDs: 1506794778202-cad84cf45f1d, 1507003211169-0a1dd7228f2d, 1500648767791-00dcc994a43e
-  Female photo IDs: 1529626455594-4ff0802cfb7e, 1488426862026-3ee34a7d66df, 1531746020798-e6953c6e8e04
-  Invent a glamorous full name and fancy job title.
-- The content field must be a complete self-contained HTML article wrapped in <article> tags
-- DO NOT include plate valuations in the content — a valuation section will be injected automatically
+- DO NOT include plate prices or valuations in the content — a section with real valuations will be added automatically
 
 Respond ONLY with valid JSON (no markdown fences):
 {
   "slug": "url-friendly-slug-celebrity-name-number-plate",
-  "title": "Fun article title with celebrity name and an emoji",
+  "title": "Fun article title with the celebrity's name",
   "metaTitle": "SEO title under 60 chars",
   "metaDescription": "Compelling meta description under 155 chars",
   "celebrity": "Full Celebrity Name",
@@ -686,7 +675,8 @@ export async function runGenerateCelebrityArticle(
   const db = admin.firestore();
 
   console.log("article-generator (celebrity): calling Gemini...");
-  const payload = await callGeminiCelebrity(geminiApiKey);
+  const payload = await callGeminiCelebrity(
+    geminiApiKey, await publishedTitles());
   console.log(
     `article-generator (celebrity): celebrity = "${payload.celebrity}", ` +
     `plates = ${JSON.stringify(payload.suggestedPlates)}`
@@ -694,10 +684,10 @@ export async function runGenerateCelebrityArticle(
 
   // Inject valuation section before the closing </article> tag
   const valuationHtml = buildValuationSection(payload.suggestedPlates);
-  const content = payload.content.replace(
+  const content = withByline(payload.content.replace(
     /<\/article>\s*$/i,
     `${valuationHtml}</article>`
-  );
+  ));
 
   const readTimeMinutes = calcReadTime(content);
 
@@ -740,41 +730,49 @@ function calcReadTime(html: string): number {
  * callGemini with retry on an unusable response.
  * @param {string} geminiApiKey - Gemini API key.
  * @param {string} keyword - Target keyword.
+ * @param {string[]} existingTitles - Titles already published.
  * @return {Promise<GeminiArticlePayload>} Parsed article payload.
  */
 function callGemini(
   geminiApiKey: string,
-  keyword: string
+  keyword: string,
+  existingTitles: string[]
 ): Promise<GeminiArticlePayload> {
   return withGeminiRetry(
-    "callGemini", () => callGeminiOnce(geminiApiKey, keyword));
+    "callGemini",
+    () => callGeminiOnce(geminiApiKey, keyword, existingTitles));
 }
 
 /**
  * callGeminiGrounded with retry on an unusable response.
  * @param {string} geminiApiKey - Gemini API key.
  * @param {number} topicIndex - Index into GROUNDED_TOPICS.
+ * @param {string[]} existingTitles - Titles already published.
  * @return {Promise<GeminiArticlePayload>} Parsed article payload.
  */
 function callGeminiGrounded(
   geminiApiKey: string,
-  topicIndex: number
+  topicIndex: number,
+  existingTitles: string[]
 ): Promise<GeminiArticlePayload> {
   return withGeminiRetry(
     "callGeminiGrounded",
-    () => callGeminiGroundedOnce(geminiApiKey, topicIndex));
+    () => callGeminiGroundedOnce(geminiApiKey, topicIndex, existingTitles));
 }
 
 /**
  * callGeminiCelebrity with retry on an unusable response.
  * @param {string} geminiApiKey - Gemini API key.
+ * @param {string[]} existingTitles - Titles already published.
  * @return {Promise<GeminiCelebrityPayload>} Parsed celebrity payload.
  */
 function callGeminiCelebrity(
-  geminiApiKey: string
+  geminiApiKey: string,
+  existingTitles: string[]
 ): Promise<GeminiCelebrityPayload> {
   return withGeminiRetry(
-    "callGeminiCelebrity", () => callGeminiCelebrityOnce(geminiApiKey));
+    "callGeminiCelebrity",
+    () => callGeminiCelebrityOnce(geminiApiKey, existingTitles));
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
@@ -810,6 +808,7 @@ export async function runGenerateDailyArticle(
   const filtered = candidates.filter((kw) => !usedSet.has(kw));
 
   // 5. Pick keyword or fall back to grounded news search
+  const existingTitles = await publishedTitles();
   let targetKeyword: string | null = null;
   let payload: GeminiArticlePayload;
 
@@ -819,7 +818,7 @@ export async function runGenerateDailyArticle(
 
     // 6a. GSC keyword path — call Gemini normally
     console.log("article-generator: calling Gemini (keyword)...");
-    payload = await callGemini(geminiApiKey, targetKeyword);
+    payload = await callGemini(geminiApiKey, targetKeyword, existingTitles);
   } else {
     // 6b. No unused keywords — use Gemini with Google Search grounding
     console.log(
@@ -835,7 +834,8 @@ export async function runGenerateDailyArticle(
     console.log(
       `article-generator: grounded topic index ${topicIndex}`
     );
-    payload = await callGeminiGrounded(geminiApiKey, topicIndex);
+    payload = await callGeminiGrounded(
+      geminiApiKey, topicIndex, existingTitles);
 
     // Advance the topic index so next fallback uses a different topic
     await db.collection("meta").doc("groundedTopicIndex").set(
@@ -847,8 +847,9 @@ export async function runGenerateDailyArticle(
     `article-generator: Gemini response received — title: "${payload.title}"`
   );
 
-  // 7. Calculate read time
-  const readTimeMinutes = calcReadTime(payload.content);
+  // 7. Add the byline and calculate read time
+  const content = withByline(payload.content);
+  const readTimeMinutes = calcReadTime(content);
 
   // 8. Write article to Firestore
   const articleData: ArticleData = {
@@ -858,7 +859,7 @@ export async function runGenerateDailyArticle(
     metaDescription: payload.metaDescription,
     category: payload.category,
     targetKeyword: targetKeyword ?? `grounded:${payload.category}`,
-    content: payload.content,
+    content,
     readTimeMinutes,
     publishedAt: admin.firestore.Timestamp.now(),
   };
