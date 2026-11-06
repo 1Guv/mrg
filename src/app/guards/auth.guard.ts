@@ -11,7 +11,8 @@ export const authGuard: CanActivateFn = (route, state) => {
   return authService.currentUser$.pipe(
     map((user) => {
       if (user) return true;
-      router.navigate(['/login']);
+      // Back to the same page after login, e.g. Messages from an enquiry email
+      router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
       return false;
     })
   );
