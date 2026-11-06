@@ -487,6 +487,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://mrvaluations.co.uk/news/your-free-guide-to-uk-number-plate-value/</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://mrvaluations.co.uk/news/big786-cherished-number-plate-value/</loc>
     <lastmod>2026-10-31</lastmod>
     <changefreq>monthly</changefreq>
@@ -1101,6 +1107,12 @@
   <url>
     <loc>https://mrvaluations.co.uk/news/value-my-private-plate-instantly/</loc>
     <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mrvaluations.co.uk/news/rolling-in-the-deep-on-the-road-adele-s-dream-number-plates/</loc>
+    <lastmod>2026-11-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -8531,6 +8543,11 @@
   </url>
   <url>
     <loc>https://mrvaluations.co.uk/plates-for-sale/M16HBO/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrvaluations.co.uk/plates-for-sale/G1JVS/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
