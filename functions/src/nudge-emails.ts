@@ -1,9 +1,7 @@
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import * as dns from "dns";
-import Stripe from "stripe";
 import {LISTING_FEE_GBP, MINIMUM_PLATE_VALUE_GBP} from "./constants.js";
-import {findResultVoucher, mintNudgeVoucher} from "./vouchers.js";
 import {findSellIntent, queueUpdateForIntent} from "./list-now.js";
 import {escapeHtml} from "./enquiries.js";
 
@@ -83,9 +81,6 @@ export function formatPrice(amount: number): string {
  * @param {number} minPrice Minimum valuation price.
  * @param {number} maxPrice Maximum valuation price.
  * @param {string} unsubUrl Signed one-click unsubscribe URL.
- * @param {string | null} voucherCode First-send 10%-off code, or null.
- * @param {admin.firestore.Timestamp | null} voucherExpiresAt When the code
- *   stops working, or null.
  * @return {string} HTML string.
  */
 function buildEmailHtml(
@@ -93,25 +88,12 @@ function buildEmailHtml(
   registration: string,
   minPrice: number,
   maxPrice: number,
-  unsubUrl: string,
-  voucherCode: string | null,
-  voucherExpiresAt: admin.firestore.Timestamp | null = null
+  unsubUrl: string
 ): string {
   /* eslint-disable max-len */
-  const ctaUrl = voucherCode ?
-    `${APP_URL}/list-plate?plate=${encodeURIComponent(registration)}&voucher=${encodeURIComponent(voucherCode)}` :
+  const ctaUrl =
     `${APP_URL}/list-plate?plate=${encodeURIComponent(registration)}`;
-
-  const voucherBanner = voucherCode ? `
-  <div style="background:#FFC200;border-radius:6px;padding:16px;margin:24px 0;text-align:center;">
-    <p style="margin:0;font-weight:bold;color:#003399;">
-      List ${voucherDeadline(voucherExpiresAt)} and get 10% off — already applied when you click below.
-    </p>
-  </div>` : "";
-
-  const ctaLabel = voucherCode ?
-    "List My Plate — 10% Off &rarr;" :
-    `List My Plate for £${LISTING_FEE_GBP} &rarr;`;
+  const ctaLabel = "List My Plate Free &rarr;";
 
   return `<!DOCTYPE html>
 <html>
@@ -135,10 +117,9 @@ function buildEmailHtml(
     visit MR Valuations every month specifically looking for plates like yours.
   </p>
   <p>
-    <strong>Listing your plate is just £${LISTING_FEE_GBP}</strong> — a one-off fee, and it stays listed until it sells.
-    No commission, no monthly charges, no hassle.
+    <strong>Listing your plate is free.</strong> You pay £${LISTING_FEE_GBP} once, only when your first buyer messages you,
+    and it stays listed until it sells. No commission, no monthly charges, no hassle.
   </p>
-  ${voucherBanner}
   <div style="background:#f8f9fa;border-left:4px solid #003399;padding:16px;margin:24px 0;">
     <p style="margin:0 0 8px;font-weight:bold;">Why list with us?</p>
     <ul style="margin:0;padding-left:20px;">
@@ -281,39 +262,16 @@ export async function runOnAutoValuationCreated(
 }
 
 /**
- * "in the next 24 hours", or "by Wed 5 Nov, 3:30pm" for longer vouchers, in
- * UK time.
- * @param {admin.firestore.Timestamp | null} expiresAt When the code expires.
- * @return {string} The deadline wording.
- */
-function voucherDeadline(expiresAt: admin.firestore.Timestamp | null): string {
-  if (!expiresAt) return "in the next 24 hours";
-  const ms = expiresAt.toMillis() - Date.now();
-  if (ms <= 25 * 60 * 60 * 1000) return "in the next 24 hours";
-  const when = expiresAt.toDate().toLocaleString("en-GB", {
-    timeZone: "Europe/London", weekday: "short", day: "numeric",
-    month: "short", hour: "numeric", minute: "2-digit", hour12: true,
-  });
-  return `by ${when}`;
-}
-
-/**
  * Processes all due nudge queue entries.
  * Sends emails and advances the next send time by the entry's cadence
  * (daily unless they chose "Maybe later").
  * @param {string} nudgeSecret HMAC secret for signing unsubscribe URLs.
- * @param {string} stripeSecretKey Stripe secret key, for minting the
- *   first-send 10%-off voucher.
  */
 export async function runScheduledNudgeEmails(
-  nudgeSecret: string,
-  stripeSecretKey: string
+  nudgeSecret: string
 ): Promise<void> {
   const db = admin.firestore();
   const now = admin.firestore.Timestamp.now();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stripe =
-    new (Stripe as any)(stripeSecretKey) as import("stripe").Stripe;
 
   const due = await db.collection("listing_nudge_queue")
     .where("unsubscribed", "==", false)
@@ -378,38 +336,12 @@ export async function runScheduledNudgeEmails(
     const sendCountBefore = (entry["sendCount"] as number) ?? 0;
     const sendCount = sendCountBefore + 1;
 
-    let voucherCode: string | null = null;
-    let voucherExpiresAt: admin.firestore.Timestamp | null = null;
-    if (sendCountBefore === 0) {
-      voucherCode = (entry["voucherCode"] as string) ?? null;
-      voucherExpiresAt =
-        (entry["voucherExpiresAt"] as admin.firestore.Timestamp) ?? null;
-      if (!voucherCode) {
-        try {
-          // Reuse the code shown on their result page while it's still live.
-          const voucher = await findResultVoucher(db, email, registration) ??
-            await mintNudgeVoucher(stripe, db, registration, email);
-          voucherCode = voucher.code;
-          voucherExpiresAt = voucher.expiresAt;
-          await doc.ref.update({
-            voucherCode: voucher.code,
-            voucherExpiresAt: voucher.expiresAt,
-          });
-        } catch (err) {
-          console.warn(
-            `nudge: failed to mint voucher for ${registration}`, err
-          );
-        }
-      }
-    }
-
     const subject =
       `Your plate ${registration} could be worth ` +
       `${formatPrice(valuationMax)} — have you thought about listing it?`;
 
     const html = buildEmailHtml(
-      firstName, registration, valuationMin, valuationMax, unsubUrl,
-      voucherCode, voucherExpiresAt
+      firstName, registration, valuationMin, valuationMax, unsubUrl
     );
 
     await db.collection("mail").add({

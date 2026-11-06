@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -58,6 +58,7 @@ const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
 const failure_alerts_1 = require("./failure-alerts");
 const plate_meanings_js_1 = require("./plate-meanings.js");
+const pay_per_enquiry_js_1 = require("./pay-per-enquiry.js");
 const enquiries_js_1 = require("./enquiries.js");
 const valuation_email_js_1 = require("./valuation-email.js");
 const users_js_1 = require("./users.js");
@@ -401,6 +402,25 @@ exports.createCheckoutSession = (0, https_1.onCall)({ maxInstances: 10, secrets:
         } }));
     return { url: session.url };
 });
+/** Callable — lists a plate for free; the seller pays per enquiry. */
+exports.createFreeListing = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a, _b;
+    if (!((_a = request.auth) === null || _a === void 0 ? void 0 : _a.token.email)) {
+        throw new https_1.HttpsError("unauthenticated", "Must be logged in");
+    }
+    const { ip } = callerOf(request);
+    return (0, pay_per_enquiry_js_1.runCreateFreeListing)(request.auth.uid, request.auth.token.email, (_b = request.data) !== null && _b !== void 0 ? _b : {}, ip);
+});
+/** Callable — Stripe Checkout for unlocking a free listing's enquiries. */
+exports.createUnlockSession = (0, https_1.onCall)({ maxInstances: 10, secrets: [stripeSecretKey] }, async (request) => {
+    var _a, _b;
+    if (!((_a = request.auth) === null || _a === void 0 ? void 0 : _a.token.email)) {
+        throw new https_1.HttpsError("unauthenticated", "Must be logged in");
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe = new stripe_1.default(stripeSecretKey.value());
+    return (0, pay_per_enquiry_js_1.runCreateUnlockSession)(stripe, request.auth.uid, request.auth.token.email, (_b = request.data) !== null && _b !== void 0 ? _b : {}, (code) => (0, vouchers_js_1.resolveVoucherForCheckout)(stripe, code));
+});
 /** Callable — admin creates/deactivates public marketing voucher codes. */
 exports.manageVoucher = (0, https_1.onCall)({ maxInstances: 10, secrets: [stripeSecretKey] }, async (request) => {
     const adminEmail = "gurvinder.singh.sandhu@gmail.com";
@@ -435,7 +455,7 @@ exports.manageVoucher = (0, https_1.onCall)({ maxInstances: 10, secrets: [stripe
     throw new https_1.HttpsError("invalid-argument", "Unknown action");
 });
 exports.stripeWebhook = (0, https_1.onRequest)({ maxInstances: 10, secrets: [stripeSecretKey, stripeWebhookSecret] }, async (request, response) => {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stripe = new stripe_1.default(stripeSecretKey.value());
     const sig = request.headers["stripe-signature"];
@@ -449,11 +469,16 @@ exports.stripeWebhook = (0, https_1.onRequest)({ maxInstances: 10, secrets: [str
     }
     if (event.type === "checkout.session.completed") {
         const session = event.data.object;
+        if (((_a = session.metadata) === null || _a === void 0 ? void 0 : _a.purpose) === "unlock") {
+            await (0, pay_per_enquiry_js_1.runUnlockEnquiries)(String(session.metadata.listingId), session.id, (_c = (_b = session.total_details) === null || _b === void 0 ? void 0 : _b.amount_discount) !== null && _c !== void 0 ? _c : 0, String((_d = session.metadata.voucherCode) !== null && _d !== void 0 ? _d : ""));
+            response.status(200).send("ok");
+            return;
+        }
         const meta = session.metadata;
-        const fallback = ((_a = meta.email) !== null && _a !== void 0 ? _a : "XX").substring(0, 2).toUpperCase();
+        const fallback = ((_e = meta.email) !== null && _e !== void 0 ? _e : "XX").substring(0, 2).toUpperCase();
         const initials = meta.initials || fallback;
         let voucherCode = meta.voucherCode || "";
-        const discountAppliedPence = (_c = (_b = session.total_details) === null || _b === void 0 ? void 0 : _b.amount_discount) !== null && _c !== void 0 ? _c : 0;
+        const discountAppliedPence = (_g = (_f = session.total_details) === null || _f === void 0 ? void 0 : _f.amount_discount) !== null && _g !== void 0 ? _g : 0;
         // Best-effort: if the discount wasn't pre-resolved (customer typed a
         // public code manually), resolve which voucher was applied from the
         // Stripe session so it can be recorded for reporting. Never blocks
@@ -463,9 +488,9 @@ exports.stripeWebhook = (0, https_1.onRequest)({ maxInstances: 10, secrets: [str
                 const full = await stripe.checkout.sessions.retrieve(session.id, {
                     expand: ["total_details.breakdown.discounts"],
                 });
-                const discount = (_f = (_e = (_d = full.total_details) === null || _d === void 0 ? void 0 : _d.breakdown) === null || _e === void 0 ? void 0 : _e.discounts) === null || _f === void 0 ? void 0 : _f[0];
+                const discount = (_k = (_j = (_h = full.total_details) === null || _h === void 0 ? void 0 : _h.breakdown) === null || _j === void 0 ? void 0 : _j.discounts) === null || _k === void 0 ? void 0 : _k[0];
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const promoCode = (_g = discount === null || discount === void 0 ? void 0 : discount.discount) === null || _g === void 0 ? void 0 : _g.promotion_code;
+                const promoCode = (_l = discount === null || discount === void 0 ? void 0 : discount.discount) === null || _l === void 0 ? void 0 : _l.promotion_code;
                 const promoId = typeof promoCode === "string" ? promoCode : null;
                 if (promoId) {
                     const voucherSnap = await db.collection("vouchers")
@@ -483,36 +508,19 @@ exports.stripeWebhook = (0, https_1.onRequest)({ maxInstances: 10, secrets: [str
         }
         const listingRef = db.collection("plate-listings-new").doc();
         const batch = db.batch();
-        batch.set(listingRef, {
+        const input = {
             plateCharacters: meta.plateCharacters,
             askingPrice: meta.askingPrice,
             meanings: meta.meanings,
-            plateNegotiable: meta.negotiable === "true",
+            negotiable: meta.negotiable === "true",
             sellerUid: meta.sellerUid,
             initials,
-            createdDate: new Date().toISOString(),
-            isSold: false,
-            soldPrice: null,
-            viewsPlaceholder: 0,
-            plateBestOffer: false,
-            offersOver: false,
-            orNearestOffer: false,
-            plateType: "",
-            plateCategory: "",
-            profiletPicUrl: "",
-            profiletPicInitials: true,
-            messageSeller: "",
-            voucherCode: voucherCode || null,
-            discountAppliedPence: discountAppliedPence || null,
-        });
+            email: meta.email,
+            phone: meta.phone,
+        };
+        batch.set(listingRef, Object.assign(Object.assign({}, (0, pay_per_enquiry_js_1.listingFields)(input)), { voucherCode: voucherCode || null, discountAppliedPence: discountAppliedPence || null }));
         // Contact details go where only Cloud Functions can read them.
-        batch.set((0, enquiries_js_1.contactRef)(listingRef), {
-            lCEmail: meta.email,
-            lCNumber: meta.phone,
-            lCName: meta.email,
-            plateListingAccName: meta.email,
-            plateListingAccTelNumber: meta.phone,
-        });
+        batch.set((0, enquiries_js_1.contactRef)(listingRef), (0, pay_per_enquiry_js_1.contactFields)(input));
         await batch.commit();
     }
     response.status(200).send("ok");
@@ -680,9 +688,9 @@ exports.scheduledNudgeEmails = (0, scheduler_1.onSchedule)({
     schedule: "every 15 minutes",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
-    secrets: [nudgeUnsubscribeSecret, stripeSecretKey],
+    secrets: [nudgeUnsubscribeSecret],
 }, async () => {
-    await (0, failure_alerts_1.withFailureAlert)("scheduledNudgeEmails", () => (0, nudge_emails_js_1.runScheduledNudgeEmails)(nudgeUnsubscribeSecret.value(), stripeSecretKey.value()));
+    await (0, failure_alerts_1.withFailureAlert)("scheduledNudgeEmails", () => (0, nudge_emails_js_1.runScheduledNudgeEmails)(nudgeUnsubscribeSecret.value()));
 });
 /**
  * Daily — writes AI descriptions for plates for sale that have none, up to

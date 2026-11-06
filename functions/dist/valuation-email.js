@@ -392,13 +392,13 @@ function buildValuationEmailHtml(firstName, registration, price, minPrice, maxPr
     <p style="margin:0;color:#666;">Typical range: <strong>${(0, nudge_emails_js_1.formatPrice)(minPrice)}</strong> – <strong>${(0, nudge_emails_js_1.formatPrice)(maxPrice)}</strong></p>
   </div>
   <p>
-    Thinking of selling? <strong>Listing your plate is just £${constants_js_1.LISTING_FEE_GBP}</strong> — a one-off fee, and it stays listed until it sells.
+    Thinking of selling? <strong>Listing your plate is free.</strong> You pay £${constants_js_1.LISTING_FEE_GBP} once, only when your first buyer messages you.
     No commission, no monthly charges.
   </p>
   <div style="text-align:center;margin:32px 0;">
     <a href="${(0, enquiries_js_1.escapeHtml)(listUrl)}"
        style="background:#003399;color:#fff;padding:16px 40px;text-decoration:none;border-radius:6px;font-size:18px;font-weight:bold;display:inline-block;">
-      List it for £${constants_js_1.LISTING_FEE_GBP} &rarr;
+      List it free &rarr;
     </a>
   </div>
   <p style="color:#666;font-size:13px;text-align:center;">

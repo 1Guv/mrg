@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { PlateListingCardComponent } from '../plate-listing-card/plate-listing-card.component';
@@ -9,7 +9,7 @@ import { AuthService } from '../../services/auth.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { FormsModule } from '@angular/forms';
 import {
-  ListNowService, MeaningCategory, PlateMeaning, ResultVoucher, SellIntent
+  ListNowService, MeaningCategory, PlateMeaning, SellIntent
 } from '../../services/list-now.service';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { ValuationGateService } from '../../services/valuation-gate.service';
@@ -19,12 +19,12 @@ import { StatsStripComponent } from '../stats-strip/stats-strip.component';
 /**
  * Sits under a revealed valuation in place of a bare "List Now" button:
  * real buyer demand, "Would you sell at this price?", and on "Yes" the
- * visitor's listing ready to publish, with their 48-hour 10% voucher.
+ * visitor's listing ready to publish for free.
  */
 @Component({
   selector: 'app-list-now-prompt',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, PlateListingCardComponent, StatsStripComponent],
+  imports: [DecimalPipe, FormsModule, MatButtonModule, PlateListingCardComponent, StatsStripComponent],
   templateUrl: './list-now-prompt.component.html',
   styleUrl: './list-now-prompt.component.scss'
 })
@@ -61,17 +61,12 @@ export class ListNowPromptComponent {
 
   readonly answer = signal<SellIntent | null>(null);
   readonly demand = signal(0);
-  readonly voucher = signal<ResultVoucher | null>(null);
 
   readonly plate = computed(() => this.registration().replace(/\s/g, '').toUpperCase());
   /** The asking price the preview suggests, to the nearest £10. */
   readonly askingPrice = computed(() => Math.max(10, Math.round(this.price() / 10) * 10));
   /** "3%": the fee against the asking price the preview suggests. */
   readonly feeShare = computed(() => feeShare(this.fee, this.askingPrice()));
-  readonly discountedFee = computed(() => {
-    const v = this.voucher();
-    return v ? Math.round(this.fee * (100 - v.percentOff)) / 100 : this.fee;
-  });
 
   readonly preview = computed<PlateListing>(() => ({
     id: 0,
@@ -103,9 +98,7 @@ export class ListNowPromptComponent {
       this.meaningCategory.set(saved?.category ?? null);
       this.meaningText = saved?.text ?? '';
       this.demand.set(0);
-      this.voucher.set(null);
       this.listNow.buyerDemand(reg).then(n => { if (reg === this.plate()) this.demand.set(n); });
-      this.listNow.voucher(reg).then(v => { if (reg === this.plate()) this.voucher.set(v); });
     });
   }
 
@@ -129,7 +122,7 @@ export class ListNowPromptComponent {
   }
 
   publish(): void {
-    this.tracking.listPreviewPublishClicked(!!this.voucher());
+    this.tracking.listPreviewPublishClicked(false);
     this.goToListing(this.askingPrice());
   }
 
@@ -147,7 +140,6 @@ export class ListNowPromptComponent {
         min: this.minPrice().toFixed(2),
         max: this.maxPrice().toFixed(2),
         ...(this.meaning()?.text ? { meaning: this.meaning()!.text } : {}),
-        ...this.listNow.voucherParams(this.voucher()),
       },
     });
   }

@@ -151,11 +151,11 @@ export class PlatesForSaleComponent implements OnInit, OnDestroy {
   benefits: BenefitCard[] = [
     {
       icon: 'payments',
-      title: 'One-off payment',
-      description: 'Pay once, no subscriptions or hidden fees.',
+      title: 'Free to list',
+      description: `Pay £${this.plateListingService.listingFee} once, only when your first buyer messages you.`,
       backgroundColor: '#e8f0fe',
       button: true,
-      buttonName: `List now for £${this.plateListingService.listingFee}`,
+      buttonName: 'List my plate free',
       buttonLink: '/list-plate'
     },
     {

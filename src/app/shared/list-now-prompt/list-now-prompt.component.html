@@ -38,24 +38,18 @@
       </div>
       <div class="text-center">
         <button mat-raised-button type="button" class="publish-btn" (click)="publish()">
-          @if (voucher()) {
-            Publish for £{{ discountedFee() | number: '1.0-2' }} <s class="was">£{{ fee }}</s>
-          } @else {
-            Publish for £{{ fee }}
-          }
+          Publish free
         </button>
-        @if (voucher(); as v) {
-          <p class="voucher-line">{{ v.percentOff }}% off — ends {{ v.expiresAt | date: 'EEE d MMM, h:mm a' }}</p>
-        }
         @if (feeShare(); as share) {
-          <p class="fee-share">That's {{ share }} of your £{{ askingPrice() | number: '1.0-0' }} asking price</p>
+          <p class="fee-share">Pay £{{ fee }} only when a buyer messages you — {{ share }} of your £{{ askingPrice() | number: '1.0-0' }} asking price</p>
         }
-        <p class="hint">🔒 Secure one-off payment by Stripe · change the price and details on the next step</p>
+        <p class="hint">No payment now · change the price and details on the next step</p>
       </div>
 
       <div class="value-panel">
-        <p class="value-title">What you get for £{{ fee }}</p>
+        <p class="value-title">What you get</p>
         <ul class="value-list">
+          <li><span class="tick">✓</span><span><strong>Free to list</strong> — pay £{{ fee }} once, only when your first buyer messages you</span></li>
           <li><span class="tick">✓</span><span><strong>No commission, no markup</strong> — buyers pay your asking price and you keep all of it</span></li>
           <li><span class="tick">✓</span><span><strong>Listed until it sells</strong> — no renewal fees</span></li>
           <li><span class="tick">✓</span><span><strong>Buyers message you here or on WhatsApp</strong> — your email stays private</span></li>
@@ -86,9 +80,6 @@
         <button mat-stroked-button type="button" (click)="choose('later')">Maybe later</button>
         <button mat-stroked-button type="button" (click)="choose('curious')">Just curious</button>
       </div>
-      @if (voucher(); as v) {
-        <p class="voucher-line">{{ v.percentOff }}% off listing until {{ v.expiresAt | date: 'EEE d MMM, h:mm a' }}</p>
-      }
     }
   }
 </div>

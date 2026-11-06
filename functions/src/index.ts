@@ -865,13 +865,11 @@ export const scheduledNudgeEmails = onSchedule(
     schedule: "every 15 minutes",
     timeZone: "Europe/London",
     timeoutSeconds: 300,
-    secrets: [nudgeUnsubscribeSecret, stripeSecretKey],
+    secrets: [nudgeUnsubscribeSecret],
   },
   async () => {
     await withFailureAlert("scheduledNudgeEmails", () =>
-      runScheduledNudgeEmails(
-        nudgeUnsubscribeSecret.value(), stripeSecretKey.value()
-      ));
+      runScheduledNudgeEmails(nudgeUnsubscribeSecret.value()));
   }
 );
 
