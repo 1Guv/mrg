@@ -21,6 +21,29 @@ interface ArticleData {
   content: string;
   readTimeMinutes: number;
   publishedAt: admin.firestore.Timestamp;
+  /** Pages Google Search found while writing it; empty for older articles. */
+  sources: ArticleSource[];
+  searchQueries: string[];
+}
+
+/** A web page Google Search grounding found for an article. */
+interface ArticleSource {
+  title: string;
+  uri: string;
+}
+
+/** Where a response's facts came from, read from its grounding metadata. */
+interface Grounding {
+  sources: ArticleSource[];
+  searchQueries: string[];
+}
+
+/** The parts of a Gemini candidate's grounding metadata we read. */
+interface GroundedCandidate {
+  groundingMetadata?: {
+    groundingChunks?: Array<{web?: {uri?: string, title?: string}}>;
+    webSearchQueries?: string[];
+  };
 }
 
 interface GeminiArticlePayload {
@@ -30,6 +53,7 @@ interface GeminiArticlePayload {
   metaDescription: string;
   category: ArticleCategory;
   content: string;
+  grounding?: Grounding;
 }
 
 interface GeminiCelebrityPayload {
@@ -40,6 +64,7 @@ interface GeminiCelebrityPayload {
   celebrity: string;
   suggestedPlates: string[];
   content: string;
+  grounding?: Grounding;
 }
 
 interface GscRow {
@@ -206,6 +231,25 @@ function malformed(
     `head=${JSON.stringify(rawText.slice(0, 120))} ` +
     `tail=${JSON.stringify(rawText.slice(-120))}`
   );
+}
+
+/**
+ * The pages and searches a grounded response was based on, so each article
+ * records where its facts came from.
+ * @param {GroundedCandidate} candidate - The Gemini candidate.
+ * @return {Grounding} Its sources, without duplicates, and search queries.
+ */
+function groundingOf(candidate: GroundedCandidate | undefined): Grounding {
+  const meta = candidate?.groundingMetadata;
+  const sources = new Map<string, ArticleSource>();
+  for (const chunk of meta?.groundingChunks ?? []) {
+    const uri = chunk.web?.uri;
+    if (uri) sources.set(uri, {title: chunk.web?.title ?? "", uri});
+  }
+  return {
+    sources: [...sources.values()],
+    searchQueries: meta?.webSearchQueries ?? [],
+  };
 }
 
 // ── Gemini call ──────────────────────────────────────────────────────────────
@@ -378,7 +422,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     );
   }
 
-  return parsed;
+  return {...parsed, grounding: groundingOf(candidate)};
 }
 
 // ── Grounded Gemini call (news fallback) ─────────────────────────────────────
@@ -493,7 +537,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
   // Force the category to match the topic we searched for
   parsed.category = category;
 
-  return parsed;
+  return {...parsed, grounding: groundingOf(candidate)};
 }
 
 // ── Celebrity Gemini call ─────────────────────────────────────────────────
@@ -510,7 +554,7 @@ async function callGeminiCelebrityOnce(
   existingTitles: string[]
 ): Promise<GeminiCelebrityPayload> {
   /* eslint-disable max-len */
-  const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well.
+  const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well. Only pick someone the search results show a specific news story about from the last 7 days, and open the article with that story. If you can't find one for a celebrity, pick someone else — never invent or assume news.
 
 Write a fun, witty, light-hearted blog article for mrvaluations.co.uk about what personalised UK number plate that celebrity should have. The site offers free number plate valuations and a marketplace to list plates for sale.
 
@@ -614,7 +658,16 @@ Respond ONLY with valid JSON (no markdown fences):
     }
   }
 
-  return parsed;
+  // The article hangs on this week's news about them, so without search
+  // results it would be made up. Retry rather than publish it.
+  const grounding = groundingOf(candidate);
+  if (!grounding.sources.length) {
+    throw new MalformedGeminiResponse(
+      "article-generator: celebrity article had no Google Search sources " +
+      `(celebrity "${parsed.celebrity}")`
+    );
+  }
+  return {...parsed, grounding};
 }
 
 /**
@@ -701,6 +754,8 @@ export async function runGenerateCelebrityArticle(
     content,
     readTimeMinutes,
     publishedAt: admin.firestore.Timestamp.now(),
+    sources: payload.grounding?.sources ?? [],
+    searchQueries: payload.grounding?.searchQueries ?? [],
   };
 
   const docRef = await db.collection("articles").add(articleData);
@@ -862,6 +917,8 @@ export async function runGenerateDailyArticle(
     content,
     readTimeMinutes,
     publishedAt: admin.firestore.Timestamp.now(),
+    sources: payload.grounding?.sources ?? [],
+    searchQueries: payload.grounding?.searchQueries ?? [],
   };
 
   const docRef = await db.collection("articles").add(articleData);

@@ -177,6 +177,26 @@ function malformed(what, rawText, finishReason) {
         `head=${JSON.stringify(rawText.slice(0, 120))} ` +
         `tail=${JSON.stringify(rawText.slice(-120))}`);
 }
+/**
+ * The pages and searches a grounded response was based on, so each article
+ * records where its facts came from.
+ * @param {GroundedCandidate} candidate - The Gemini candidate.
+ * @return {Grounding} Its sources, without duplicates, and search queries.
+ */
+function groundingOf(candidate) {
+    var _a, _b, _c, _d, _e;
+    const meta = candidate === null || candidate === void 0 ? void 0 : candidate.groundingMetadata;
+    const sources = new Map();
+    for (const chunk of (_a = meta === null || meta === void 0 ? void 0 : meta.groundingChunks) !== null && _a !== void 0 ? _a : []) {
+        const uri = (_b = chunk.web) === null || _b === void 0 ? void 0 : _b.uri;
+        if (uri)
+            sources.set(uri, { title: (_d = (_c = chunk.web) === null || _c === void 0 ? void 0 : _c.title) !== null && _d !== void 0 ? _d : "", uri });
+    }
+    return {
+        sources: [...sources.values()],
+        searchQueries: (_e = meta === null || meta === void 0 ? void 0 : meta.webSearchQueries) !== null && _e !== void 0 ? _e : [],
+    };
+}
 // ── Gemini call ──────────────────────────────────────────────────────────────
 // ── Shared article rules ─────────────────────────────────────────────────────
 /* eslint-disable max-len */
@@ -308,7 +328,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     if (!validCategories.includes(parsed.category)) {
         throw new Error(`article-generator: unexpected category "${parsed.category}"`);
     }
-    return parsed;
+    return Object.assign(Object.assign({}, parsed), { grounding: groundingOf(candidate) });
 }
 // ── Grounded Gemini call (news fallback) ─────────────────────────────────────
 const GROUNDED_TOPICS = [
@@ -395,7 +415,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
     }
     // Force the category to match the topic we searched for
     parsed.category = category;
-    return parsed;
+    return Object.assign(Object.assign({}, parsed), { grounding: groundingOf(candidate) });
 }
 // ── Celebrity Gemini call ─────────────────────────────────────────────────
 /**
@@ -408,7 +428,7 @@ Respond ONLY with valid JSON in this exact shape (no markdown fences):
 async function callGeminiCelebrityOnce(geminiApiKey, existingTitles) {
     var _a, _b, _c, _d, _e, _f;
     /* eslint-disable max-len */
-    const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well.
+    const prompt = `Search the web for ONE specific UK or international celebrity or famous person who is trending in the news today or this week. Pick the most interesting one — footballers, musicians, actors, royals, TV personalities all work well. Only pick someone the search results show a specific news story about from the last 7 days, and open the article with that story. If you can't find one for a celebrity, pick someone else — never invent or assume news.
 
 Write a fun, witty, light-hearted blog article for mrvaluations.co.uk about what personalised UK number plate that celebrity should have. The site offers free number plate valuations and a marketplace to list plates for sale.
 
@@ -487,7 +507,14 @@ Respond ONLY with valid JSON (no markdown fences):
             throw new MalformedGeminiResponse(`article-generator: celebrity payload missing field "${key}"`);
         }
     }
-    return parsed;
+    // The article hangs on this week's news about them, so without search
+    // results it would be made up. Retry rather than publish it.
+    const grounding = groundingOf(candidate);
+    if (!grounding.sources.length) {
+        throw new MalformedGeminiResponse("article-generator: celebrity article had no Google Search sources " +
+            `(celebrity "${parsed.celebrity}")`);
+    }
+    return Object.assign(Object.assign({}, parsed), { grounding });
 }
 /**
  * Build a styled HTML valuation section for the suggested celebrity plates.
@@ -540,6 +567,7 @@ function buildValuationSection(plates) {
  * @return {Promise<void>}
  */
 async function runGenerateCelebrityArticle(geminiApiKey) {
+    var _a, _b, _c, _d;
     const db = admin.firestore();
     console.log("article-generator (celebrity): calling Gemini...");
     const payload = await callGeminiCelebrity(geminiApiKey, await publishedTitles());
@@ -559,6 +587,8 @@ async function runGenerateCelebrityArticle(geminiApiKey) {
         content,
         readTimeMinutes,
         publishedAt: admin.firestore.Timestamp.now(),
+        sources: (_b = (_a = payload.grounding) === null || _a === void 0 ? void 0 : _a.sources) !== null && _b !== void 0 ? _b : [],
+        searchQueries: (_d = (_c = payload.grounding) === null || _c === void 0 ? void 0 : _c.searchQueries) !== null && _d !== void 0 ? _d : [],
     };
     const docRef = await db.collection("articles").add(articleData);
     console.log(`article-generator (celebrity): article written — doc ID: ${docRef.id}`);
@@ -613,7 +643,7 @@ function callGeminiCelebrity(geminiApiKey, existingTitles) {
  * @return {Promise<void>}
  */
 async function runGenerateDailyArticle(geminiApiKey) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     const db = admin.firestore();
     // 1. Fetch GSC data
     console.log("article-generator: fetching GSC data...");
@@ -670,6 +700,8 @@ async function runGenerateDailyArticle(geminiApiKey) {
         content,
         readTimeMinutes,
         publishedAt: admin.firestore.Timestamp.now(),
+        sources: (_f = (_e = payload.grounding) === null || _e === void 0 ? void 0 : _e.sources) !== null && _f !== void 0 ? _f : [],
+        searchQueries: (_h = (_g = payload.grounding) === null || _g === void 0 ? void 0 : _g.searchQueries) !== null && _h !== void 0 ? _h : [],
     };
     const docRef = await db.collection("articles").add(articleData);
     console.log(`article-generator: article written — doc ID: ${docRef.id}`);
