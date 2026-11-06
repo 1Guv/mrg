@@ -83,13 +83,26 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // Seller enquiries — created by the sendEnquiry function; sellers can read their own; admins can read all
+    // Seller enquiries — conversations written only by Cloud Functions; the
+    // seller and the buyer can read their own; admins can read all
     match /seller_enquiries/{docId} {
       allow create: if false;
       allow read: if request.auth != null
         && (request.auth.token.email == resource.data.sellerEmail
+            || request.auth.uid == resource.data.buyerUid
             || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
       allow update, delete: if false;
+
+      // Every message in the conversation. The seller can't read them until
+      // they've paid to unlock the enquiry; the buyer always can.
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+          && (request.auth.uid == get(/databases/$(database)/documents/seller_enquiries/$(docId)).data.buyerUid
+              || (request.auth.token.email == get(/databases/$(database)/documents/seller_enquiries/$(docId)).data.sellerEmail
+                  && get(/databases/$(database)/documents/seller_enquiries/$(docId)).data.locked != true)
+              || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+        allow write: if false;
+      }
     }
 
     // New plate listings — publicly readable; owner can update price/meanings; only server can create

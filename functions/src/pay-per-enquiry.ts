@@ -1,7 +1,9 @@
 import * as admin from "firebase-admin";
 import {HttpsError} from "firebase-functions/v2/https";
 import {consumeRateLimits, rateLimitId} from "./valuation-email.js";
-import {contactRef, escapeHtml} from "./enquiries.js";
+import {
+  contactRef, escapeHtml, messagesRef, MESSAGES_URL,
+} from "./enquiries.js";
 import {LISTING_FEE_GBP} from "./constants.js";
 
 /**
@@ -9,10 +11,11 @@ import {LISTING_FEE_GBP} from "./constants.js";
  * fee once to read and reply to the first buyer enquiry. Every later
  * enquiry on that listing is free.
  *
- * Until the listing is unlocked, an enquiry's buyer details and full
- * message are kept in seller_enquiries/<id>/private/buyer, which clients
- * can't read. The seller sees only the enquiry type and a short preview,
- * and the buyer doesn't get the seller's WhatsApp number.
+ * Until the listing is unlocked, an enquiry's buyer email is kept in
+ * seller_enquiries/<id>/private/buyer, which clients can't read, and its
+ * messages can be read by the buyer but not the seller (see the rules).
+ * The seller sees only the enquiry type and a short preview, and the buyer
+ * doesn't get the seller's WhatsApp number.
  *
  * Listings paid for up front (no pricingModel) and the legacy stock are
  * never locked.
@@ -236,8 +239,11 @@ export async function saveLockedEnquiry(
   const db = admin.firestore();
   const plate = String(listing.plateCharacters ?? "").toUpperCase();
   const preview = enquiryPreview(enquiry.message);
+  const now = admin.firestore.FieldValue.serverTimestamp();
   const enquiryRef = db.collection("seller_enquiries").doc();
   const batch = db.batch();
+  // buyerUid stays visible so the buyer can see their conversation; it
+  // isn't contact information.
   batch.set(enquiryRef, {
     plateId: listingRef.id,
     plateCharacters: listing.plateCharacters ?? "",
@@ -245,12 +251,17 @@ export async function saveLockedEnquiry(
     message: null,
     preview,
     locked: true,
-    buyerUid: null,
+    buyerUid: enquiry.buyerUid,
     buyerEmail: null,
     sellerLCNumber: "",
     sellerEmail,
-    submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+    submittedAt: now,
+    lastMessageAt: now,
+    lastMessageFrom: "buyer",
+    lastMessageText: null,
   });
+  batch.set(messagesRef(enquiryRef).doc(),
+    {from: "buyer", text: enquiry.message, sentAt: now});
   batch.set(enquiryRef.collection("private").doc("buyer"), {
     message: enquiry.message,
     buyerUid: enquiry.buyerUid,
@@ -266,7 +277,7 @@ export async function saveLockedEnquiry(
         <p><strong>Enquiry type:</strong> ${escapeHtml(enquiry.enquiryType)}</p>
         <p><strong>Message:</strong> “${escapeHtml(preview)}”</p>
         <p>Pay £${LISTING_FEE_GBP} once to read the full message and reply. Every enquiry after this one is free.</p>
-        <p><a href="https://mrvaluations.co.uk/account-dashboard?tab=messages">Unlock this enquiry</a></p>
+        <p><a href="${MESSAGES_URL}">Unlock this enquiry</a></p>
       `,
     },
   });
@@ -390,6 +401,7 @@ export async function runUnlockEnquiries(
       message: buyer.message ?? "",
       buyerUid: buyer.buyerUid ?? null,
       buyerEmail: buyer.buyerEmail ?? null,
+      lastMessageText: enquiry.lastMessageText ?? buyer.message ?? "",
     });
     /* eslint-disable max-len */
     batch.set(db.collection("mail").doc(), {
@@ -403,7 +415,7 @@ export async function runUnlockEnquiries(
           <p><strong>Enquiry type:</strong> ${escapeHtml(String(enquiry.enquiryType ?? ""))}</p>
           <p><strong>Message:</strong> ${escapeHtml(String(buyer.message ?? ""))}</p>
           <p><strong>From:</strong> ${escapeHtml(String(buyer.buyerEmail ?? ""))}</p>
-          <p>Reply to this email, or from <a href="https://mrvaluations.co.uk/account-dashboard?tab=messages">your messages</a>.</p>
+          <p>Reply to this email, or from <a href="${MESSAGES_URL}">your messages</a>.</p>
         `,
       },
     });

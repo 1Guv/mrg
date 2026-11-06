@@ -1,0 +1,88 @@
+<div class="inbox">
+  <div class="inbox-toggle" role="tablist">
+    <button type="button" role="tab" [class.active]="view() === 'selling'" (click)="setView('selling')">
+      Selling ({{ selling().length }})
+    </button>
+    <button type="button" role="tab" [class.active]="view() === 'buying'" (click)="setView('buying')">
+      Buying ({{ buying().length }})
+    </button>
+  </div>
+
+  @if (!conversations().length) {
+    <p class="empty">
+      @if (view() === 'selling') {
+        No messages yet. When someone enquires about your plate, it will appear here.
+      } @else {
+        You haven't messaged any sellers yet. Use Message Seller on a plate you like.
+      }
+    </p>
+  }
+
+  @for (c of conversations(); track c.id) {
+    <div class="conv" [class.open]="openId() === c.id">
+      <button type="button" class="conv-row" (click)="toggle(c)" [attr.aria-expanded]="openId() === c.id">
+        <span class="bevel-plate conv-plate">{{ c.plateCharacters | uppercase }}</span>
+        <span class="conv-main">
+          <span class="conv-snippet">{{ snippet(c) }}</span>
+          <span class="conv-meta">
+            <span class="conv-status" [class.attention]="needsYou(c) && !c.locked" [class.locked]="c.locked">{{ status(c) }}</span>
+            @if (lastAt(c); as at) { · {{ at | date: 'd MMM, HH:mm' }} }
+          </span>
+        </span>
+      </button>
+
+      @if (openId() === c.id) {
+        <div class="thread">
+          <p class="thread-type">{{ c.enquiryType }}</p>
+
+          @if (c.locked && view() === 'selling') {
+            <p class="locked-preview">“{{ c.preview }}”</p>
+            <p class="thread-hint">
+              A buyer is waiting. Pay £{{ listingFee() }} once to read their full message, see who it's from and
+              reply — every enquiry on this plate after that is free.
+            </p>
+            @if (unlockError() && unlockingId() === null) {
+              <p class="send-error">{{ unlockError() }}</p>
+            }
+            <button type="button" mat-raised-button class="unlock-btn"
+              [disabled]="unlockingId() !== null" (click)="unlock.emit(c)">
+              @if (unlockingId() === ('' + c.plateId)) { Opening checkout... } @else { Unlock for £{{ listingFee() }} }
+            </button>
+          } @else {
+            @if (view() === 'selling' && c.buyerEmail) {
+              <p class="thread-hint">From {{ c.buyerEmail }}</p>
+            }
+            <div class="bubbles">
+              @for (m of thread(c); track $index) {
+                <div class="bubble" [class.mine]="isMine(m)">
+                  <p class="bubble-text">{{ m.text }}</p>
+                  <span class="bubble-meta">
+                    {{ isMine(m) ? 'You' : (m.from === 'seller' ? 'Seller' : 'Buyer') }}
+                    @if (m.sentAt?.toDate?.(); as at) { · {{ at | date: 'd MMM, HH:mm' }} }
+                  </span>
+                </div>
+              }
+            </div>
+
+            @if (c.locked) {
+              <p class="thread-hint">The seller has been emailed. You can carry on the conversation here once they've read your message.</p>
+            } @else {
+              <div class="reply">
+                <textarea class="reply-input" rows="2" maxlength="2000" placeholder="Write a reply..."
+                  [(ngModel)]="draft" [disabled]="sending()"></textarea>
+                <button type="button" mat-raised-button class="send-btn"
+                  [disabled]="!draft.trim() || sending()" (click)="send(c)">
+                  @if (sending()) { Sending... } @else { Send }
+                </button>
+              </div>
+              @if (sendError()) {
+                <p class="send-error">{{ sendError() }}</p>
+              }
+              <p class="thread-hint">We'll email them your message too.</p>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

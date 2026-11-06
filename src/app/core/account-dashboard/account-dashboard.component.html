@@ -141,41 +141,15 @@
                     </div>
                 </mat-tab>
 
-                <mat-tab [label]="'Messages (' + sellerEnquiries$().length + ')'">
+                <mat-tab [label]="'Messages (' + (sellerEnquiries$().length + buyerEnquiries$().length) + ')'">
                     <div class="tab-content">
-                        @if (sellerEnquiries$().length === 0) {
-                            <p class="text-muted mt-3 text-center">
-                                No messages yet. When someone enquires about your plate, it will appear here.
-                            </p>
-                        } @else {
-                            @for (enquiry of sellerEnquiries$(); track enquiry.id) {
-                                <div class="enquiry-card">
-                                    <div class="enquiry-plate-row">
-                                        <span class="bevel-plate enquiry-plate">{{ enquiry.plateCharacters | uppercase }}</span>
-                                        <span class="enquiry-date">{{ enquiry.submittedAt?.toDate() | date:'d MMM y, HH:mm' }}</span>
-                                    </div>
-                                    <p class="enquiry-type">{{ enquiry.enquiryType }}</p>
-                                    @if (enquiry.locked) {
-                                        <p class="enquiry-message locked-preview">“{{ enquiry.preview }}”</p>
-                                        <p class="enquiry-from">A buyer is waiting. Pay £{{ listingFee }} once to read their full message, see who it's from and reply — every enquiry on this plate after that is free.</p>
-                                        @if (unlockError() && unlockingId() === null) {
-                                            <p class="save-error">{{ unlockError() }}</p>
-                                        }
-                                        <button type="button" mat-raised-button class="unlock-btn"
-                                            [disabled]="unlockingId() !== null"
-                                            (click)="onUnlock(enquiry)">
-                                            @if (unlockingId() === ('' + enquiry.plateId)) { Opening checkout... } @else { Unlock for £{{ listingFee }} }
-                                        </button>
-                                    } @else {
-                                        <p class="enquiry-message">{{ enquiry.message }}</p>
-                                        <p class="enquiry-from">From: {{ enquiry.buyerEmail }}</p>
-                                        <button type="button" mat-stroked-button color="primary" (click)="onReply(enquiry)">
-                                            Reply
-                                        </button>
-                                    }
-                                </div>
-                            }
-                        }
+                        <app-messages-inbox
+                            [selling]="sellerEnquiries$()"
+                            [buying]="buyerEnquiries$()"
+                            [listingFee]="listingFee"
+                            [unlockingId]="unlockingId()"
+                            [unlockError]="unlockError()"
+                            (unlock)="onUnlock($event)" />
                     </div>
                 </mat-tab>
 

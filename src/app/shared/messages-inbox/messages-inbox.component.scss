@@ -1,0 +1,196 @@
+.inbox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.inbox-toggle {
+  display: flex;
+  align-self: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eef1f5;
+
+  button {
+    border: none;
+    background: transparent;
+    padding: 0.45rem 1.1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+
+    &.active {
+      background: #fff;
+      color: #1a237e;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+  }
+}
+
+.empty {
+  margin: 1rem 0 0;
+  text-align: center;
+  color: #6c757d;
+}
+
+.conv {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+
+  &.open {
+    border-color: #b6d7b8;
+  }
+}
+
+.conv-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conv-plate {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.conv-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.conv-snippet {
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-meta {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.conv-status {
+  font-weight: 600;
+
+  &.attention {
+    color: #2e7d32;
+  }
+
+  &.locked {
+    color: #b26a00;
+  }
+}
+
+.thread {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.thread-type {
+  margin: 0.75rem 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1565c0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.thread-hint {
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.locked-preview {
+  margin: 0;
+  color: #555;
+  font-style: italic;
+}
+
+.bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bubble {
+  align-self: flex-start;
+  max-width: 85%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 14px 14px 14px 4px;
+  background: #f1f3f6;
+
+  &.mine {
+    align-self: flex-end;
+    border-radius: 14px 14px 4px 14px;
+    background: #e8f5e9;
+  }
+}
+
+.bubble-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+.bubble-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: #888;
+}
+
+.reply {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.reply-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  font: inherit;
+  resize: vertical;
+
+  &:focus {
+    outline: 2px solid #a5d6a7;
+    border-color: #2e7d32;
+  }
+}
+
+.send-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #d32f2f;
+}
+
+// Extra class beats Material's own button colours
+.send-btn.mat-mdc-raised-button,
+.unlock-btn.mat-mdc-raised-button {
+  background-color: #2e7d32;
+  color: white;
+  border-radius: 999px;
+
+  &:disabled {
+    background-color: rgba(46, 125, 50, 0.35);
+    color: white;
+  }
+}

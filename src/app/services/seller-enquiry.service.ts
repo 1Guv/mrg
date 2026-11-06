@@ -3,6 +3,7 @@ import {
   Firestore,
   collection,
   collectionData,
+  orderBy,
   query,
   where
 } from '@angular/fire/firestore';
@@ -27,6 +28,24 @@ export interface SellerEnquiry {
   sellerLCNumber: string;
   sellerEmail: string;
   submittedAt?: any;
+  lastMessageAt?: any;
+  lastMessageFrom?: 'buyer' | 'seller';
+  /** Null while locked, so the seller can't read it before paying. */
+  lastMessageText?: string | null;
+}
+
+/** One message in an enquiry's conversation. */
+export interface EnquiryMessage {
+  id?: string;
+  from: 'buyer' | 'seller';
+  text: string;
+  sentAt?: any;
+}
+
+/** Most recent activity first; older enquiries have no lastMessageAt. */
+function byLatest(enquiries: SellerEnquiry[]): SellerEnquiry[] {
+  const at = (e: SellerEnquiry) => (e.lastMessageAt ?? e.submittedAt)?.toMillis?.() ?? 0;
+  return [...enquiries].sort((a, b) => at(b) - at(a));
 }
 
 export interface SendEnquiryResult {
@@ -57,17 +76,24 @@ export class SellerEnquiryService {
   getEnquiriesForSeller(email: string): Observable<SellerEnquiry[]> {
     const ref = collection(this.firestore, 'seller_enquiries');
     const q = query(ref, where('sellerEmail', '==', email));
-    return (collectionData(q, { idField: 'id' }) as Observable<SellerEnquiry[]>).pipe(
-      map(enquiries => [...enquiries].sort((a, b) => {
-        const aTime = a.submittedAt?.toMillis?.() ?? 0;
-        const bTime = b.submittedAt?.toMillis?.() ?? 0;
-        return bTime - aTime;
-      }))
-    );
+    return (collectionData(q, { idField: 'id' }) as Observable<SellerEnquiry[]>).pipe(map(byLatest));
   }
 
-  async sendReply(enquiry: SellerEnquiry, replyMessage: string): Promise<void> {
+  /** Enquiries this user has sent about other people's plates. */
+  getEnquiriesForBuyer(uid: string): Observable<SellerEnquiry[]> {
+    const ref = collection(this.firestore, 'seller_enquiries');
+    const q = query(ref, where('buyerUid', '==', uid));
+    return (collectionData(q, { idField: 'id' }) as Observable<SellerEnquiry[]>).pipe(map(byLatest));
+  }
+
+  getMessages(enquiryId: string): Observable<EnquiryMessage[]> {
+    const ref = collection(this.firestore, 'seller_enquiries', enquiryId, 'messages');
+    return collectionData(query(ref, orderBy('sentAt')), { idField: 'id' }) as Observable<EnquiryMessage[]>;
+  }
+
+  /** Adds a message to the conversation; the other side is emailed it. */
+  async sendMessage(enquiryId: string, text: string): Promise<void> {
     const fn = httpsCallable<object, { success: boolean }>(this.functions, 'replyToEnquiry');
-    await fn({ enquiryId: enquiry.id, replyMessage });
+    await fn({ enquiryId, replyMessage: text });
   }
 }

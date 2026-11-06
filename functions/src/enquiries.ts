@@ -3,9 +3,13 @@ import {HttpsError} from "firebase-functions/v2/https";
 import {enquiriesLocked, saveLockedEnquiry} from "./pay-per-enquiry.js";
 
 /**
- * Buyer enquiries and seller replies. Seller contact details live in a
- * private subdocument, <listing>/private/contact, which clients can't read,
- * so the emails are sent from here rather than from the browser.
+ * Buyer enquiries and the conversations that follow. Seller contact details
+ * live in a private subdocument, <listing>/private/contact, which clients
+ * can't read, so the emails are sent from here rather than from the browser.
+ *
+ * Each enquiry is a conversation: seller_enquiries/<id> holds who it's
+ * between and the latest message, and seller_enquiries/<id>/messages holds
+ * every message from either side. Each new message is also emailed.
  */
 
 export const LISTING_COLLECTIONS = ["plate-listings-new", "plate-listings"];
@@ -33,6 +37,16 @@ export function contactRef(
   listingRef: admin.firestore.DocumentReference
 ): admin.firestore.DocumentReference {
   return listingRef.collection("private").doc("contact");
+}
+
+/**
+ * @param {admin.firestore.DocumentReference} enquiryRef - A conversation.
+ * @return {admin.firestore.CollectionReference} Its messages.
+ */
+export function messagesRef(
+  enquiryRef: admin.firestore.DocumentReference
+): admin.firestore.CollectionReference {
+  return enquiryRef.collection("messages");
 }
 
 /**
@@ -115,18 +129,27 @@ export async function runSendEnquiry(
   }
 
   const plate = String(listing.plateCharacters ?? "").toUpperCase();
+  const now = admin.firestore.FieldValue.serverTimestamp();
+  const enquiryRef = db.collection("seller_enquiries").doc();
+  const batch = db.batch();
+  batch.set(enquiryRef, {
+    plateId: listingId,
+    plateCharacters: listing.plateCharacters ?? "",
+    enquiryType,
+    message,
+    buyerUid,
+    buyerEmail,
+    sellerLCNumber: contact.lCNumber ?? "",
+    sellerEmail: contact.lCEmail,
+    submittedAt: now,
+    lastMessageAt: now,
+    lastMessageFrom: "buyer",
+    lastMessageText: message,
+  });
+  batch.set(messagesRef(enquiryRef).doc(),
+    {from: "buyer", text: message, sentAt: now});
   await Promise.all([
-    db.collection("seller_enquiries").add({
-      plateId: listingId,
-      plateCharacters: listing.plateCharacters ?? "",
-      enquiryType,
-      message,
-      buyerUid,
-      buyerEmail,
-      sellerLCNumber: contact.lCNumber ?? "",
-      sellerEmail: contact.lCEmail,
-      submittedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }),
+    batch.commit(),
     /* eslint-disable max-len */
     db.collection("mail").add({
       to: [contact.lCEmail],
@@ -141,6 +164,7 @@ export async function runSendEnquiry(
           <p><strong>Message:</strong> ${escapeHtml(message)}</p>
           <p><strong>From:</strong> ${escapeHtml(buyerEmail)}</p>
           <p><strong>Sent:</strong> ${new Date().toLocaleString("en-GB", {timeZone: "Europe/London"})}</p>
+          <p><a href="${MESSAGES_URL}">Reply from your messages</a></p>
         `,
       },
     }),
@@ -154,10 +178,15 @@ export async function runSendEnquiry(
   return {whatsappNumber: digits || null};
 }
 
+export const MESSAGES_URL =
+  "https://mrvaluations.co.uk/account-dashboard?tab=messages";
+
 /**
- * Email a seller's reply to the buyer of one of their enquiries.
- * @param {string} uid - The signed-in seller.
- * @param {string | undefined} email - The seller's email from their token.
+ * Add a message to a conversation, from either the seller or the buyer, and
+ * email it to the other side. Nobody can write while the seller still has
+ * to unlock it.
+ * @param {string} uid - The signed-in user.
+ * @param {string | undefined} email - Their email from their token.
  * @param {Record<string, unknown>} data - enquiryId and replyMessage.
  * @return {Promise<void>}
  */
@@ -167,38 +196,60 @@ export async function runReplyToEnquiry(
   data: Record<string, unknown>
 ): Promise<void> {
   const enquiryId = text(data.enquiryId, 1, 100, "enquiry");
-  const reply = text(data.replyMessage, 10, 2000, "reply");
+  const reply = text(data.replyMessage, 1, 2000, "message");
 
   const db = admin.firestore();
+  const enquiryRef = db.collection("seller_enquiries").doc(enquiryId);
   const [enquirySnap, adminSnap] = await Promise.all([
-    db.collection("seller_enquiries").doc(enquiryId).get(),
+    enquiryRef.get(),
     db.collection("admins").doc(uid).get(),
   ]);
   const enquiry = enquirySnap.data();
   if (!enquiry) {
     throw new HttpsError("not-found", "Enquiry not found");
   }
-  if (!adminSnap.exists && (!email || email !== enquiry.sellerEmail)) {
+  const isBuyer = enquiry.buyerUid === uid;
+  // Admins answer for the legacy stock, but not on their own enquiries.
+  const isSeller = (!!email && email === enquiry.sellerEmail) ||
+    (adminSnap.exists && !isBuyer);
+  if (!isBuyer && !isSeller) {
     throw new HttpsError("permission-denied", "Not your enquiry");
   }
   if (enquiry.locked) {
     throw new HttpsError("failed-precondition", "Unlock this enquiry first");
   }
+  // Someone enquiring about their own plate is the seller here.
+  const from = isSeller ? "seller" : "buyer";
+  const to = from === "seller" ? enquiry.buyerEmail : enquiry.sellerEmail;
+  if (!to) {
+    throw new HttpsError("failed-precondition", "No email to reply to");
+  }
 
   const plate = String(enquiry.plateCharacters ?? "").toUpperCase();
+  const now = admin.firestore.FieldValue.serverTimestamp();
+  const heading = from === "seller" ?
+    "The seller has replied to your enquiry" :
+    "The buyer has replied";
+  const batch = db.batch();
+  batch.set(messagesRef(enquiryRef).doc(), {from, text: reply, sentAt: now});
+  batch.update(enquiryRef, {
+    lastMessageAt: now,
+    lastMessageFrom: from,
+    lastMessageText: reply,
+  });
   /* eslint-disable max-len */
-  await db.collection("mail").add({
-    to: [enquiry.buyerEmail],
+  batch.set(db.collection("mail").doc(), {
+    to: [to],
     message: {
       subject: `Re: Your enquiry about ${plate}`,
       html: `
-        <h2>The seller has replied to your enquiry</h2>
+        <h2>${heading}</h2>
         <p><strong>Plate:</strong> ${escapeHtml(plate)}</p>
-        <p><strong>Reply:</strong> ${escapeHtml(reply)}</p>
-        <hr>
-        <p style="color:#888"><em>Your original message: ${escapeHtml(String(enquiry.message ?? ""))}</em></p>
+        <p><strong>Message:</strong> ${escapeHtml(reply)}</p>
+        <p><a href="${MESSAGES_URL}">See the conversation and reply</a></p>
       `,
     },
   });
   /* eslint-enable max-len */
+  await batch.commit();
 }

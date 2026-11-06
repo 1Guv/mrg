@@ -51,10 +51,11 @@ const constants_js_1 = require("./constants.js");
  * fee once to read and reply to the first buyer enquiry. Every later
  * enquiry on that listing is free.
  *
- * Until the listing is unlocked, an enquiry's buyer details and full
- * message are kept in seller_enquiries/<id>/private/buyer, which clients
- * can't read. The seller sees only the enquiry type and a short preview,
- * and the buyer doesn't get the seller's WhatsApp number.
+ * Until the listing is unlocked, an enquiry's buyer email is kept in
+ * seller_enquiries/<id>/private/buyer, which clients can't read, and its
+ * messages can be read by the buyer but not the seller (see the rules).
+ * The seller sees only the enquiry type and a short preview, and the buyer
+ * doesn't get the seller's WhatsApp number.
  *
  * Listings paid for up front (no pricingModel) and the legacy stock are
  * never locked.
@@ -232,8 +233,11 @@ async function saveLockedEnquiry(listingRef, listing, sellerEmail, enquiry) {
     const db = admin.firestore();
     const plate = String((_a = listing.plateCharacters) !== null && _a !== void 0 ? _a : "").toUpperCase();
     const preview = enquiryPreview(enquiry.message);
+    const now = admin.firestore.FieldValue.serverTimestamp();
     const enquiryRef = db.collection("seller_enquiries").doc();
     const batch = db.batch();
+    // buyerUid stays visible so the buyer can see their conversation; it
+    // isn't contact information.
     batch.set(enquiryRef, {
         plateId: listingRef.id,
         plateCharacters: (_b = listing.plateCharacters) !== null && _b !== void 0 ? _b : "",
@@ -241,12 +245,16 @@ async function saveLockedEnquiry(listingRef, listing, sellerEmail, enquiry) {
         message: null,
         preview,
         locked: true,
-        buyerUid: null,
+        buyerUid: enquiry.buyerUid,
         buyerEmail: null,
         sellerLCNumber: "",
         sellerEmail,
-        submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+        submittedAt: now,
+        lastMessageAt: now,
+        lastMessageFrom: "buyer",
+        lastMessageText: null,
     });
+    batch.set((0, enquiries_js_1.messagesRef)(enquiryRef).doc(), { from: "buyer", text: enquiry.message, sentAt: now });
     batch.set(enquiryRef.collection("private").doc("buyer"), {
         message: enquiry.message,
         buyerUid: enquiry.buyerUid,
@@ -262,7 +270,7 @@ async function saveLockedEnquiry(listingRef, listing, sellerEmail, enquiry) {
         <p><strong>Enquiry type:</strong> ${(0, enquiries_js_1.escapeHtml)(enquiry.enquiryType)}</p>
         <p><strong>Message:</strong> “${(0, enquiries_js_1.escapeHtml)(preview)}”</p>
         <p>Pay £${constants_js_1.LISTING_FEE_GBP} once to read the full message and reply. Every enquiry after this one is free.</p>
-        <p><a href="https://mrvaluations.co.uk/account-dashboard?tab=messages">Unlock this enquiry</a></p>
+        <p><a href="${enquiries_js_1.MESSAGES_URL}">Unlock this enquiry</a></p>
       `,
         },
     });
@@ -355,7 +363,7 @@ async function runUnlockEnquiries(listingId, sessionId, discountPence, voucherCo
         discountAppliedPence: discountPence || null,
     });
     locked.docs.forEach((doc, i) => {
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         const buyer = (_a = privates[i].data()) !== null && _a !== void 0 ? _a : {};
         const enquiry = doc.data();
         batch.update(doc.ref, {
@@ -363,6 +371,7 @@ async function runUnlockEnquiries(listingId, sessionId, discountPence, voucherCo
             message: (_b = buyer.message) !== null && _b !== void 0 ? _b : "",
             buyerUid: (_c = buyer.buyerUid) !== null && _c !== void 0 ? _c : null,
             buyerEmail: (_d = buyer.buyerEmail) !== null && _d !== void 0 ? _d : null,
+            lastMessageText: (_f = (_e = enquiry.lastMessageText) !== null && _e !== void 0 ? _e : buyer.message) !== null && _f !== void 0 ? _f : "",
         });
         /* eslint-disable max-len */
         batch.set(db.collection("mail").doc(), Object.assign(Object.assign({ to: [enquiry.sellerEmail] }, (buyer.buyerEmail ? { replyTo: buyer.buyerEmail } : {})), { message: {
@@ -370,10 +379,10 @@ async function runUnlockEnquiries(listingId, sessionId, discountPence, voucherCo
                 html: `
           <h2>Your enquiry is unlocked</h2>
           <p><strong>Plate:</strong> ${(0, enquiries_js_1.escapeHtml)(plate)}</p>
-          <p><strong>Enquiry type:</strong> ${(0, enquiries_js_1.escapeHtml)(String((_e = enquiry.enquiryType) !== null && _e !== void 0 ? _e : ""))}</p>
-          <p><strong>Message:</strong> ${(0, enquiries_js_1.escapeHtml)(String((_f = buyer.message) !== null && _f !== void 0 ? _f : ""))}</p>
-          <p><strong>From:</strong> ${(0, enquiries_js_1.escapeHtml)(String((_g = buyer.buyerEmail) !== null && _g !== void 0 ? _g : ""))}</p>
-          <p>Reply to this email, or from <a href="https://mrvaluations.co.uk/account-dashboard?tab=messages">your messages</a>.</p>
+          <p><strong>Enquiry type:</strong> ${(0, enquiries_js_1.escapeHtml)(String((_g = enquiry.enquiryType) !== null && _g !== void 0 ? _g : ""))}</p>
+          <p><strong>Message:</strong> ${(0, enquiries_js_1.escapeHtml)(String((_h = buyer.message) !== null && _h !== void 0 ? _h : ""))}</p>
+          <p><strong>From:</strong> ${(0, enquiries_js_1.escapeHtml)(String((_j = buyer.buyerEmail) !== null && _j !== void 0 ? _j : ""))}</p>
+          <p>Reply to this email, or from <a href="${enquiries_js_1.MESSAGES_URL}">your messages</a>.</p>
         `,
             } }));
         /* eslint-enable max-len */

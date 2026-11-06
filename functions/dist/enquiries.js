@@ -33,8 +33,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CONTACT_FIELDS = exports.LISTING_COLLECTIONS = void 0;
+exports.MESSAGES_URL = exports.CONTACT_FIELDS = exports.LISTING_COLLECTIONS = void 0;
 exports.contactRef = contactRef;
+exports.messagesRef = messagesRef;
 exports.escapeHtml = escapeHtml;
 exports.runSendEnquiry = runSendEnquiry;
 exports.runReplyToEnquiry = runReplyToEnquiry;
@@ -42,9 +43,13 @@ const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const pay_per_enquiry_js_1 = require("./pay-per-enquiry.js");
 /**
- * Buyer enquiries and seller replies. Seller contact details live in a
- * private subdocument, <listing>/private/contact, which clients can't read,
- * so the emails are sent from here rather than from the browser.
+ * Buyer enquiries and the conversations that follow. Seller contact details
+ * live in a private subdocument, <listing>/private/contact, which clients
+ * can't read, so the emails are sent from here rather than from the browser.
+ *
+ * Each enquiry is a conversation: seller_enquiries/<id> holds who it's
+ * between and the latest message, and seller_enquiries/<id>/messages holds
+ * every message from either side. Each new message is also emailed.
  */
 exports.LISTING_COLLECTIONS = ["plate-listings-new", "plate-listings"];
 exports.CONTACT_FIELDS = [
@@ -60,6 +65,13 @@ exports.CONTACT_FIELDS = [
  */
 function contactRef(listingRef) {
     return listingRef.collection("private").doc("contact");
+}
+/**
+ * @param {admin.firestore.DocumentReference} enquiryRef - A conversation.
+ * @return {admin.firestore.CollectionReference} Its messages.
+ */
+function messagesRef(enquiryRef) {
+    return enquiryRef.collection("messages");
 }
 /**
  * @param {string} text - Text typed by a user.
@@ -132,18 +144,26 @@ async function runSendEnquiry(buyerUid, buyerEmail, data) {
         return { whatsappNumber: null, sellerNotified: true };
     }
     const plate = String((_d = listing.plateCharacters) !== null && _d !== void 0 ? _d : "").toUpperCase();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const enquiryRef = db.collection("seller_enquiries").doc();
+    const batch = db.batch();
+    batch.set(enquiryRef, {
+        plateId: listingId,
+        plateCharacters: (_e = listing.plateCharacters) !== null && _e !== void 0 ? _e : "",
+        enquiryType,
+        message,
+        buyerUid,
+        buyerEmail,
+        sellerLCNumber: (_f = contact.lCNumber) !== null && _f !== void 0 ? _f : "",
+        sellerEmail: contact.lCEmail,
+        submittedAt: now,
+        lastMessageAt: now,
+        lastMessageFrom: "buyer",
+        lastMessageText: message,
+    });
+    batch.set(messagesRef(enquiryRef).doc(), { from: "buyer", text: message, sentAt: now });
     await Promise.all([
-        db.collection("seller_enquiries").add({
-            plateId: listingId,
-            plateCharacters: (_e = listing.plateCharacters) !== null && _e !== void 0 ? _e : "",
-            enquiryType,
-            message,
-            buyerUid,
-            buyerEmail,
-            sellerLCNumber: (_f = contact.lCNumber) !== null && _f !== void 0 ? _f : "",
-            sellerEmail: contact.lCEmail,
-            submittedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }),
+        batch.commit(),
         /* eslint-disable max-len */
         db.collection("mail").add({
             to: [contact.lCEmail],
@@ -158,6 +178,7 @@ async function runSendEnquiry(buyerUid, buyerEmail, data) {
           <p><strong>Message:</strong> ${escapeHtml(message)}</p>
           <p><strong>From:</strong> ${escapeHtml(buyerEmail)}</p>
           <p><strong>Sent:</strong> ${new Date().toLocaleString("en-GB", { timeZone: "Europe/London" })}</p>
+          <p><a href="${exports.MESSAGES_URL}">Reply from your messages</a></p>
         `,
             },
         }),
@@ -169,47 +190,72 @@ async function runSendEnquiry(buyerUid, buyerEmail, data) {
     const digits = String((_h = contact.lCNumber) !== null && _h !== void 0 ? _h : "").replace(/\D/g, "");
     return { whatsappNumber: digits || null };
 }
+exports.MESSAGES_URL = "https://mrvaluations.co.uk/account-dashboard?tab=messages";
 /**
- * Email a seller's reply to the buyer of one of their enquiries.
- * @param {string} uid - The signed-in seller.
- * @param {string | undefined} email - The seller's email from their token.
+ * Add a message to a conversation, from either the seller or the buyer, and
+ * email it to the other side. Nobody can write while the seller still has
+ * to unlock it.
+ * @param {string} uid - The signed-in user.
+ * @param {string | undefined} email - Their email from their token.
  * @param {Record<string, unknown>} data - enquiryId and replyMessage.
  * @return {Promise<void>}
  */
 async function runReplyToEnquiry(uid, email, data) {
-    var _a, _b;
+    var _a;
     const enquiryId = text(data.enquiryId, 1, 100, "enquiry");
-    const reply = text(data.replyMessage, 10, 2000, "reply");
+    const reply = text(data.replyMessage, 1, 2000, "message");
     const db = admin.firestore();
+    const enquiryRef = db.collection("seller_enquiries").doc(enquiryId);
     const [enquirySnap, adminSnap] = await Promise.all([
-        db.collection("seller_enquiries").doc(enquiryId).get(),
+        enquiryRef.get(),
         db.collection("admins").doc(uid).get(),
     ]);
     const enquiry = enquirySnap.data();
     if (!enquiry) {
         throw new https_1.HttpsError("not-found", "Enquiry not found");
     }
-    if (!adminSnap.exists && (!email || email !== enquiry.sellerEmail)) {
+    const isBuyer = enquiry.buyerUid === uid;
+    // Admins answer for the legacy stock, but not on their own enquiries.
+    const isSeller = (!!email && email === enquiry.sellerEmail) ||
+        (adminSnap.exists && !isBuyer);
+    if (!isBuyer && !isSeller) {
         throw new https_1.HttpsError("permission-denied", "Not your enquiry");
     }
     if (enquiry.locked) {
         throw new https_1.HttpsError("failed-precondition", "Unlock this enquiry first");
     }
+    // Someone enquiring about their own plate is the seller here.
+    const from = isSeller ? "seller" : "buyer";
+    const to = from === "seller" ? enquiry.buyerEmail : enquiry.sellerEmail;
+    if (!to) {
+        throw new https_1.HttpsError("failed-precondition", "No email to reply to");
+    }
     const plate = String((_a = enquiry.plateCharacters) !== null && _a !== void 0 ? _a : "").toUpperCase();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const heading = from === "seller" ?
+        "The seller has replied to your enquiry" :
+        "The buyer has replied";
+    const batch = db.batch();
+    batch.set(messagesRef(enquiryRef).doc(), { from, text: reply, sentAt: now });
+    batch.update(enquiryRef, {
+        lastMessageAt: now,
+        lastMessageFrom: from,
+        lastMessageText: reply,
+    });
     /* eslint-disable max-len */
-    await db.collection("mail").add({
-        to: [enquiry.buyerEmail],
+    batch.set(db.collection("mail").doc(), {
+        to: [to],
         message: {
             subject: `Re: Your enquiry about ${plate}`,
             html: `
-        <h2>The seller has replied to your enquiry</h2>
+        <h2>${heading}</h2>
         <p><strong>Plate:</strong> ${escapeHtml(plate)}</p>
-        <p><strong>Reply:</strong> ${escapeHtml(reply)}</p>
-        <hr>
-        <p style="color:#888"><em>Your original message: ${escapeHtml(String((_b = enquiry.message) !== null && _b !== void 0 ? _b : ""))}</em></p>
+        <p><strong>Message:</strong> ${escapeHtml(reply)}</p>
+        <p><a href="${exports.MESSAGES_URL}">See the conversation and reply</a></p>
       `,
         },
     });
     /* eslint-enable max-len */
+    await batch.commit();
 }
 //# sourceMappingURL=enquiries.js.map

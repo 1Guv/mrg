@@ -7,17 +7,6 @@
   padding: 1.5rem 0;
 }
 
-.enquiry-card {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
 .enquiry-plate-row {
   display: flex;
   align-items: center;
@@ -35,22 +24,6 @@
 .enquiry-date {
   font-size: 0.75rem;
   color: #888;
-}
-
-.enquiry-type {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #1565c0;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.enquiry-message {
-  font-size: 0.9rem;
-  color: #333;
-  margin: 0;
-  line-height: 1.5;
 }
 
 .enquiry-from {
@@ -98,16 +71,4 @@
   color: #1b5e20;
   text-align: center;
   font-weight: 500;
-}
-
-.locked-preview {
-  color: #555;
-  font-style: italic;
-}
-
-// Extra class beats Material's own button colours
-.unlock-btn.mat-mdc-raised-button {
-  background-color: #2e7d32;
-  color: white;
-  border-radius: 999px;
 }

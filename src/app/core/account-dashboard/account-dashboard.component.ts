@@ -2,10 +2,9 @@ import { Component, OnDestroy, OnInit, effect, inject, signal } from '@angular/c
 import { CommonModule, DatePipe, UpperCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { ReplyToEnquiryDialogComponent } from '../../shared/reply-to-enquiry-dialog/reply-to-enquiry-dialog.component';
+import { MessagesInboxComponent } from '../../shared/messages-inbox/messages-inbox.component';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -38,7 +37,6 @@ import { LISTING_FEE } from '../../constants/listing-fee';
     UpperCasePipe,
     MatButtonModule,
     MatTabsModule,
-    MatDialogModule,
     MatTableModule,
     RouterModule,
     ReactiveFormsModule,
@@ -48,7 +46,8 @@ import { LISTING_FEE } from '../../constants/listing-fee';
     AccountDashboardValuationComponent,
     AdminComponent,
     VouchersAdminComponent,
-    MeComponent
+    MeComponent,
+    MessagesInboxComponent
   ],
   templateUrl: './account-dashboard.component.html',
   styleUrl: './account-dashboard.component.scss'
@@ -82,6 +81,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   feedback$ = signal<ValuationFeedback[]>([]);
   plateMessages$ = signal<PlateValuationMessage[]>([]);
   sellerEnquiries$ = signal<SellerEnquiry[]>([]);
+  buyerEnquiries$ = signal<SellerEnquiry[]>([]);
   myListings$ = signal<PlateListing[]>([]);
   nudgeQueue$ = signal<NudgeQueueEntry[]>([]);
   buyerSearches$ = signal<BuyerSearch[]>([]);
@@ -99,8 +99,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private authService: AuthService,
-    private dialog: MatDialog
+    private authService: AuthService
   ) {
     effect(() => {
       const uid = (this.currentUser$() as any)?.uid;
@@ -215,6 +214,16 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
     this.subs.add(
       this.authService.currentUser$.pipe(
+        switchMap((user: any) => user?.uid
+          ? this.sellerEnquiryService.getEnquiriesForBuyer(user.uid).pipe(
+              catchError((err) => { console.error('Firestore error loading sent enquiries:', err); return of([] as SellerEnquiry[]); })
+            )
+          : of([] as SellerEnquiry[]))
+      ).subscribe(enquiries => this.buyerEnquiries$.set(enquiries))
+    );
+
+    this.subs.add(
+      this.authService.currentUser$.pipe(
         switchMap(user => {
           const uid = (user as any)?.uid;
           if (!uid) return of([] as PlateListing[]);
@@ -265,10 +274,6 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   async signOut(): Promise<void> {
     await this.authService.logout();
     await this.router.navigateByUrl('/login');
-  }
-
-  onReply(enquiry: SellerEnquiry): void {
-    this.dialog.open(ReplyToEnquiryDialogComponent, { width: '520px', data: enquiry });
   }
 
   /** Pay once to unlock every enquiry on the listing this one is about. */
