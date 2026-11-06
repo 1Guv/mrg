@@ -35,7 +35,8 @@ export class VouchersAdminComponent {
   deactivatingId = signal<string | null>(null);
 
   form: FormGroup = this.fb.group({
-    code: ['', [Validators.required, Validators.minLength(3)]],
+    // Stripe promotion codes allow only letters, numbers, - and _
+    code: ['', [Validators.required, Validators.minLength(3), Validators.pattern(/^[A-Za-z0-9_-]+$/)]],
     percentOff: ['', [Validators.required, Validators.min(1), Validators.max(100)]],
     description: ['', Validators.required],
     expiresAt: [''],
