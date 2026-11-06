@@ -1,12 +1,8 @@
 <div class="container-fluid main-bg-c">
   <div class="list-plate-container">
     <h1 class="cabin-font-sketch text-center">List Your Plate</h1>
-    <p class="text-center text-muted mb-2">One-off £{{ plateListingService.listingFee }} listing fee — no commission, no markup, listed until sold.</p>
+    <p class="text-center text-muted mb-2"><strong>Free to list.</strong> Pay £{{ plateListingService.listingFee }} once, only when a buyer messages you — no commission, no markup.</p>
     <app-stats-strip class="mb-4" [compact]="true" />
-
-    @if (voucherCode) {
-      <p class="text-center voucher-applied-hint">🎉 Voucher <strong>{{ voucherCode }}</strong> — {{ voucherPercentOff }}% off applied</p>
-    }
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="list-plate-form">
 
@@ -35,19 +31,20 @@
         </p>
       }
       @if (feeShare; as share) {
-        <p class="valuation-hint text-muted">The £{{ plateListingService.listingFee }} fee is {{ share }} of your asking price.</p>
+        <p class="valuation-hint text-muted">If a buyer gets in touch, the one-off £{{ plateListingService.listingFee }} is {{ share }} of your asking price.</p>
       }
 
       <mat-form-field appearance="outline" class="full-field">
         <mat-label>Phone number</mat-label>
         <input matInput type="tel" formControlName="phone" placeholder="e.g. 07700 900000">
-        <mat-hint>Buyers who message you can also WhatsApp you on this number</mat-hint>
+        <mat-hint>Buyers can WhatsApp you on this number once you've unlocked their enquiry</mat-hint>
         <mat-error>Phone number is required</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-field">
         <mat-label>Email address</mat-label>
-        <input matInput type="email" formControlName="email">
+        <input matInput type="email" formControlName="email" readonly>
+        <mat-hint>Your account email — we'll send buyer enquiries here</mat-hint>
         <mat-error>A valid email address is required</mat-error>
       </mat-form-field>
 
@@ -74,7 +71,7 @@
 
       <button type="submit" mat-raised-button color="primary" class="submit-btn"
         [disabled]="form.invalid || loading">
-        @if (loading) { Processing... } @else { Pay £{{ plateListingService.listingFee }} &amp; List }
+        @if (loading) { Listing... } @else { List my plate free }
       </button>
 
       <button type="button" mat-stroked-button class="submit-btn" routerLink="/">Cancel</button>

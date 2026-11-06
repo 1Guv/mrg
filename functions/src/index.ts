@@ -37,6 +37,13 @@ const valuationApiKey = defineSecret("VALUATION_API_KEY");
 import {withFailureAlert} from "./failure-alerts";
 import {fillPlateMeanings} from "./plate-meanings.js";
 import {
+  contactFields,
+  listingFields,
+  runCreateFreeListing,
+  runCreateUnlockSession,
+  runUnlockEnquiries,
+} from "./pay-per-enquiry.js";
+import {
   contactRef,
   runSendEnquiry,
   runReplyToEnquiry,
@@ -451,6 +458,35 @@ export const createCheckoutSession = onCall(
   }
 );
 
+/** Callable — lists a plate for free; the seller pays per enquiry. */
+export const createFreeListing = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    if (!request.auth?.token.email) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+    const {ip} = callerOf(request);
+    return runCreateFreeListing(
+      request.auth.uid, request.auth.token.email, request.data ?? {}, ip);
+  }
+);
+
+/** Callable — Stripe Checkout for unlocking a free listing's enquiries. */
+export const createUnlockSession = onCall(
+  {maxInstances: 10, secrets: [stripeSecretKey]},
+  async (request) => {
+    if (!request.auth?.token.email) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripe =
+      new (Stripe as any)(stripeSecretKey.value()) as import("stripe").Stripe;
+    return runCreateUnlockSession(
+      stripe, request.auth.uid, request.auth.token.email, request.data ?? {},
+      (code) => resolveVoucherForCheckout(stripe, code));
+  }
+);
+
 /** Callable — admin creates/deactivates public marketing voucher codes. */
 export const manageVoucher = onCall(
   {maxInstances: 10, secrets: [stripeSecretKey]},
@@ -525,6 +561,15 @@ export const stripeWebhook = onRequest(
           import("stripe").Stripe["checkout"]["sessions"]["create"]
         >>;
       const session = event.data.object as CheckoutSession;
+      if (session.metadata?.purpose === "unlock") {
+        await runUnlockEnquiries(
+          String(session.metadata.listingId),
+          session.id,
+          session.total_details?.amount_discount ?? 0,
+          String(session.metadata.voucherCode ?? ""));
+        response.status(200).send("ok");
+        return;
+      }
       const meta = session.metadata as {
         plateCharacters: string;
         askingPrice: string;
@@ -571,36 +616,23 @@ export const stripeWebhook = onRequest(
 
       const listingRef = db.collection("plate-listings-new").doc();
       const batch = db.batch();
-      batch.set(listingRef, {
+      const input = {
         plateCharacters: meta.plateCharacters,
         askingPrice: meta.askingPrice,
         meanings: meta.meanings,
-        plateNegotiable: meta.negotiable === "true",
+        negotiable: meta.negotiable === "true",
         sellerUid: meta.sellerUid,
         initials,
-        createdDate: new Date().toISOString(),
-        isSold: false,
-        soldPrice: null,
-        viewsPlaceholder: 0,
-        plateBestOffer: false,
-        offersOver: false,
-        orNearestOffer: false,
-        plateType: "",
-        plateCategory: "",
-        profiletPicUrl: "",
-        profiletPicInitials: true,
-        messageSeller: "",
+        email: meta.email,
+        phone: meta.phone,
+      };
+      batch.set(listingRef, {
+        ...listingFields(input),
         voucherCode: voucherCode || null,
         discountAppliedPence: discountAppliedPence || null,
       });
       // Contact details go where only Cloud Functions can read them.
-      batch.set(contactRef(listingRef), {
-        lCEmail: meta.email,
-        lCNumber: meta.phone,
-        lCName: meta.email,
-        plateListingAccName: meta.email,
-        plateListingAccTelNumber: meta.phone,
-      });
+      batch.set(contactRef(listingRef), contactFields(input));
       await batch.commit();
     }
 

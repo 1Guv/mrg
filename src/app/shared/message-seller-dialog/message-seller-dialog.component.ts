@@ -53,6 +53,8 @@ export class MessageSellerDialogComponent {
   errorMessage = '';
   /** The seller's number, returned once the enquiry is sent. */
   whatsappNumber: string | null = null;
+  /** The seller has been emailed and must unlock the enquiry to reply. */
+  sellerNotified = false;
 
   get whatsappUrl(): string {
     const enquiryType = this.form.value.enquiryType ?? '';
@@ -69,11 +71,13 @@ export class MessageSellerDialogComponent {
     this.errorMessage = '';
 
     try {
-      this.whatsappNumber = await this.enquiryService.sendEnquiry(
+      const result = await this.enquiryService.sendEnquiry(
         this.listing,
         this.form.value.enquiryType,
         this.form.value.message
       );
+      this.whatsappNumber = result.whatsappNumber;
+      this.sellerNotified = !!result.sellerNotified;
       this.tracking.enquirySent(this.form.value.enquiryType);
       this.submitted = true;
     } catch {

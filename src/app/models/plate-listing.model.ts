@@ -18,6 +18,9 @@ export interface PlateListing {
   isSold: boolean;
   soldPrice: number | null;
   sellerUid?: string;
+  /** 'enquiry' for free listings, where the seller pays to unlock enquiries. */
+  pricingModel?: 'enquiry';
+  enquiriesUnlocked?: boolean;
   voucherCode?: string | null;
   discountAppliedPence?: number | null;
   _collection?: string;

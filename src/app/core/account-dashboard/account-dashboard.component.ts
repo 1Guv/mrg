@@ -3,7 +3,7 @@ import { CommonModule, DatePipe, UpperCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ReplyToEnquiryDialogComponent } from '../../shared/reply-to-enquiry-dialog/reply-to-enquiry-dialog.component';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -25,6 +25,9 @@ import { AdminService, AutoValuation, BuyerSearch, NudgeQueueEntry, PlateSearch,
 import { AdminsService } from '../../services/admins.service';
 import { MeComponent } from '../me/me.component';
 import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enquiry.service';
+import { PayPerEnquiryService } from '../../services/pay-per-enquiry.service';
+import { ConversionTrackingService } from '../../services/conversion-tracking.service';
+import { LISTING_FEE } from '../../constants/listing-fee';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -60,6 +63,17 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
   private adminsService = inject(AdminsService);
   private numberPlateFormService = inject(NumberPlateFormService);
   private sellerEnquiryService = inject(SellerEnquiryService);
+  private payPerEnquiry = inject(PayPerEnquiryService);
+  private tracking = inject(ConversionTrackingService);
+  private route = inject(ActivatedRoute);
+
+  readonly listingFee = LISTING_FEE;
+  /** Opened from an enquiry email or after paying, so start on Messages. */
+  openMessages = false;
+  /** Plate just unlocked, from the Stripe success redirect. */
+  unlockedPlate = '';
+  unlockingId = signal<string | null>(null);
+  unlockError = signal('');
 
   valuations$ = signal<RegValuation[]>([]);
   plateSearches$ = signal<PlateSearch[]>([]);
@@ -101,6 +115,13 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.numberPlateFormService.triggerReset();
+
+    const params = this.route.snapshot.queryParamMap;
+    this.openMessages = params.get('tab') === 'messages';
+    this.unlockedPlate = params.get('unlocked') ?? '';
+    const sessionId = params.get('session_id');
+    // GA4 drops repeat purchases with the same transaction_id, so a reload is safe
+    if (this.unlockedPlate && sessionId) this.tracking.listingPurchased(sessionId, LISTING_FEE);
 
     this.subs.add(
       this.authService.currentUser$
@@ -248,6 +269,21 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   onReply(enquiry: SellerEnquiry): void {
     this.dialog.open(ReplyToEnquiryDialogComponent, { width: '520px', data: enquiry });
+  }
+
+  /** Pay once to unlock every enquiry on the listing this one is about. */
+  async onUnlock(enquiry: SellerEnquiry): Promise<void> {
+    const listingId = String(enquiry.plateId);
+    this.unlockingId.set(listingId);
+    this.unlockError.set('');
+    try {
+      const url = await this.payPerEnquiry.createUnlockSession(listingId);
+      this.tracking.unlockStarted(LISTING_FEE);
+      window.location.href = url;
+    } catch {
+      this.unlockError.set('Something went wrong. Please try again.');
+      this.unlockingId.set(null);
+    }
   }
 
   getListingForm(listing: PlateListing): FormGroup {

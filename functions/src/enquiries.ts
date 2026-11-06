@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import {HttpsError} from "firebase-functions/v2/https";
+import {enquiriesLocked, saveLockedEnquiry} from "./pay-per-enquiry.js";
 
 /**
  * Buyer enquiries and seller replies. Seller contact details live in a
@@ -69,13 +70,15 @@ function text(value: unknown, min: number, max: number, name: string): string {
  * @param {Record<string, unknown>} data - listingId, collection (a hint),
  *   enquiryType and message.
  * @return {Promise<object>} whatsappNumber: the seller's number, digits
- *   only, so the buyer can follow up on WhatsApp; null when there is none.
+ *   only, so the buyer can follow up on WhatsApp; null when there is none
+ *   or the seller hasn't unlocked their enquiries yet. sellerNotified is
+ *   true when the enquiry waits for the seller to unlock it.
  */
 export async function runSendEnquiry(
   buyerUid: string,
   buyerEmail: string,
   data: Record<string, unknown>
-): Promise<{whatsappNumber: string | null}> {
+): Promise<{whatsappNumber: string | null, sellerNotified?: boolean}> {
   const listingId = text(data.listingId, 1, 100, "listing");
   const enquiryType = text(data.enquiryType, 1, 100, "enquiry type");
   const message = text(data.message, 10, 2000, "message");
@@ -103,6 +106,12 @@ export async function runSendEnquiry(
   const contact = (contactSnap.data() ?? listing) as SellerContact;
   if (!contact.lCEmail) {
     throw new HttpsError("failed-precondition", "Seller has no email");
+  }
+
+  if (enquiriesLocked(listing)) {
+    await saveLockedEnquiry(listingRef, listing, contact.lCEmail,
+      {enquiryType, message, buyerUid, buyerEmail});
+    return {whatsappNumber: null, sellerNotified: true};
   }
 
   const plate = String(listing.plateCharacters ?? "").toUpperCase();
@@ -171,6 +180,9 @@ export async function runReplyToEnquiry(
   }
   if (!adminSnap.exists && (!email || email !== enquiry.sellerEmail)) {
     throw new HttpsError("permission-denied", "Not your enquiry");
+  }
+  if (enquiry.locked) {
+    throw new HttpsError("failed-precondition", "Unlock this enquiry first");
   }
 
   const plate = String(enquiry.plateCharacters ?? "").toUpperCase();

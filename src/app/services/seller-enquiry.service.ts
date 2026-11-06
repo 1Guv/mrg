@@ -16,12 +16,22 @@ export interface SellerEnquiry {
   plateId: number | string;
   plateCharacters: string;
   enquiryType: string;
-  message: string;
-  buyerUid: string;
-  buyerEmail: string;
+  /** Null until the seller unlocks a locked enquiry. */
+  message: string | null;
+  buyerUid: string | null;
+  buyerEmail: string | null;
+  /** Set on free listings until the seller pays to read it. */
+  locked?: boolean;
+  /** First few words, with contact details masked, shown while locked. */
+  preview?: string;
   sellerLCNumber: string;
   sellerEmail: string;
   submittedAt?: any;
+}
+
+export interface SendEnquiryResult {
+  whatsappNumber: string | null;
+  sellerNotified?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -29,16 +39,19 @@ export class SellerEnquiryService {
   private firestore = inject(Firestore);
   private functions = inject(Functions);
 
-  /** Sends the enquiry to the seller; resolves to their WhatsApp number, if any. */
-  async sendEnquiry(listing: PlateListing, enquiryType: string, message: string): Promise<string | null> {
-    const fn = httpsCallable<object, { whatsappNumber: string | null }>(this.functions, 'sendEnquiry');
+  /**
+   * Sends the enquiry to the seller. Resolves to their WhatsApp number, if
+   * any; sellerNotified means it waits for the seller to unlock it.
+   */
+  async sendEnquiry(listing: PlateListing, enquiryType: string, message: string): Promise<SendEnquiryResult> {
+    const fn = httpsCallable<object, SendEnquiryResult>(this.functions, 'sendEnquiry');
     const result = await fn({
       listingId: String(listing.id),
       collection: listing._collection,
       enquiryType,
       message
     });
-    return result.data.whatsappNumber;
+    return result.data;
   }
 
   getEnquiriesForSeller(email: string): Observable<SellerEnquiry[]> {

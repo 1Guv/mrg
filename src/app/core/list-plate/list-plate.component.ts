@@ -7,15 +7,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { StripeService } from '../../services/stripe.service';
+import { PayPerEnquiryService } from '../../services/pay-per-enquiry.service';
 import { EmailLinkSignInService } from '../../services/email-link-sign-in.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { feeShare } from '../../utils/fee-share';
-import { CHECKOUT_VALUE_STORAGE_KEY, NUDGE_VOUCHER_PERCENT_OFF } from '../../constants/listing-fee';
 import { AuthPromptDialogComponent, AuthPromptDialogData } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 import { StatsStripComponent } from '../../shared/stats-strip/stats-strip.component';
 
@@ -40,7 +39,8 @@ import { StatsStripComponent } from '../../shared/stats-strip/stats-strip.compon
 export class ListPlateComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private stripeService = inject(StripeService);
+  private payPerEnquiry = inject(PayPerEnquiryService);
+  private router = inject(Router);
   private tracking = inject(ConversionTrackingService);
   private dialog = inject(MatDialog);
   plateListingService = inject(PlateListingService);
@@ -61,8 +61,6 @@ export class ListPlateComponent implements OnInit {
   errorMessage = '';
   valuationMin: number | null = null;
   valuationMax: number | null = null;
-  voucherCode: string | null = null;
-  readonly voucherPercentOff = NUDGE_VOUCHER_PERCENT_OFF;
 
   /** "3%": the fee against the asking price as they type it. */
   get feeShare(): string | null {
@@ -80,11 +78,6 @@ export class ListPlateComponent implements OnInit {
     if (!isNaN(minVal) && minVal > 0) this.valuationMin = minVal;
     const maxVal = Number(params['max']);
     if (!isNaN(maxVal) && maxVal > 0) this.valuationMax = maxVal;
-    // Result-page vouchers say when they expire; drop one that has, so the
-    // page doesn't promise a discount Stripe will refuse.
-    const voucherExpires = Number(params['voucherExpires']);
-    const voucherLive = !voucherExpires || voucherExpires > Date.now();
-    if (params['voucher'] && voucherLive) this.voucherCode = String(params['voucher']).toUpperCase();
 
     const source = this.emailLink.hasLinkInUrl() ? 'email_link' :
       params['from'] === 'result' ? 'valuation' :
@@ -125,28 +118,22 @@ export class ListPlateComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     try {
-      const url = await this.stripeService.createCheckoutSession({
+      const listing = await this.payPerEnquiry.createFreeListing({
         plateCharacters: this.form.value.plateCharacters.toUpperCase(),
         askingPrice: String(this.form.value.askingPrice),
         phone: this.form.value.phone,
-        email: this.form.value.email,
         initials: this.form.value.initials.toUpperCase(),
         meanings: this.form.value.meanings ?? '',
         negotiable: this.form.value.negotiable ?? false,
-        voucherCode: this.voucherCode ?? undefined,
       });
-      const fee = this.voucherCode ?
-        this.plateListingService.listingFee * (100 - NUDGE_VOUCHER_PERCENT_OFF) / 100 :
-        this.plateListingService.listingFee;
-      this.tracking.checkoutStarted(fee, !!this.voucherCode);
-      try {
-        sessionStorage.setItem(CHECKOUT_VALUE_STORAGE_KEY, String(fee));
-      } catch {
-        // Storage can be blocked; the success page falls back to the full fee.
-      }
-      window.location.href = url;
-    } catch {
-      this.errorMessage = 'Something went wrong. Please try again.';
+      this.tracking.freeListingCreated();
+      this.router.navigate(['/list-plate/success'], { queryParams: { plate: listing.plateCharacters } });
+    } catch (err) {
+      // The listing limit and duplicate checks explain themselves.
+      const code = (err as { code?: string }).code ?? '';
+      this.errorMessage = /resource-exhausted|already-exists/.test(code) ?
+        (err as Error).message :
+        'Something went wrong. Please try again.';
       this.loading = false;
     }
   }

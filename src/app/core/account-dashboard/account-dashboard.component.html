@@ -3,7 +3,13 @@
         <div class="py-5">
             <h1 class="h1-admin-title text-center">Account Dashboard</h1>
 
-            <mat-tab-group animationDuration="200ms" class="dashboard-tabs">
+            @if (unlockedPlate) {
+                <p class="unlocked-banner">{{ unlockedPlate }} is unlocked — you can now read and reply to every enquiry on it.</p>
+            }
+
+            <!-- Messages is the 3rd tab for sellers, after the 4 admin-only tabs for admins -->
+            <mat-tab-group animationDuration="200ms" class="dashboard-tabs"
+                [selectedIndex]="openMessages ? (isAdmin ? 6 : 2) : 0">
 
                 @if(isAdmin) {
                 <mat-tab label="Me">
@@ -149,11 +155,24 @@
                                         <span class="enquiry-date">{{ enquiry.submittedAt?.toDate() | date:'d MMM y, HH:mm' }}</span>
                                     </div>
                                     <p class="enquiry-type">{{ enquiry.enquiryType }}</p>
-                                    <p class="enquiry-message">{{ enquiry.message }}</p>
-                                    <p class="enquiry-from">From: {{ enquiry.buyerEmail }}</p>
-                                    <button type="button" mat-stroked-button color="primary" (click)="onReply(enquiry)">
-                                        Reply
-                                    </button>
+                                    @if (enquiry.locked) {
+                                        <p class="enquiry-message locked-preview">“{{ enquiry.preview }}”</p>
+                                        <p class="enquiry-from">A buyer is waiting. Pay £{{ listingFee }} once to read their full message, see who it's from and reply — every enquiry on this plate after that is free.</p>
+                                        @if (unlockError() && unlockingId() === null) {
+                                            <p class="save-error">{{ unlockError() }}</p>
+                                        }
+                                        <button type="button" mat-raised-button class="unlock-btn"
+                                            [disabled]="unlockingId() !== null"
+                                            (click)="onUnlock(enquiry)">
+                                            @if (unlockingId() === ('' + enquiry.plateId)) { Opening checkout... } @else { Unlock for £{{ listingFee }} }
+                                        </button>
+                                    } @else {
+                                        <p class="enquiry-message">{{ enquiry.message }}</p>
+                                        <p class="enquiry-from">From: {{ enquiry.buyerEmail }}</p>
+                                        <button type="button" mat-stroked-button color="primary" (click)="onReply(enquiry)">
+                                            Reply
+                                        </button>
+                                    }
                                 </div>
                             }
                         }
@@ -175,6 +194,12 @@
                                         <span class="bevel-plate enquiry-plate">{{ listing.plateCharacters | uppercase }}</span>
                                         <span class="enquiry-date">Listed {{ listing.createdDate | date:'d MMM y' }}</span>
                                     </div>
+                                    @if (listing.pricingModel === 'enquiry') {
+                                        <p class="enquiry-from">
+                                            @if (listing.enquiriesUnlocked) { Free listing · enquiries unlocked }
+                                            @else { Free listing · pay £{{ listingFee }} when your first buyer gets in touch }
+                                        </p>
+                                    }
 
                                     <mat-form-field appearance="outline" class="full-field">
                                         <mat-label>Asking price (£)</mat-label>

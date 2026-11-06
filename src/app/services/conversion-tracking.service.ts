@@ -72,6 +72,15 @@ export class ConversionTrackingService {
     this.send('purchase', { transaction_id: sessionId, value: valuePounds, currency: 'GBP' });
   }
 
+  /** A plate listed for free; the seller pays later, per enquiry. */
+  freeListingCreated(): void {
+    this.send('listing_created', { pricing_model: 'enquiry' });
+  }
+
+  unlockStarted(feePounds: number): void {
+    this.send('begin_checkout', { value: feePounds, currency: 'GBP', checkout_type: 'unlock' });
+  }
+
   enquirySent(enquiryType: string): void {
     this.send('generate_lead', { lead_source: 'seller_enquiry', enquiry_type: enquiryType });
   }
