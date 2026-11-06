@@ -42,6 +42,7 @@ import {
   runCreateFreeListing,
   runCreateUnlockSession,
   runUnlockEnquiries,
+  runUnlockReminders,
 } from "./pay-per-enquiry.js";
 import {
   contactRef,
@@ -870,6 +871,17 @@ export const scheduledNudgeEmails = onSchedule(
   async () => {
     await withFailureAlert("scheduledNudgeEmails", () =>
       runScheduledNudgeEmails(nudgeUnsubscribeSecret.value()));
+  }
+);
+
+/**
+ * Daily — reminds sellers with a buyer waiting on a locked enquiry to
+ * unlock it: after a day, then after three days.
+ */
+export const scheduledUnlockReminders = onSchedule(
+  {schedule: "every day 10:00", timeZone: "Europe/London"},
+  async () => {
+    await withFailureAlert("scheduledUnlockReminders", runUnlockReminders);
   }
 );
 

@@ -41,6 +41,7 @@ exports.runCreateFreeListing = runCreateFreeListing;
 exports.saveLockedEnquiry = saveLockedEnquiry;
 exports.runCreateUnlockSession = runCreateUnlockSession;
 exports.runUnlockEnquiries = runUnlockEnquiries;
+exports.runUnlockReminders = runUnlockReminders;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
 const valuation_email_js_1 = require("./valuation-email.js");
@@ -388,5 +389,83 @@ async function runUnlockEnquiries(listingId, sessionId, discountPence, voucherCo
         /* eslint-enable max-len */
     });
     await batch.commit();
+}
+/** Hours after the first locked enquiry that each reminder is due. */
+const UNLOCK_REMINDER_HOURS = [24, 72];
+/**
+ * Remind sellers who haven't unlocked a waiting enquiry: once after a day,
+ * once more after three days, then never again for that listing. One email
+ * per listing, however many buyers are waiting.
+ * @return {Promise<void>}
+ */
+async function runUnlockReminders() {
+    var _a, _b;
+    const db = admin.firestore();
+    const locked = await db.collection("seller_enquiries")
+        .where("locked", "==", true)
+        .get();
+    const byListing = new Map();
+    locked.docs.forEach((doc) => {
+        var _a, _b;
+        const enquiry = doc.data();
+        const id = String((_a = enquiry.plateId) !== null && _a !== void 0 ? _a : "");
+        if (id)
+            byListing.set(id, [...((_b = byListing.get(id)) !== null && _b !== void 0 ? _b : []), enquiry]);
+    });
+    const now = Date.now();
+    let sent = 0;
+    for (const [listingId, enquiries] of byListing) {
+        const listingRef = db.collection("plate-listings-new").doc(listingId);
+        const listing = (await listingRef.get()).data();
+        if (!listing || listing.isSold || !enquiriesLocked(listing))
+            continue;
+        const remindersSent = Number((_a = listing.unlockRemindersSent) !== null && _a !== void 0 ? _a : 0);
+        const dueAfter = UNLOCK_REMINDER_HOURS[remindersSent];
+        if (dueAfter === undefined)
+            continue;
+        const firstAt = Math.min(...enquiries.map((e) => { var _a, _b, _c; return (_c = (_b = (_a = e.submittedAt) === null || _a === void 0 ? void 0 : _a.toMillis) === null || _b === void 0 ? void 0 : _b.call(_a)) !== null && _c !== void 0 ? _c : now; }));
+        if (now - firstAt < dueAfter * 3600000)
+            continue;
+        const plate = String((_b = listing.plateCharacters) !== null && _b !== void 0 ? _b : "").toUpperCase();
+        const batch = db.batch();
+        batch.set(db.collection("mail").doc(), {
+            to: [enquiries[0].sellerEmail],
+            message: {
+                subject: enquiries.length > 1 ?
+                    `${enquiries.length} buyers are waiting to hear about ${plate}` :
+                    `A buyer is still waiting to hear about ${plate}`,
+                html: unlockReminderHtml(plate, enquiries, remindersSent === 1),
+            },
+        });
+        batch.update(listingRef, { unlockRemindersSent: remindersSent + 1 });
+        await batch.commit();
+        sent++;
+    }
+    console.log(`unlock reminders: sent ${sent}`);
+}
+/**
+ * @param {string} plate - The plate, upper case.
+ * @param {admin.firestore.DocumentData[]} enquiries - The locked enquiries.
+ * @param {boolean} last - Whether this is the final reminder.
+ * @return {string} Reminder email HTML.
+ */
+function unlockReminderHtml(plate, enquiries, last) {
+    const previews = enquiries.map((e) => {
+        var _a, _b;
+        return `<li><strong>${(0, enquiries_js_1.escapeHtml)(String((_a = e.enquiryType) !== null && _a !== void 0 ? _a : ""))}:</strong> ` +
+            `“${(0, enquiries_js_1.escapeHtml)(String((_b = e.preview) !== null && _b !== void 0 ? _b : ""))}”</li>`;
+    }).join("");
+    const waiting = enquiries.length > 1 ?
+        `${enquiries.length} buyers have messaged you` :
+        "A buyer has messaged you";
+    /* eslint-disable max-len */
+    return `
+    <h2>${waiting} about ${(0, enquiries_js_1.escapeHtml)(plate)}</h2>
+    <ul>${previews}</ul>
+    <p>They haven't had a reply yet. Pay £${constants_js_1.LISTING_FEE_GBP} once to read the full ${enquiries.length > 1 ? "messages" : "message"} and reply — every enquiry on this plate after that is free.</p>
+    <p><a href="${enquiries_js_1.MESSAGES_URL}">Unlock and reply</a></p>
+    ${last ? "<p>This is the last reminder we'll send about these enquiries.</p>" : ""}
+  `;
+    /* eslint-enable max-len */
 }
 //# sourceMappingURL=pay-per-enquiry.js.map

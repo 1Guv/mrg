@@ -423,3 +423,85 @@ export async function runUnlockEnquiries(
   });
   await batch.commit();
 }
+
+/** Hours after the first locked enquiry that each reminder is due. */
+const UNLOCK_REMINDER_HOURS = [24, 72];
+
+/**
+ * Remind sellers who haven't unlocked a waiting enquiry: once after a day,
+ * once more after three days, then never again for that listing. One email
+ * per listing, however many buyers are waiting.
+ * @return {Promise<void>}
+ */
+export async function runUnlockReminders(): Promise<void> {
+  const db = admin.firestore();
+  const locked = await db.collection("seller_enquiries")
+    .where("locked", "==", true)
+    .get();
+
+  const byListing = new Map<string, admin.firestore.DocumentData[]>();
+  locked.docs.forEach((doc) => {
+    const enquiry = doc.data();
+    const id = String(enquiry.plateId ?? "");
+    if (id) byListing.set(id, [...(byListing.get(id) ?? []), enquiry]);
+  });
+
+  const now = Date.now();
+  let sent = 0;
+  for (const [listingId, enquiries] of byListing) {
+    const listingRef = db.collection("plate-listings-new").doc(listingId);
+    const listing = (await listingRef.get()).data();
+    if (!listing || listing.isSold || !enquiriesLocked(listing)) continue;
+
+    const remindersSent = Number(listing.unlockRemindersSent ?? 0);
+    const dueAfter = UNLOCK_REMINDER_HOURS[remindersSent];
+    if (dueAfter === undefined) continue;
+    const firstAt = Math.min(...enquiries.map((e) =>
+      e.submittedAt?.toMillis?.() ?? now));
+    if (now - firstAt < dueAfter * 3_600_000) continue;
+
+    const plate = String(listing.plateCharacters ?? "").toUpperCase();
+    const batch = db.batch();
+    batch.set(db.collection("mail").doc(), {
+      to: [enquiries[0].sellerEmail],
+      message: {
+        subject: enquiries.length > 1 ?
+          `${enquiries.length} buyers are waiting to hear about ${plate}` :
+          `A buyer is still waiting to hear about ${plate}`,
+        html: unlockReminderHtml(plate, enquiries, remindersSent === 1),
+      },
+    });
+    batch.update(listingRef, {unlockRemindersSent: remindersSent + 1});
+    await batch.commit();
+    sent++;
+  }
+  console.log(`unlock reminders: sent ${sent}`);
+}
+
+/**
+ * @param {string} plate - The plate, upper case.
+ * @param {admin.firestore.DocumentData[]} enquiries - The locked enquiries.
+ * @param {boolean} last - Whether this is the final reminder.
+ * @return {string} Reminder email HTML.
+ */
+function unlockReminderHtml(
+  plate: string,
+  enquiries: admin.firestore.DocumentData[],
+  last: boolean
+): string {
+  const previews = enquiries.map((e) =>
+    `<li><strong>${escapeHtml(String(e.enquiryType ?? ""))}:</strong> ` +
+    `“${escapeHtml(String(e.preview ?? ""))}”</li>`).join("");
+  const waiting = enquiries.length > 1 ?
+    `${enquiries.length} buyers have messaged you` :
+    "A buyer has messaged you";
+  /* eslint-disable max-len */
+  return `
+    <h2>${waiting} about ${escapeHtml(plate)}</h2>
+    <ul>${previews}</ul>
+    <p>They haven't had a reply yet. Pay £${LISTING_FEE_GBP} once to read the full ${enquiries.length > 1 ? "messages" : "message"} and reply — every enquiry on this plate after that is free.</p>
+    <p><a href="${MESSAGES_URL}">Unlock and reply</a></p>
+    ${last ? "<p>This is the last reminder we'll send about these enquiries.</p>" : ""}
+  `;
+  /* eslint-enable max-len */
+}
