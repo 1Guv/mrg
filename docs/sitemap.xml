@@ -745,6 +745,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://mrvaluations.co.uk/news/dvla-number-plate-valuation/</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://mrvaluations.co.uk/news/romeo-beckham-number-plate-dreams/</loc>
     <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
@@ -901,6 +907,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://mrvaluations.co.uk/news/hell0-f-sale-uk-number-plates/</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://mrvaluations.co.uk/news/how-much-is-my-reg-worth-free/</loc>
     <lastmod>2026-10-08</lastmod>
     <changefreq>monthly</changefreq>
@@ -1005,6 +1017,12 @@
   <url>
     <loc>https://mrvaluations.co.uk/news/taylor-swift-number-plate-dream-drives/</loc>
     <lastmod>2026-07-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mrvaluations.co.uk/news/wayne-rooney-number-plate-im-a-celeb/</loc>
+    <lastmod>2026-11-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -8528,6 +8546,11 @@
   </url>
   <url>
     <loc>https://mrvaluations.co.uk/plates-for-sale/UR10CKY/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mrvaluations.co.uk/plates-for-sale/M1CRV/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
