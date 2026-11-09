@@ -51,7 +51,10 @@ export class EmailLinkSignInService {
 
   private async completeIfPresent(): Promise<void> {
     const href = window.location.href;
-    if (!isSignInWithEmailLink(this.auth, href)) return;
+    if (!isSignInWithEmailLink(this.auth, href)) {
+      if (/[?&]pending=/.test(href)) console.warn('Listing link opened without a sign-in code', href);
+      return;
+    }
 
     let email: string | null = null;
     try {
@@ -73,7 +76,8 @@ export class EmailLinkSignInService {
           // Nothing to clean up.
         }
         this.snackBar.open('You are signed in', 'OK', { duration: 4000 });
-      } catch {
+      } catch (err) {
+        console.error('Email link sign-in failed', (err as { code?: string }).code, err);
         this.snackBar.open('That sign-in link has expired or was already used. Request a new one from the login page.', 'OK');
       }
     }

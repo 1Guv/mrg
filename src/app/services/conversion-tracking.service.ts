@@ -77,6 +77,16 @@ export class ConversionTrackingService {
     this.send('listing_created', { pricing_model: 'enquiry' });
   }
 
+  /** A signed-out visitor sent the form; the listing waits for their email link. */
+  pendingListingCreated(): void {
+    this.send('listing_pending', { pricing_model: 'enquiry' });
+  }
+
+  /** The email link published a pending listing. */
+  pendingListingConfirmed(): void {
+    this.send('listing_created', { pricing_model: 'enquiry', via: 'email_link' });
+  }
+
   unlockStarted(feePounds: number): void {
     this.send('begin_checkout', { value: feePounds, currency: 'GBP', checkout_type: 'unlock' });
   }

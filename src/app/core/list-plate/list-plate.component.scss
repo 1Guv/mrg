@@ -14,6 +14,11 @@
   width: 100%;
 }
 
+// Fields whose hint can wrap grow to fit it, so keep the usual gap below
+.full-field[subscriptSizing='dynamic'] {
+  margin-bottom: 1rem;
+}
+
 .negotiable-check {
   margin-bottom: 0.5rem;
 }
@@ -26,4 +31,17 @@
 .submit-btn {
   width: 100%;
   margin-top: 0.5rem;
+}
+
+.step-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.step-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
 }

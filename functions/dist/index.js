@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -410,6 +410,27 @@ exports.createFreeListing = (0, https_1.onCall)({ maxInstances: 10 }, async (req
     }
     const { ip } = callerOf(request);
     return (0, pay_per_enquiry_js_1.runCreateFreeListing)(request.auth.uid, request.auth.token.email, (_b = request.data) !== null && _b !== void 0 ? _b : {}, ip);
+});
+/** Callable — lists a plate signed out; an emailed link publishes it. */
+exports.createPendingListing = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a;
+    const { ip } = callerOf(request);
+    return (0, pay_per_enquiry_js_1.runCreatePendingListing)((_a = request.data) !== null && _a !== void 0 ? _a : {}, ip);
+});
+/** Callable — emails a fresh link for a pending listing. */
+exports.resendPendingListing = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a;
+    const { ip } = callerOf(request);
+    await (0, pay_per_enquiry_js_1.runResendPendingListing)((_a = request.data) !== null && _a !== void 0 ? _a : {}, ip);
+    return { sent: true };
+});
+/** Callable — publishes a pending listing once its link has signed them in. */
+exports.confirmPendingListing = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a, _b;
+    if (!((_a = request.auth) === null || _a === void 0 ? void 0 : _a.token.email)) {
+        throw new https_1.HttpsError("unauthenticated", "Must be logged in");
+    }
+    return (0, pay_per_enquiry_js_1.runConfirmPendingListing)(request.auth.uid, request.auth.token.email, (_b = request.data) !== null && _b !== void 0 ? _b : {});
 });
 /** Callable — Stripe Checkout for unlocking a free listing's enquiries. */
 exports.createUnlockSession = (0, https_1.onCall)({ maxInstances: 10, secrets: [stripeSecretKey] }, async (request) => {

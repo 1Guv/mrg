@@ -4,6 +4,45 @@
     <p class="text-center text-muted mb-2"><strong>Free to list.</strong> Pay £{{ plateListingService.listingFee }} once, only when a buyer messages you — no commission, no markup.</p>
     <app-stats-strip class="mb-4" [compact]="true" />
 
+    @switch (step) {
+    @case ('confirming') {
+      <div class="step-card text-center">
+        <mat-spinner diameter="36" class="mx-auto mb-3"></mat-spinner>
+        <p class="mb-0">Publishing your listing...</p>
+      </div>
+    }
+    @case ('checkInbox') {
+      <div class="step-card text-center">
+        <h2 class="step-title">Check your inbox</h2>
+        <p>We've emailed <strong>{{ form.value.email }}</strong> a link to publish
+          <strong>{{ form.value.plateCharacters | uppercase }}</strong>. Tap it and your listing goes live.</p>
+        <p class="text-muted small">Can't see it? Check your spam folder.</p>
+        @if (errorMessage) {
+          <p class="error-message">{{ errorMessage }}</p>
+        }
+        @if (resent) {
+          <p class="text-muted">We've sent a new link.</p>
+        } @else {
+          <button type="button" mat-stroked-button class="submit-btn" [disabled]="loading" (click)="resend()">Send the link again</button>
+        }
+        <button type="button" mat-button class="submit-btn" (click)="editListing()">Wrong email? Change it</button>
+      </div>
+    }
+    @case ('linkExpired') {
+      <div class="step-card text-center">
+        <h2 class="step-title">This link has expired</h2>
+        <p>Your listing is saved. We'll email you a new link to publish it.</p>
+        @if (errorMessage) {
+          <p class="error-message">{{ errorMessage }}</p>
+        }
+        @if (resent) {
+          <p class="text-muted">We've sent a new link. Check your inbox.</p>
+        } @else {
+          <button type="button" mat-raised-button class="submit-btn" [disabled]="loading" (click)="resend()">Email me a new link</button>
+        }
+      </div>
+    }
+    @default {
     <form [formGroup]="form" (ngSubmit)="onSubmit()" class="list-plate-form">
 
       <mat-form-field appearance="outline" class="full-field">
@@ -16,6 +55,9 @@
         @if (form.get('plateCharacters')?.hasError('minlength') || form.get('plateCharacters')?.hasError('maxlength')) {
           <mat-error>Must be between 2 and 8 characters</mat-error>
         }
+        @if (form.get('plateCharacters')?.hasError('pattern')) {
+          <mat-error>Use letters, numbers and spaces only</mat-error>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-field">
@@ -26,7 +68,7 @@
 
       @if (valuationMin !== null && valuationMax !== null) {
         <p class="valuation-hint text-muted">
-          Valuation range: £{{ valuationMin | number:'1.2-2' }} – £{{ valuationMax | number:'1.2-2' }}.
+          Valuation range: £{{ valuationMin | number:'1.0-0' }} – £{{ valuationMax | number:'1.0-0' }}.
           You can adjust the price above.
         </p>
       }
@@ -34,31 +76,28 @@
         <p class="valuation-hint text-muted">If a buyer gets in touch, the one-off £{{ plateListingService.listingFee }} is {{ share }} of your asking price.</p>
       }
 
-      <mat-form-field appearance="outline" class="full-field">
-        <mat-label>Phone number</mat-label>
-        <input matInput type="tel" formControlName="phone" placeholder="e.g. 07700 900000">
-        <mat-hint>Buyers can WhatsApp you on this number once you've unlocked their enquiry</mat-hint>
-        <mat-error>Phone number is required</mat-error>
+      <mat-form-field appearance="outline" class="full-field" subscriptSizing="dynamic">
+        <mat-label>What does it mean? (optional)</mat-label>
+        <input matInput formControlName="meanings" placeholder="e.g. my initials, or spells BOSS">
+        <mat-hint>Buyers want to know why it's special</mat-hint>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full-field">
+      <mat-form-field appearance="outline" class="full-field" subscriptSizing="dynamic">
         <mat-label>Email address</mat-label>
-        <input matInput type="email" formControlName="email" readonly>
-        <mat-hint>Your account email — we'll send buyer enquiries here</mat-hint>
+        <input matInput type="email" formControlName="email" [readonly]="signedIn" autocomplete="email">
+        @if (signedIn) {
+          <mat-hint>Your account email — we'll send buyer enquiries here</mat-hint>
+        } @else {
+          <mat-hint>We'll email you a link to publish your listing, and send buyer enquiries here</mat-hint>
+        }
         <mat-error>A valid email address is required</mat-error>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full-field">
-        <mat-label>Your initials</mat-label>
-        <input matInput formControlName="initials" placeholder="e.g. GS" maxlength="3"
-          style="text-transform: uppercase">
-        <mat-hint>Shown as your avatar on the listing</mat-hint>
-        <mat-error>Initials are required</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-field">
-        <mat-label>Meanings (optional)</mat-label>
-        <input matInput formControlName="meanings" placeholder="e.g. ABC = my initials">
+      <mat-form-field appearance="outline" class="full-field" subscriptSizing="dynamic">
+        <mat-label>Phone number (optional)</mat-label>
+        <input matInput type="tel" formControlName="phone" placeholder="e.g. 07700 900000" autocomplete="tel">
+        <mat-hint>Lets buyers WhatsApp you. Without it, they message you here.</mat-hint>
+        <mat-error>That phone number doesn't look right</mat-error>
       </mat-form-field>
 
       <mat-checkbox formControlName="negotiable" class="negotiable-check">
@@ -74,8 +113,16 @@
         @if (loading) { Listing... } @else { List my plate free }
       </button>
 
+      @if (!signedIn) {
+        <p class="text-center text-muted small mt-2 mb-0">
+          Already have an account? <a routerLink="/login" [queryParams]="loginLink">Log in</a>
+        </p>
+      }
+
       <button type="button" mat-stroked-button class="submit-btn" routerLink="/">Cancel</button>
 
     </form>
+    }
+    }
   </div>
 </div>

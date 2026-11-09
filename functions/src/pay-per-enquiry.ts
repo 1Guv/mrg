@@ -1,6 +1,10 @@
 import * as admin from "firebase-admin";
 import {HttpsError} from "firebase-functions/v2/https";
-import {consumeRateLimits, rateLimitId} from "./valuation-email.js";
+import {createHash} from "crypto";
+import {
+  ALLOWED_APP_BASE_URLS, consumeRateLimits, EMAIL_RE, rateLimitId,
+} from "./valuation-email.js";
+import {APP_URL} from "./nudge-emails.js";
 import {
   contactRef, escapeHtml, messagesRef, MESSAGES_URL,
 } from "./enquiries.js";
@@ -119,13 +123,60 @@ function text(value: unknown, min: number, max: number, name: string): string {
   return s;
 }
 
+/** A listing request after validation, before it has a seller account. */
+interface ListingRequest {
+  plateCharacters: string;
+  askingPrice: string;
+  phone: string;
+  meanings: string;
+  initials: string;
+  negotiable: boolean;
+}
+
+/**
+ * Check and normalise the form's listing fields.
+ * @param {Record<string, unknown>} data - plateCharacters, askingPrice,
+ *   phone (optional), initials (optional), meanings and negotiable.
+ * @param {string} email - The seller's email, for default initials.
+ * @return {ListingRequest} The cleaned fields.
+ */
+function parseListingRequest(
+  data: Record<string, unknown>,
+  email: string
+): ListingRequest {
+  const plateCharacters =
+    text(data.plateCharacters, 2, 8, "plate").toUpperCase();
+  if (!/^[A-Z0-9 ]+$/.test(plateCharacters)) {
+    throw new HttpsError(
+      "invalid-argument", "A plate can only use letters, numbers and spaces");
+  }
+  const price = Number(data.askingPrice);
+  if (!Number.isFinite(price) || price < 1) {
+    throw new HttpsError("invalid-argument", "Enter an asking price in pounds");
+  }
+  // Optional: without one, buyers message through the site only.
+  const phone = String(data.phone ?? "").trim();
+  if (phone && !/^\+?[\d\s()-]{7,20}$/.test(phone)) {
+    throw new HttpsError(
+      "invalid-argument", "That phone number doesn't look right");
+  }
+  return {
+    plateCharacters,
+    askingPrice: String(Math.round(price)),
+    phone,
+    meanings: String(data.meanings ?? "").trim().slice(0, 200),
+    initials: String(data.initials ?? "").trim().slice(0, 3)
+      .toUpperCase() || email.substring(0, 2).toUpperCase(),
+    negotiable: data.negotiable === true,
+  };
+}
+
 /**
  * List a plate for free. Contact goes to the signed-in account's email so
  * the seller can read enquiries in their dashboard.
  * @param {string} uid - The signed-in seller.
  * @param {string} email - The seller's email from their auth token.
- * @param {Record<string, unknown>} data - plateCharacters, askingPrice,
- *   phone, initials, meanings and negotiable.
+ * @param {Record<string, unknown>} data - The form's listing fields.
  * @param {string} ip - The caller's IP, for rate limiting.
  * @return {Promise<object>} The new listing's id and plate.
  */
@@ -135,23 +186,26 @@ export async function runCreateFreeListing(
   data: Record<string, unknown>,
   ip: string
 ): Promise<{listingId: string, plateCharacters: string}> {
-  const plateCharacters =
-    text(data.plateCharacters, 2, 8, "plate").toUpperCase();
-  if (!/^[A-Z0-9 ]+$/.test(plateCharacters)) {
-    throw new HttpsError("invalid-argument", "Invalid plate");
-  }
-  const price = Number(data.askingPrice);
-  if (!Number.isFinite(price) || price < 1) {
-    throw new HttpsError("invalid-argument", "Invalid asking price");
-  }
-  const phone = text(data.phone, 7, 20, "phone");
-  const meanings = String(data.meanings ?? "").trim().slice(0, 200);
-  const initials = String(data.initials ?? "").trim().slice(0, 3)
-    .toUpperCase() || email.substring(0, 2).toUpperCase();
-
+  const request = parseListingRequest(data, email);
   await consumeRateLimits(
     [{id: rateLimitId("free-listing-ip", ip || "unknown"), max: 10}]);
+  return publishFreeListing(uid, email, request);
+}
 
+/**
+ * Publish a validated listing for a seller, after the duplicate and
+ * free-listing limit checks.
+ * @param {string} uid - The seller.
+ * @param {string} email - The seller's email.
+ * @param {ListingRequest} request - The listing.
+ * @return {Promise<object>} The new listing's id and plate.
+ */
+async function publishFreeListing(
+  uid: string,
+  email: string,
+  request: ListingRequest
+): Promise<{listingId: string, plateCharacters: string}> {
+  const {plateCharacters} = request;
   const db = admin.firestore();
   const mine = db.collection("plate-listings-new")
     .where("sellerUid", "==", uid)
@@ -170,16 +224,7 @@ export async function runCreateFreeListing(
       `You can list up to ${FREE_LISTING_LIMIT} plates for free`);
   }
 
-  const input: ListingInput = {
-    plateCharacters,
-    askingPrice: String(Math.round(price)),
-    meanings,
-    negotiable: data.negotiable === true,
-    sellerUid: uid,
-    initials,
-    email,
-    phone,
-  };
+  const input: ListingInput = {...request, sellerUid: uid, email};
   const listingRef = db.collection("plate-listings-new").doc();
   const batch = db.batch();
   batch.set(listingRef, {
@@ -197,6 +242,162 @@ export async function runCreateFreeListing(
   });
   await batch.commit();
   return {listingId: listingRef.id, plateCharacters};
+}
+
+// ── Listing without signing in ──────────────────────────────────────────────
+
+// Visitors who aren't signed in list with just their email. The listing
+// waits in pending_listings (no client access) until they click the link we
+// email them: it signs them in, and the page then confirms the listing. So
+// nobody can list a plate under someone else's email address.
+
+/**
+ * @param {string} email - The seller's email.
+ * @param {string} plate - The plate.
+ * @return {string} One pending listing per email and plate, so sending the
+ *   form again replaces it rather than adding another.
+ */
+function pendingListingId(email: string, plate: string): string {
+  return createHash("sha256").update(`${email}|${plate}`).digest("hex")
+    .slice(0, 32);
+}
+
+/**
+ * Save a listing from a visitor who isn't signed in, and email them the
+ * link that publishes it.
+ * @param {Record<string, unknown>} data - email, appBaseUrl and the form's
+ *   listing fields.
+ * @param {string} ip - The caller's IP, for rate limiting.
+ * @return {Promise<object>} The pending listing's id and plate.
+ */
+export async function runCreatePendingListing(
+  data: Record<string, unknown>,
+  ip: string
+): Promise<{pendingId: string, plateCharacters: string}> {
+  const email = String(data.email ?? "").trim().toLowerCase();
+  if (email.length > 254 || !EMAIL_RE.test(email)) {
+    throw new HttpsError("invalid-argument", "Enter a valid email address");
+  }
+  const request = parseListingRequest(data, email);
+  const appBaseUrl = String(data.appBaseUrl ?? "");
+  await consumeRateLimits([
+    {id: rateLimitId("pending-listing-ip", ip || "unknown"), max: 10},
+    {id: rateLimitId("pending-listing-email", email), max: 5},
+  ]);
+
+  const pendingId = pendingListingId(email, request.plateCharacters);
+  await admin.firestore().collection("pending_listings").doc(pendingId).set({
+    ...request,
+    email,
+    appBaseUrl: ALLOWED_APP_BASE_URLS.includes(appBaseUrl) ?
+      appBaseUrl : APP_URL,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  await emailPendingListingLink(pendingId);
+  return {pendingId, plateCharacters: request.plateCharacters};
+}
+
+/**
+ * Email a fresh link for a pending listing, e.g. when the first one has
+ * expired. The address comes from the saved listing, never the request.
+ * @param {Record<string, unknown>} data - pendingId.
+ * @param {string} ip - The caller's IP, for rate limiting.
+ * @return {Promise<void>}
+ */
+export async function runResendPendingListing(
+  data: Record<string, unknown>,
+  ip: string
+): Promise<void> {
+  const pendingId = text(data.pendingId, 1, 64, "listing");
+  await consumeRateLimits([
+    {id: rateLimitId("pending-resend-ip", ip || "unknown"), max: 10},
+    {id: rateLimitId("pending-resend", pendingId), max: 3},
+  ]);
+  await emailPendingListingLink(pendingId);
+}
+
+/**
+ * @param {string} pendingId - The pending listing.
+ * @return {Promise<void>}
+ */
+async function emailPendingListingLink(pendingId: string): Promise<void> {
+  const snap = await admin.firestore()
+    .collection("pending_listings").doc(pendingId).get();
+  const pending = snap.data();
+  if (!pending) throw new HttpsError("not-found", "Listing not found");
+  const plate = String(pending.plateCharacters);
+  const link = await admin.auth().generateSignInWithEmailLink(
+    pending.email, {
+      url: `${pending.appBaseUrl}/list-plate?pending=${pendingId}`,
+      handleCodeInApp: true,
+    });
+  await admin.firestore().collection("mail").add({
+    to: [pending.email],
+    message: {
+      subject: `Confirm your listing for ${plate}`,
+      html: confirmListingEmailHtml(plate, pending.askingPrice, link),
+    },
+  });
+}
+
+/**
+ * Publish a pending listing once its link has signed the seller in.
+ * Running it again after it's published returns the same listing.
+ * @param {string} uid - The signed-in seller.
+ * @param {string} email - Their email from the auth token.
+ * @param {Record<string, unknown>} data - pendingId.
+ * @return {Promise<object>} The listing's id and plate.
+ */
+export async function runConfirmPendingListing(
+  uid: string,
+  email: string,
+  data: Record<string, unknown>
+): Promise<{listingId: string, plateCharacters: string}> {
+  const pendingId = text(data.pendingId, 1, 64, "listing");
+  const db = admin.firestore();
+  const ref = db.collection("pending_listings").doc(pendingId);
+  const pending = (await ref.get()).data();
+  if (!pending) {
+    throw new HttpsError(
+      "not-found", "This listing has already been published or has expired");
+  }
+  if (pending.email !== email.toLowerCase()) {
+    throw new HttpsError(
+      "permission-denied", "This link is for a different email address");
+  }
+  const request: ListingRequest = {
+    plateCharacters: pending.plateCharacters,
+    askingPrice: pending.askingPrice,
+    phone: pending.phone,
+    meanings: pending.meanings,
+    initials: pending.initials,
+    negotiable: pending.negotiable === true,
+  };
+  const listing = await publishFreeListing(uid, email, request);
+  await ref.delete();
+  return listing;
+}
+
+/**
+ * @param {string} plate - The plate, upper case.
+ * @param {string} price - The asking price in pounds.
+ * @param {string} link - The sign-in link that publishes it.
+ * @return {string} Email HTML asking the seller to confirm their listing.
+ */
+function confirmListingEmailHtml(
+  plate: string,
+  price: string,
+  link: string
+): string {
+  /* eslint-disable max-len */
+  return `
+    <h2>One tap to put ${escapeHtml(plate)} up for sale</h2>
+    <p>Your listing at <strong>£${Number(price).toLocaleString("en-GB")}</strong> is ready. Tap below to publish it:</p>
+    <p><a href="${link}" style="display:inline-block;background:#2e7d32;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:600">Publish my listing</a></p>
+    <p>Listing is free. You pay £${LISTING_FEE_GBP} once, only when your first buyer messages you, and every enquiry after that is free.</p>
+    <p style="color:#888;font-size:12px">The button also signs you in so you can manage your listing. It works once; if it has expired, open the listing page again and ask for a new link. Didn't list a plate? Ignore this email and nothing will be published.</p>
+  `;
+  /* eslint-enable max-len */
 }
 
 /**

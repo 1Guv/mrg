@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ALLOWED_APP_BASE_URLS = exports.EMAIL_RE = void 0;
 exports.rateLimitId = rateLimitId;
 exports.consumeRateLimits = consumeRateLimits;
 exports.runCaptureValuationEmail = runCaptureValuationEmail;
@@ -54,9 +55,9 @@ const EMAIL_LIMIT_PER_HOUR = 5;
 const IP_LIMIT_PER_HOUR = 20;
 const PLATE_TYPES = ["current", "prefix", "suffix", "dateless"];
 const INTENTS = ["email", "list"];
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+exports.EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Bases the client may ask continueUrl to use; anything else gets APP_URL.
-const ALLOWED_APP_BASE_URLS = [
+exports.ALLOWED_APP_BASE_URLS = [
     "https://mrvaluations.co.uk",
     "http://localhost:1234",
     "http://localhost:4200",
@@ -124,7 +125,7 @@ function parseInput(data) {
         throw new https_1.HttpsError("invalid-argument", "Invalid first name");
     }
     const email = String((_b = data.email) !== null && _b !== void 0 ? _b : "").trim().toLowerCase();
-    if (email.length > 254 || !EMAIL_RE.test(email)) {
+    if (email.length > 254 || !exports.EMAIL_RE.test(email)) {
         throw new https_1.HttpsError("invalid-argument", "Invalid email");
     }
     const registration = String((_c = data.registration) !== null && _c !== void 0 ? _c : "").replace(/\s/g, "").toUpperCase();
@@ -154,7 +155,7 @@ function parseInput(data) {
         minPrice: money(data.minPrice, "min price"),
         maxPrice: money(data.maxPrice, "max price"),
         valuation,
-        appBaseUrl: ALLOWED_APP_BASE_URLS.includes(appBaseUrl) ?
+        appBaseUrl: exports.ALLOWED_APP_BASE_URLS.includes(appBaseUrl) ?
             appBaseUrl : nudge_emails_js_1.APP_URL,
     };
 }
@@ -529,13 +530,13 @@ function buildSignInLinkEmailHtml(link) {
 async function runSendSignInLink(data, ip) {
     var _a, _b;
     const email = String((_a = data["email"]) !== null && _a !== void 0 ? _a : "").trim().toLowerCase();
-    if (!EMAIL_RE.test(email) || email.length > 254) {
+    if (!exports.EMAIL_RE.test(email) || email.length > 254) {
         throw new https_1.HttpsError("invalid-argument", "Invalid email");
     }
     let returnUrl = `${nudge_emails_js_1.APP_URL}/account-dashboard`;
     try {
         const url = new URL(String((_b = data["returnUrl"]) !== null && _b !== void 0 ? _b : ""));
-        if (ALLOWED_APP_BASE_URLS.includes(url.origin))
+        if (exports.ALLOWED_APP_BASE_URLS.includes(url.origin))
             returnUrl = url.toString();
     }
     catch (_c) {

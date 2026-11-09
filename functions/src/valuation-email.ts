@@ -17,9 +17,9 @@ const EMAIL_LIMIT_PER_HOUR = 5;
 const IP_LIMIT_PER_HOUR = 20;
 const PLATE_TYPES = ["current", "prefix", "suffix", "dateless"];
 const INTENTS = ["email", "list"];
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Bases the client may ask continueUrl to use; anything else gets APP_URL.
-const ALLOWED_APP_BASE_URLS = [
+export const ALLOWED_APP_BASE_URLS = [
   "https://mrvaluations.co.uk",
   "http://localhost:1234",
   "http://localhost:4200",

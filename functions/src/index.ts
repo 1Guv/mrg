@@ -39,9 +39,12 @@ import {fillPlateMeanings} from "./plate-meanings.js";
 import {
   contactFields,
   listingFields,
+  runConfirmPendingListing,
   runCreateFreeListing,
+  runCreatePendingListing,
   runCreateUnlockSession,
   runUnlockEnquiries,
+  runResendPendingListing,
   runUnlockReminders,
 } from "./pay-per-enquiry.js";
 import {
@@ -469,6 +472,37 @@ export const createFreeListing = onCall(
     const {ip} = callerOf(request);
     return runCreateFreeListing(
       request.auth.uid, request.auth.token.email, request.data ?? {}, ip);
+  }
+);
+
+/** Callable — lists a plate signed out; an emailed link publishes it. */
+export const createPendingListing = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const {ip} = callerOf(request);
+    return runCreatePendingListing(request.data ?? {}, ip);
+  }
+);
+
+/** Callable — emails a fresh link for a pending listing. */
+export const resendPendingListing = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const {ip} = callerOf(request);
+    await runResendPendingListing(request.data ?? {}, ip);
+    return {sent: true};
+  }
+);
+
+/** Callable — publishes a pending listing once its link has signed them in. */
+export const confirmPendingListing = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    if (!request.auth?.token.email) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+    return runConfirmPendingListing(
+      request.auth.uid, request.auth.token.email, request.data ?? {});
   }
 );
 
