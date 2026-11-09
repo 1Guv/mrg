@@ -2,10 +2,12 @@ import {google} from "googleapis";
 import axios from "axios";
 import * as admin from "firebase-admin";
 import {valuatePlate} from "./valuation.js";
+import {LISTING_FEE_GBP} from "./constants.js";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const GSC_SITE_URL = "https://mrvaluations.co.uk/";
+const META_DESCRIPTION_MAX = 155;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -282,11 +284,33 @@ function articleRules(existingTitles: string[]): string {
   1. One linking to / (e.g. <a href="/">get a free valuation</a>)
   2. One linking to /list-plate (e.g. <a href="/list-plate">list your plate for sale</a>)
 - Do not add an author name, byline or sign-off — the site adds its own
+- Do not name, link to or quote other number plate dealers, valuation sites or marketplaces, or repeat their claims about their own services. Official sources (the DVLA, GOV.UK) and news outlets are fine
+- If you describe how Mr Valuations works, stick to this: it gives a free, instant estimate worked out from the plate itself — its format (current, prefix, suffix or dateless), its length, its letters and numbers, and whether it reads as a name, word or initials — and shows a price range, not a guaranteed price. Listing a plate for sale is free; the seller pays £${LISTING_FEE_GBP} once, only when the first buyer messages them. Never claim it uses live market data or auction results, or that it is exact
+- The page already shows the title as its heading, so don't start with an <h1> or repeat the title: open with an introductory <p>
 - The content field must be a complete self-contained HTML article wrapped in <article> tags
 - These titles are already published. Pick a different angle so the article is not a repeat of any of them:
 ${existingTitles.map((t) => `  - ${t}`).join("\n")}`;
 }
 /* eslint-enable max-len */
+
+/**
+ * Enforce the rules Gemini sometimes ignores: drop a leading <h1> that
+ * repeats the page heading, and cut the meta description at a word so
+ * Google doesn't truncate it.
+ * @param {T} payload - Gemini's article payload.
+ * @return {T} The payload, tidied.
+ */
+function tidyPayload<T extends {content: string, metaDescription: string}>(
+  payload: T
+): T {
+  const content = payload.content.replace(/<h1[^>]*>[\s\S]*?<\/h1>\s*/i, "");
+  let metaDescription = payload.metaDescription.trim();
+  if (metaDescription.length > META_DESCRIPTION_MAX) {
+    const cut = metaDescription.slice(0, META_DESCRIPTION_MAX - 1);
+    metaDescription = `${cut.slice(0, cut.lastIndexOf(" "))}…`;
+  }
+  return {...payload, content, metaDescription};
+}
 
 /** Honest byline added to every article in place of an invented author. */
 const TEAM_BYLINE =
@@ -728,8 +752,8 @@ export async function runGenerateCelebrityArticle(
   const db = admin.firestore();
 
   console.log("article-generator (celebrity): calling Gemini...");
-  const payload = await callGeminiCelebrity(
-    geminiApiKey, await publishedTitles());
+  const payload = tidyPayload(await callGeminiCelebrity(
+    geminiApiKey, await publishedTitles()));
   console.log(
     `article-generator (celebrity): celebrity = "${payload.celebrity}", ` +
     `plates = ${JSON.stringify(payload.suggestedPlates)}`
@@ -902,7 +926,8 @@ export async function runGenerateDailyArticle(
     `article-generator: Gemini response received — title: "${payload.title}"`
   );
 
-  // 7. Add the byline and calculate read time
+  // 7. Tidy, add the byline and calculate read time
+  payload = tidyPayload(payload);
   const content = withByline(payload.content);
   const readTimeMinutes = calcReadTime(content);
 
