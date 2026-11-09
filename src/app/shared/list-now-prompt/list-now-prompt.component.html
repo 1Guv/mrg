@@ -1,3 +1,5 @@
+<!-- Admins value plates for Facebook posts; they aren't selling them -->
+@if (!isAdmin()) {
 <div class="list-now-prompt">
   @if (demand() > 0) {
     <p class="demand">🔥 <strong>{{ demand() }} buyers</strong> searched for plates like {{ plate() }} in the last 30 days</p>
@@ -83,3 +85,4 @@
     }
   }
 </div>
+}

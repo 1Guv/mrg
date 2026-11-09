@@ -21,3 +21,10 @@
     </a>
   }
 </div>
+@if (isAdmin()) {
+  <p class="admin-copy">
+    <button type="button" class="admin-copy-btn" (click)="onCopyForFacebookGroup()">
+      <mat-icon>content_copy</mat-icon> Copy for Facebook group
+    </button>
+  </p>
+}

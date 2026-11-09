@@ -664,17 +664,26 @@ exports.generateCelebrityArticle = (0, scheduler_1.onSchedule)({
 // ── Plate listing nudge emails ──────────────────────────────────────────────
 /**
  * Seeds the nudge queue when a new auto_valuation is created, and sends the
- * admin notification for records flagged adminNotify: "server".
+ * admin notification for records flagged adminNotify: "server". Admins
+ * value plates to post in Facebook groups, not to sell them, so theirs are
+ * tagged byAdmin and never get selling reminders.
  */
 exports.onAutoValuationCreated = (0, firestore_1.onDocumentCreated)("auto_valuations/{docId}", async (event) => {
-    var _a, _b;
+    var _a, _b, _c;
     const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
     if (!data)
         return;
+    const userId = data["userId"];
+    const byAdmin = typeof userId === "string" && userId !== "" &&
+        (await admin.firestore().collection("admins").doc(userId).get()).exists;
+    if (byAdmin)
+        await ((_b = event.data) === null || _b === void 0 ? void 0 : _b.ref.update({ byAdmin: true }));
     if (data["adminNotify"] === "server") {
-        await (0, nudge_emails_js_1.runAdminValuationNotify)(data);
+        await (0, nudge_emails_js_1.runAdminValuationNotify)(data, byAdmin);
     }
-    const savedAt = (_b = data["savedAt"]) !== null && _b !== void 0 ? _b : admin.firestore.Timestamp.now();
+    if (byAdmin)
+        return;
+    const savedAt = (_c = data["savedAt"]) !== null && _c !== void 0 ? _c : admin.firestore.Timestamp.now();
     await (0, nudge_emails_js_1.runOnAutoValuationCreated)(data, savedAt);
 });
 /** Hourly — recounts the real numbers shown in the site's trust strip. */

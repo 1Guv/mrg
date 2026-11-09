@@ -835,16 +835,23 @@ export const generateCelebrityArticle = onSchedule(
 
 /**
  * Seeds the nudge queue when a new auto_valuation is created, and sends the
- * admin notification for records flagged adminNotify: "server".
+ * admin notification for records flagged adminNotify: "server". Admins
+ * value plates to post in Facebook groups, not to sell them, so theirs are
+ * tagged byAdmin and never get selling reminders.
  */
 export const onAutoValuationCreated = onDocumentCreated(
   "auto_valuations/{docId}",
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
+    const userId = data["userId"];
+    const byAdmin = typeof userId === "string" && userId !== "" &&
+      (await admin.firestore().collection("admins").doc(userId).get()).exists;
+    if (byAdmin) await event.data?.ref.update({byAdmin: true});
     if (data["adminNotify"] === "server") {
-      await runAdminValuationNotify(data);
+      await runAdminValuationNotify(data, byAdmin);
     }
+    if (byAdmin) return;
     const savedAt = data["savedAt"] ?? admin.firestore.Timestamp.now();
     await runOnAutoValuationCreated(data, savedAt);
   }

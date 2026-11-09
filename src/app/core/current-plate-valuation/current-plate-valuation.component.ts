@@ -603,7 +603,7 @@ export class CurrentPlateValuationComponent implements OnInit, OnDestroy {
 
   get shareText(): string {
     const plate = this.getPlatePreview().toUpperCase();
-    return `${plate} has been valued at £${this.totalPrice.toFixed(2)} on MR Valuations!`;
+    return `${plate} has been valued at £${this.totalPrice.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on MR Valuations!`;
   }
 
   ngOnDestroy() {

@@ -41,4 +41,9 @@ export class AdminsService {
     if (!uid) return false;
     return this.adminUids().includes(uid);
   }
+
+  private currentUser = toSignal(inject(AuthService).currentUser$, { initialValue: null });
+
+  /** Whether the signed-in visitor is an admin. */
+  readonly currentUserIsAdmin = computed(() => this.isAdmin(this.currentUser()?.uid));
 }

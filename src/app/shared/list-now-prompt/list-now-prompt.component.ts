@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { PlateListingCardComponent } from '../plate-listing-card/plate-listing-card.component';
 import { PlateListing } from '../../models/plate-listing.model';
+import { AdminsService } from '../../services/admins.service';
 import { AuthService } from '../../services/auth.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { FormsModule } from '@angular/forms';
@@ -35,6 +36,7 @@ export class ListNowPromptComponent {
   private gate = inject(ValuationGateService);
   private user = toSignal(inject(AuthService).currentUser$, { initialValue: null });
   readonly fee = inject(PlateListingService).listingFee;
+  readonly isAdmin = inject(AdminsService).currentUserIsAdmin;
 
   readonly registration = input.required<string>();
   readonly plateType = input.required<string>();

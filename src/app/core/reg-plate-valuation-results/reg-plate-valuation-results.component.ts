@@ -386,7 +386,8 @@ export class RegPlateValuationResultsComponent implements OnInit, OnDestroy {
 
   get shareText(): string {
     const plate = this.currentPlate.toUpperCase();
-    const price = (this.totalPoints * this.multiplier).toFixed(2);
+    const price = (this.totalPoints * this.multiplier)
+      .toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return `${plate} has been valued at £${price} on MR Valuations!`;
   }
 

@@ -192,8 +192,9 @@ function formatPricePence(amount) {
  * document. Only called for documents flagged adminNotify: "server"; older
  * clients still send their own copy from the browser.
  * @param {admin.firestore.DocumentData} data The document data.
+ * @param {boolean} byAdmin Whether an admin made the valuation.
  */
-async function runAdminValuationNotify(data) {
+async function runAdminValuationNotify(data, byAdmin = false) {
     var _a, _b, _c, _d, _e;
     const registration = String((_a = data["registration"]) !== null && _a !== void 0 ? _a : "");
     const firstName = String((_b = data["firstName"]) !== null && _b !== void 0 ? _b : "").trim();
@@ -204,9 +205,9 @@ async function runAdminValuationNotify(data) {
     // The email gate writes a second record for a valuation the admin has
     // already been told about; label it as the lead it is, not a new valuation.
     const isLead = data["source"] === "email_gate";
-    const subject = isLead ?
+    const subject = (byAdmin ? "[You] " : "") + (isLead ?
         `New lead: ${registration}${firstName ? ` – ${firstName}` : ""}` :
-        `New Valuation: ${registration}`;
+        `New Valuation: ${registration}`);
     const heading = isLead ?
         "Someone asked for their valuation by email" :
         "New valuation on MRG";

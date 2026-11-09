@@ -29,3 +29,23 @@
     &.copy:hover     { background: #555; }
   }
 }
+
+.admin-copy {
+  margin: 0.5rem 0 0;
+  text-align: center;
+}
+
+.admin-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border: 1px solid #1877F2;
+  border-radius: 999px;
+  background: #fff;
+  color: #1877F2;
+  font-weight: 600;
+  cursor: pointer;
+
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
