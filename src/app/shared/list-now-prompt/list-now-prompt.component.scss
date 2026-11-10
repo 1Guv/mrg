@@ -130,19 +130,20 @@
   color: #374151;
 }
 
-.answers {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-
-  button { min-width: 110px; }
+.not-now {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
 }
 
-.answer-yes {
-  background-color: #2e7d32;
-  color: #fff;
-  font-weight: 700;
+.not-now-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 // The card's host is display: contents, so it takes this box's full width,

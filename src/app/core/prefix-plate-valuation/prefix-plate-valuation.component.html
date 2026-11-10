@@ -131,6 +131,18 @@
           (changeAnswers)="onChangeAnswers()" />
       }
       @if (gate.unlocked()) {
+        <app-plate-valuation-totals
+          [totalPrice]="totalPrice"
+          [minPrice]="minPrice"
+          [maxPrice]="maxPrice" />
+
+        <app-list-now-prompt class="d-block my-4"
+          [registration]="registration"
+          [plateType]="'prefix'"
+          [price]="totalPrice"
+          [minPrice]="minPrice"
+          [maxPrice]="maxPrice" />
+
         <app-plate-breakdown-card>
 
             <div class="d-flex justify-content-between">
@@ -222,18 +234,6 @@
             }
 
         </app-plate-breakdown-card>
-
-        <app-plate-valuation-totals
-          [totalPrice]="totalPrice"
-          [minPrice]="minPrice"
-          [maxPrice]="maxPrice" />
-
-        <app-list-now-prompt class="d-block mt-4"
-          [registration]="registration"
-          [plateType]="'prefix'"
-          [price]="totalPrice"
-          [minPrice]="minPrice"
-          [maxPrice]="maxPrice" />
 
         <app-share-buttons [shareText]="shareText" />
         <app-valuation-feedback [registration]="getPlatePreview()" [valuation]="totalPrice" />

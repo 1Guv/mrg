@@ -18,9 +18,9 @@ import { feeShare } from '../../utils/fee-share';
 import { StatsStripComponent } from '../stats-strip/stats-strip.component';
 
 /**
- * Sits under a revealed valuation in place of a bare "List Now" button:
- * real buyer demand, "Would you sell at this price?", and on "Yes" the
- * visitor's listing ready to publish for free.
+ * Sits under a revealed valuation's price: real buyer demand and the
+ * visitor's listing ready to publish for free, one click away. "Maybe
+ * later" and "Just curious" record that they aren't selling yet.
  */
 @Component({
   selector: 'app-list-now-prompt',
@@ -123,7 +123,9 @@ export class ListNowPromptComponent {
     this.meaning.set(null);
   }
 
+  /** Publishing is the "Yes, I'd sell" answer. */
   publish(): void {
+    if (!this.answer()) this.choose('yes');
     this.tracking.listPreviewPublishClicked(false);
     this.goToListing(this.askingPrice());
   }

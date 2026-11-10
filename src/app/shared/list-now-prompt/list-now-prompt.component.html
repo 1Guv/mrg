@@ -33,8 +33,16 @@
   </div>
 
   @switch (answer()) {
-    @case ('yes') {
-      <p class="prompt-heading">Here's your listing, ready to go</p>
+    @case ('later') {
+      <p class="prompt-reply">No problem — we'll check in weekly and tell you if demand for plates like {{ plate() }} picks up.</p>
+      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
+    }
+    @case ('curious') {
+      <p class="prompt-reply">Thanks — we won't send you selling reminders for {{ plate() }}.</p>
+      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
+    }
+    @default {
+      <p class="prompt-heading">Would you sell {{ plate() }} for £{{ askingPrice() | number: '1.0-0' }}? Here's your listing</p>
       <div class="preview">
         <app-plate-listing-card [listing]="preview()" variant="preview" />
       </div>
@@ -46,6 +54,11 @@
           <p class="fee-share">Pay £{{ fee }} only when a buyer messages you — {{ share }} of your £{{ askingPrice() | number: '1.0-0' }} asking price</p>
         }
         <p class="hint">No payment now · change the price and details on the next step</p>
+        <p class="not-now">
+          Not selling?
+          <button type="button" class="not-now-link" (click)="choose('later')">Maybe later</button> ·
+          <button type="button" class="not-now-link" (click)="choose('curious')">Just curious</button>
+        </p>
       </div>
 
       <div class="value-panel">
@@ -65,22 +78,6 @@
           <li><span class="step-num">3</span><span>They message you, you agree a price and transfer it through the DVLA</span></li>
         </ol>
         <app-stats-strip class="mt-3" [compact]="true" />
-      </div>
-    }
-    @case ('later') {
-      <p class="prompt-reply">No problem — we'll check in weekly and tell you if demand for plates like {{ plate() }} picks up.</p>
-      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
-    }
-    @case ('curious') {
-      <p class="prompt-reply">Thanks — we won't send you selling reminders for {{ plate() }}.</p>
-      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
-    }
-    @default {
-      <p class="prompt-heading">Would you sell {{ plate() }} for £{{ price() | number: '1.0-0' }}?</p>
-      <div class="answers">
-        <button mat-raised-button type="button" class="answer-yes" (click)="choose('yes')">Yes</button>
-        <button mat-stroked-button type="button" (click)="choose('later')">Maybe later</button>
-        <button mat-stroked-button type="button" (click)="choose('curious')">Just curious</button>
       </div>
     }
   }
