@@ -54,7 +54,7 @@ export class ListPlateComponent implements OnInit {
   });
 
   /** form, or a step of listing by email link for visitors who aren't signed in. */
-  step: 'form' | 'checkInbox' | 'confirming' | 'linkExpired' = 'form';
+  step: 'form' | 'checkInbox' | 'confirming' | 'cancelled' = 'form';
   signedIn = false;
   loading = false;
   errorMessage = '';
@@ -63,6 +63,7 @@ export class ListPlateComponent implements OnInit {
   valuationMax: number | null = null;
   private initials = '';
   private pendingId = '';
+  cancelledPlate = '';
 
   /** "3%": the fee against the asking price as they type it. */
   get feeShare(): string | null {
@@ -86,10 +87,15 @@ export class ListPlateComponent implements OnInit {
     const maxVal = Number(params['max']);
     if (!isNaN(maxVal) && maxVal > 0) this.valuationMax = maxVal;
 
+    // The emailed link of a listing made signed out: publishes it, or stops it.
     this.pendingId = String(params['pending'] ?? '');
-    if (this.pendingId) this.step = 'confirming';
+    const pendingKey = String(params['key'] ?? '');
+    if (this.pendingId && pendingKey) {
+      this.step = 'confirming';
+      if (params['action'] === 'cancel') this.cancelPending(pendingKey); else this.confirmPending(pendingKey);
+    }
 
-    const source = this.emailLink.hasLinkInUrl() ? 'email_link' :
+    const source = this.emailLink.hasLinkInUrl() || this.pendingId ? 'email_link' :
       params['from'] === 'result' ? 'valuation' :
       params['voucher'] ? 'nudge' :
       params['plate'] ? 'valuation' : 'direct';
@@ -101,9 +107,6 @@ export class ListPlateComponent implements OnInit {
       if (user) {
         this.form.patchValue({ email: user.email ?? '' });
         this.initials = this.initialsOf(user.displayName);
-      }
-      if (this.pendingId) {
-        if (user) this.confirmPending(); else this.step = 'linkExpired';
       }
     }));
   }
@@ -134,8 +137,6 @@ export class ListPlateComponent implements OnInit {
       }
       const email = this.form.value.email.trim();
       const pending = await this.payPerEnquiry.createPendingListing({ ...listing, email });
-      // The link then signs them in without asking for their email again.
-      this.emailLink.rememberEmail(email);
       this.pendingId = pending.pendingId;
       this.tracking.pendingListingCreated();
       this.step = 'checkInbox';
@@ -164,11 +165,21 @@ export class ListPlateComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  private async confirmPending(): Promise<void> {
+  private async confirmPending(key: string): Promise<void> {
     try {
-      const listing = await this.payPerEnquiry.confirmPendingListing(this.pendingId);
+      const listing = await this.payPerEnquiry.confirmPendingListing(this.pendingId, key);
       this.tracking.pendingListingConfirmed();
       this.router.navigate(['/list-plate/success'], { queryParams: { plate: listing.plateCharacters } });
+    } catch (err) {
+      this.step = 'form';
+      this.errorMessage = this.messageFor(err);
+    }
+  }
+
+  private async cancelPending(key: string): Promise<void> {
+    try {
+      this.cancelledPlate = (await this.payPerEnquiry.cancelPendingListing(this.pendingId, key)).plateCharacters;
+      this.step = 'cancelled';
     } catch (err) {
       this.step = 'form';
       this.errorMessage = this.messageFor(err);

@@ -28,18 +28,11 @@
         <button type="button" mat-button class="submit-btn" (click)="editListing()">Wrong email? Change it</button>
       </div>
     }
-    @case ('linkExpired') {
+    @case ('cancelled') {
       <div class="step-card text-center">
-        <h2 class="step-title">This link has expired</h2>
-        <p>Your listing is saved. We'll email you a new link to publish it.</p>
-        @if (errorMessage) {
-          <p class="error-message">{{ errorMessage }}</p>
-        }
-        @if (resent) {
-          <p class="text-muted">We've sent a new link. Check your inbox.</p>
-        } @else {
-          <button type="button" mat-raised-button class="submit-btn" [disabled]="loading" (click)="resend()">Email me a new link</button>
-        }
+        <h2 class="step-title">Listing removed</h2>
+        <p>We won't publish <strong>{{ cancelledPlate }}</strong> or remind you about it again.</p>
+        <a mat-stroked-button class="submit-btn" routerLink="/">Back to valuations</a>
       </div>
     }
     @default {

@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import {HttpsError} from "firebase-functions/v2/https";
-import {createHash} from "crypto";
+import {createHash, randomBytes, timingSafeEqual} from "crypto";
 import {
   ALLOWED_APP_BASE_URLS, consumeRateLimits, EMAIL_RE, rateLimitId,
 } from "./valuation-email.js";
@@ -248,8 +248,15 @@ async function publishFreeListing(
 
 // Visitors who aren't signed in list with just their email. The listing
 // waits in pending_listings (no client access) until they click the link we
-// email them: it signs them in, and the page then confirms the listing. So
-// nobody can list a plate under someone else's email address.
+// email them. The link carries a secret key that only that inbox has, so
+// nobody can list a plate under someone else's email address. The key never
+// expires: every email for a listing, reminders included, has the same link,
+// and it keeps working after the listing is published.
+
+/** Days between reminders after the first, which is sent after a day. */
+const PENDING_REMINDER_EVERY_DAYS = 7;
+/** The first reminder plus four weekly ones, then we stop. */
+const PENDING_REMINDER_LIMIT = 5;
 
 /**
  * @param {string} email - The seller's email.
@@ -260,6 +267,21 @@ async function publishFreeListing(
 function pendingListingId(email: string, plate: string): string {
   return createHash("sha256").update(`${email}|${plate}`).digest("hex")
     .slice(0, 32);
+}
+
+/**
+ * @param {admin.firestore.DocumentData} pending - The pending listing.
+ * @param {string} pendingId - Its id.
+ * @param {string} action - "cancel" for the link that stops it instead.
+ * @return {string} The emailed link that publishes (or cancels) it.
+ */
+function pendingListingUrl(
+  pending: admin.firestore.DocumentData,
+  pendingId: string,
+  action?: "cancel"
+): string {
+  return `${pending.appBaseUrl}/list-plate?pending=${pendingId}` +
+    `&key=${pending.key}${action ? `&action=${action}` : ""}`;
 }
 
 /**
@@ -286,9 +308,15 @@ export async function runCreatePendingListing(
   ]);
 
   const pendingId = pendingListingId(email, request.plateCharacters);
-  await admin.firestore().collection("pending_listings").doc(pendingId).set({
+  const ref = admin.firestore().collection("pending_listings").doc(pendingId);
+  // Sending the form again keeps the key, so earlier emails still work.
+  const key = (await ref.get()).data()?.key ?? randomBytes(24).toString("hex");
+  await ref.set({
     ...request,
     email,
+    key,
+    status: "pending",
+    remindersSent: 0,
     appBaseUrl: ALLOWED_APP_BASE_URLS.includes(appBaseUrl) ?
       appBaseUrl : APP_URL,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -298,8 +326,8 @@ export async function runCreatePendingListing(
 }
 
 /**
- * Email a fresh link for a pending listing, e.g. when the first one has
- * expired. The address comes from the saved listing, never the request.
+ * Email the link for a pending listing again, e.g. when the first email
+ * went to spam. The address comes from the saved listing, never the request.
  * @param {Record<string, unknown>} data - pendingId.
  * @param {string} ip - The caller's IP, for rate limiting.
  * @return {Promise<void>}
@@ -326,62 +354,171 @@ async function emailPendingListingLink(pendingId: string): Promise<void> {
   const pending = snap.data();
   if (!pending) throw new HttpsError("not-found", "Listing not found");
   const plate = String(pending.plateCharacters);
-  const link = await admin.auth().generateSignInWithEmailLink(
-    pending.email, {
-      url: `${pending.appBaseUrl}/list-plate?pending=${pendingId}`,
-      handleCodeInApp: true,
-    });
   await admin.firestore().collection("mail").add({
     to: [pending.email],
     message: {
       subject: `Confirm your listing for ${plate}`,
-      html: confirmListingEmailHtml(plate, pending.askingPrice, link),
+      html: confirmListingEmailHtml(
+        plate, pending.askingPrice, pendingListingUrl(pending, pendingId)),
     },
   });
 }
 
 /**
- * Publish a pending listing once its link has signed the seller in.
- * Running it again after it's published returns the same listing.
- * @param {string} uid - The signed-in seller.
- * @param {string} email - Their email from the auth token.
- * @param {Record<string, unknown>} data - pendingId.
- * @return {Promise<object>} The listing's id and plate.
+ * Read a pending listing from its emailed link, checking the link's key.
+ * @param {Record<string, unknown>} data - pendingId and key.
+ * @return {Promise<object>} The pending listing and its ref.
+ */
+async function pendingFromLink(data: Record<string, unknown>): Promise<{
+  ref: admin.firestore.DocumentReference,
+  pending: admin.firestore.DocumentData,
+}> {
+  const pendingId = text(data.pendingId, 1, 64, "listing");
+  const key = String(data.key ?? "");
+  const ref = admin.firestore().collection("pending_listings").doc(pendingId);
+  const pending = (await ref.get()).data();
+  const expected = Buffer.from(String(pending?.key ?? ""));
+  const given = Buffer.from(key);
+  if (!pending || !expected.length || expected.length !== given.length ||
+    !timingSafeEqual(expected, given)) {
+    throw new HttpsError(
+      "not-found", "We couldn't find this listing. Please list it again.");
+  }
+  return {ref, pending};
+}
+
+/**
+ * Publish a pending listing from its emailed link, and sign the seller in:
+ * opening the link proves they own the email, so their account is created
+ * if they don't have one. Opening it again after it's published returns the
+ * same listing.
+ * @param {Record<string, unknown>} data - pendingId and key.
+ * @return {Promise<object>} The listing's id and plate, and a custom token
+ *   that signs the seller in.
  */
 export async function runConfirmPendingListing(
-  uid: string,
-  email: string,
   data: Record<string, unknown>
-): Promise<{listingId: string, plateCharacters: string}> {
-  const pendingId = text(data.pendingId, 1, 64, "listing");
+): Promise<{
+  listingId: string, plateCharacters: string, customToken?: string,
+}> {
+  const {ref, pending} = await pendingFromLink(data);
+  const email = String(pending.email);
+  const uid = await uidForEmail(email);
+
+  let listingId = String(pending.listingId ?? "");
+  if (pending.status !== "listed") {
+    const request: ListingRequest = {
+      plateCharacters: pending.plateCharacters,
+      askingPrice: pending.askingPrice,
+      phone: pending.phone,
+      meanings: pending.meanings,
+      initials: pending.initials,
+      negotiable: pending.negotiable === true,
+    };
+    try {
+      listingId = (await publishFreeListing(uid, email, request)).listingId;
+    } catch (err) {
+      // Already listed from another tab or device: that's the listing.
+      if ((err as HttpsError).code !== "already-exists") throw err;
+    }
+    await ref.update({
+      status: "listed",
+      listingId,
+      listedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+
+  const listing = {listingId, plateCharacters: pending.plateCharacters};
+  try {
+    return {...listing, customToken: await admin.auth().createCustomToken(uid)};
+  } catch (err) {
+    // Listed all the same; they can log in to manage it.
+    console.error("confirm-pending: custom token failed", err);
+    return listing;
+  }
+}
+
+/**
+ * Stop a pending listing, and its reminders, from its emailed link.
+ * @param {Record<string, unknown>} data - pendingId and key.
+ * @return {Promise<object>} The plate.
+ */
+export async function runCancelPendingListing(
+  data: Record<string, unknown>
+): Promise<{plateCharacters: string}> {
+  const {ref, pending} = await pendingFromLink(data);
+  if (pending.status === "pending") await ref.update({status: "cancelled"});
+  return {plateCharacters: pending.plateCharacters};
+}
+
+/**
+ * @param {string} email - A verified email.
+ * @return {Promise<string>} The uid of that email's account, created if
+ *   there isn't one.
+ */
+async function uidForEmail(email: string): Promise<string> {
+  try {
+    const user = await admin.auth().getUserByEmail(email);
+    if (!user.emailVerified) {
+      await admin.auth().updateUser(user.uid, {emailVerified: true});
+    }
+    return user.uid;
+  } catch (err) {
+    if ((err as {code?: string}).code !== "auth/user-not-found") throw err;
+    return (await admin.auth().createUser({email, emailVerified: true})).uid;
+  }
+}
+
+/**
+ * Remind visitors who listed signed out but never opened the link: a day
+ * after they listed, then weekly, up to PENDING_REMINDER_LIMIT emails.
+ * @return {Promise<void>}
+ */
+export async function runPendingListingReminders(): Promise<void> {
   const db = admin.firestore();
-  const ref = db.collection("pending_listings").doc(pendingId);
-  const pending = (await ref.get()).data();
-  if (!pending) {
-    throw new HttpsError(
-      "not-found", "This listing has already been published or has expired");
+  const pending = await db.collection("pending_listings")
+    .where("status", "==", "pending")
+    .get();
+
+  const now = Date.now();
+  let sent = 0;
+  for (const doc of pending.docs) {
+    const listing = doc.data();
+    const remindersSent = Number(listing.remindersSent ?? 0);
+    if (remindersSent >= PENDING_REMINDER_LIMIT) continue;
+    const since = remindersSent === 0 ?
+      listing.createdAt?.toMillis?.() : listing.lastRemindedAt?.toMillis?.();
+    const waitDays = remindersSent === 0 ? 1 : PENDING_REMINDER_EVERY_DAYS;
+    // The daily run drifts a little; an hour's slack keeps it on the day.
+    if (!since || now - since < waitDays * 86_400_000 - 3_600_000) continue;
+
+    const plate = String(listing.plateCharacters);
+    const batch = db.batch();
+    batch.set(db.collection("mail").doc(), {
+      to: [listing.email],
+      message: {
+        subject: `Your ${plate} listing is waiting to go live`,
+        html: pendingReminderHtml(
+          plate, listing.askingPrice,
+          pendingListingUrl(listing, doc.id),
+          pendingListingUrl(listing, doc.id, "cancel"),
+          remindersSent + 1 === PENDING_REMINDER_LIMIT),
+      },
+    });
+    batch.update(doc.ref, {
+      remindersSent: remindersSent + 1,
+      lastRemindedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+    sent++;
   }
-  if (pending.email !== email.toLowerCase()) {
-    throw new HttpsError(
-      "permission-denied", "This link is for a different email address");
-  }
-  const request: ListingRequest = {
-    plateCharacters: pending.plateCharacters,
-    askingPrice: pending.askingPrice,
-    phone: pending.phone,
-    meanings: pending.meanings,
-    initials: pending.initials,
-    negotiable: pending.negotiable === true,
-  };
-  const listing = await publishFreeListing(uid, email, request);
-  await ref.delete();
-  return listing;
+  console.log(`pending listing reminders: sent ${sent}`);
 }
 
 /**
  * @param {string} plate - The plate, upper case.
  * @param {string} price - The asking price in pounds.
- * @param {string} link - The sign-in link that publishes it.
+ * @param {string} link - The link that publishes it.
  * @return {string} Email HTML asking the seller to confirm their listing.
  */
 function confirmListingEmailHtml(
@@ -395,7 +532,34 @@ function confirmListingEmailHtml(
     <p>Your listing at <strong>£${Number(price).toLocaleString("en-GB")}</strong> is ready. Tap below to publish it:</p>
     <p><a href="${link}" style="display:inline-block;background:#2e7d32;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:600">Publish my listing</a></p>
     <p>Listing is free. You pay £${LISTING_FEE_GBP} once, only when your first buyer messages you, and every enquiry after that is free.</p>
-    <p style="color:#888;font-size:12px">The button also signs you in so you can manage your listing. It works once; if it has expired, open the listing page again and ask for a new link. Didn't list a plate? Ignore this email and nothing will be published.</p>
+    <p style="color:#888;font-size:12px">The button also signs you in so you can manage your listing. Didn't list a plate? Ignore this email and nothing will be published.</p>
+  `;
+  /* eslint-enable max-len */
+}
+
+/**
+ * @param {string} plate - The plate, upper case.
+ * @param {string} price - The asking price in pounds.
+ * @param {string} link - The link that publishes it.
+ * @param {string} cancelLink - The link that stops it and its reminders.
+ * @param {boolean} last - Whether this is the final reminder.
+ * @return {string} Reminder email HTML for an unpublished listing.
+ */
+function pendingReminderHtml(
+  plate: string,
+  price: string,
+  link: string,
+  cancelLink: string,
+  last: boolean
+): string {
+  /* eslint-disable max-len */
+  return `
+    <h2>${escapeHtml(plate)} isn't for sale yet</h2>
+    <p>You started listing it at <strong>£${Number(price).toLocaleString("en-GB")}</strong>, but it hasn't been published, so buyers can't see it. One tap and it's live:</p>
+    <p><a href="${link}" style="display:inline-block;background:#2e7d32;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:600">Publish my listing</a></p>
+    <p>Listing is free. You pay £${LISTING_FEE_GBP} once, only when your first buyer messages you, and every enquiry after that is free.</p>
+    ${last ? "<p>This is the last reminder we'll send about this listing.</p>" : ""}
+    <p style="color:#888;font-size:12px">Changed your mind? <a href="${cancelLink}" style="color:#888">Remove this listing</a> and we'll stop reminding you.</p>
   `;
   /* eslint-enable max-len */
 }

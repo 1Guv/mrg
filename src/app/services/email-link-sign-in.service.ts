@@ -51,10 +51,7 @@ export class EmailLinkSignInService {
 
   private async completeIfPresent(): Promise<void> {
     const href = window.location.href;
-    if (!isSignInWithEmailLink(this.auth, href)) {
-      if (/[?&]pending=/.test(href)) console.warn('Listing link opened without a sign-in code', href);
-      return;
-    }
+    if (!isSignInWithEmailLink(this.auth, href)) return;
 
     let email: string | null = null;
     try {

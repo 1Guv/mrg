@@ -39,11 +39,13 @@ import {fillPlateMeanings} from "./plate-meanings.js";
 import {
   contactFields,
   listingFields,
+  runCancelPendingListing,
   runConfirmPendingListing,
   runCreateFreeListing,
   runCreatePendingListing,
   runCreateUnlockSession,
   runUnlockEnquiries,
+  runPendingListingReminders,
   runResendPendingListing,
   runUnlockReminders,
 } from "./pay-per-enquiry.js";
@@ -494,16 +496,19 @@ export const resendPendingListing = onCall(
   }
 );
 
-/** Callable — publishes a pending listing once its link has signed them in. */
+/**
+ * Callable — publishes a pending listing from its emailed link, and returns
+ * a token that signs the seller in.
+ */
 export const confirmPendingListing = onCall(
   {maxInstances: 10},
-  async (request) => {
-    if (!request.auth?.token.email) {
-      throw new HttpsError("unauthenticated", "Must be logged in");
-    }
-    return runConfirmPendingListing(
-      request.auth.uid, request.auth.token.email, request.data ?? {});
-  }
+  async (request) => runConfirmPendingListing(request.data ?? {})
+);
+
+/** Callable — stops a pending listing and its reminders. */
+export const cancelPendingListing = onCall(
+  {maxInstances: 10},
+  async (request) => runCancelPendingListing(request.data ?? {})
 );
 
 /** Callable — Stripe Checkout for unlocking a free listing's enquiries. */
@@ -923,6 +928,18 @@ export const scheduledUnlockReminders = onSchedule(
   {schedule: "every day 10:00", timeZone: "Europe/London"},
   async () => {
     await withFailureAlert("scheduledUnlockReminders", runUnlockReminders);
+  }
+);
+
+/**
+ * Daily — reminds visitors who listed signed out to open the link that
+ * publishes their listing: after a day, then weekly.
+ */
+export const scheduledPendingListingReminders = onSchedule(
+  {schedule: "every day 10:00", timeZone: "Europe/London"},
+  async () => {
+    await withFailureAlert(
+      "scheduledPendingListingReminders", runPendingListingReminders);
   }
 );
 

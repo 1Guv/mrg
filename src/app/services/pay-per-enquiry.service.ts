@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { Auth, signInWithCustomToken } from '@angular/fire/auth';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { environment } from '../../environments/environment';
 
@@ -19,6 +20,7 @@ export interface ListingForm {
 @Injectable({ providedIn: 'root' })
 export class PayPerEnquiryService {
   private functions = inject(Functions);
+  private auth = inject(Auth);
 
   async createFreeListing(data: ListingForm): Promise<{ listingId: string; plateCharacters: string }> {
     const fn = httpsCallable<ListingForm, { listingId: string; plateCharacters: string }>(
@@ -41,13 +43,24 @@ export class PayPerEnquiryService {
     await httpsCallable(this.functions, 'resendPendingListing')({ pendingId });
   }
 
-  /** Publishes a pending listing once its emailed link has signed the visitor in. */
-  async confirmPendingListing(pendingId: string): Promise<{ listingId: string; plateCharacters: string }> {
-    const fn = httpsCallable<{ pendingId: string }, { listingId: string; plateCharacters: string }>(
+  /** Publishes a pending listing from its emailed link, and signs the seller in. */
+  async confirmPendingListing(pendingId: string, key: string): Promise<{ listingId: string; plateCharacters: string }> {
+    const fn = httpsCallable<{ pendingId: string; key: string }, { listingId: string; plateCharacters: string; customToken?: string }>(
       this.functions,
       'confirmPendingListing'
     );
-    return (await fn({ pendingId })).data;
+    const { customToken, ...listing } = (await fn({ pendingId, key })).data;
+    if (customToken) await signInWithCustomToken(this.auth, customToken);
+    return listing;
+  }
+
+  /** Stops a pending listing, and its reminders, from the emailed link. */
+  async cancelPendingListing(pendingId: string, key: string): Promise<{ plateCharacters: string }> {
+    const fn = httpsCallable<{ pendingId: string; key: string }, { plateCharacters: string }>(
+      this.functions,
+      'cancelPendingListing'
+    );
+    return (await fn({ pendingId, key })).data;
   }
 
   /** Checkout URL for unlocking every enquiry on one of the seller's listings. */
