@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sourceFromProviders = sourceFromProviders;
 exports.maskEmail = maskEmail;
 exports.runOnUserCreated = runOnUserCreated;
+exports.uidForEmail = uidForEmail;
 const admin = __importStar(require("firebase-admin"));
 /** gRPC status Firestore returns when create() finds a document. */
 const ALREADY_EXISTS = 6;
@@ -92,6 +93,25 @@ async function runOnUserCreated(user) {
         if (err.code === ALREADY_EXISTS)
             return;
         throw err;
+    }
+}
+/**
+ * @param {string} email - A verified email.
+ * @return {Promise<string>} The uid of that email's account, created if
+ *   there isn't one.
+ */
+async function uidForEmail(email) {
+    try {
+        const user = await admin.auth().getUserByEmail(email);
+        if (!user.emailVerified) {
+            await admin.auth().updateUser(user.uid, { emailVerified: true });
+        }
+        return user.uid;
+    }
+    catch (err) {
+        if (err.code !== "auth/user-not-found")
+            throw err;
+        return (await admin.auth().createUser({ email, emailVerified: true })).uid;
     }
 }
 //# sourceMappingURL=users.js.map

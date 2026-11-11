@@ -36,6 +36,7 @@ const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
 import {withFailureAlert} from "./failure-alerts";
 import {fillPlateMeanings} from "./plate-meanings.js";
+import {runRedeemSignInLink} from "./sign-in-links.js";
 import {
   contactFields,
   listingFields,
@@ -1058,6 +1059,12 @@ export const sendSignInLink = onCall(
     await runSendSignInLink(request.data ?? {}, ip);
     return {sent: true};
   }
+);
+
+/** Callable — signs a visitor in from an emailed sign-in link. */
+export const redeemSignInLink = onCall(
+  {maxInstances: 10},
+  async (request) => runRedeemSignInLink(request.data ?? {})
 );
 
 /**

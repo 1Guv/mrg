@@ -52,6 +52,7 @@ const https_1 = require("firebase-functions/v2/https");
 const crypto_1 = require("crypto");
 const valuation_email_js_1 = require("./valuation-email.js");
 const nudge_emails_js_1 = require("./nudge-emails.js");
+const users_js_1 = require("./users.js");
 const enquiries_js_1 = require("./enquiries.js");
 const constants_js_1 = require("./constants.js");
 /**
@@ -361,7 +362,7 @@ async function runConfirmPendingListing(data) {
     var _a;
     const { ref, pending } = await pendingFromLink(data);
     const email = String(pending.email);
-    const uid = await uidForEmail(email);
+    const uid = await (0, users_js_1.uidForEmail)(email);
     let listingId = String((_a = pending.listingId) !== null && _a !== void 0 ? _a : "");
     if (pending.status !== "listed") {
         const request = {
@@ -406,25 +407,6 @@ async function runCancelPendingListing(data) {
     if (pending.status === "pending")
         await ref.update({ status: "cancelled" });
     return { plateCharacters: pending.plateCharacters };
-}
-/**
- * @param {string} email - A verified email.
- * @return {Promise<string>} The uid of that email's account, created if
- *   there isn't one.
- */
-async function uidForEmail(email) {
-    try {
-        const user = await admin.auth().getUserByEmail(email);
-        if (!user.emailVerified) {
-            await admin.auth().updateUser(user.uid, { emailVerified: true });
-        }
-        return user.uid;
-    }
-    catch (err) {
-        if (err.code !== "auth/user-not-found")
-            throw err;
-        return (await admin.auth().createUser({ email, emailVerified: true })).uid;
-    }
 }
 /**
  * Remind visitors who listed signed out but never opened the link: a day

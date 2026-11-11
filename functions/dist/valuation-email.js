@@ -45,6 +45,7 @@ const constants_js_1 = require("./constants.js");
 const enquiries_js_1 = require("./enquiries.js");
 const nudge_emails_js_1 = require("./nudge-emails.js");
 const users_js_1 = require("./users.js");
+const sign_in_links_js_1 = require("./sign-in-links.js");
 /**
  * The email gate on a valuation result. A visitor gives a first name and an
  * email; we find or create their account, add them to the customer list,
@@ -404,7 +405,7 @@ function buildValuationEmailHtml(firstName, registration, price, minPrice, maxPr
   </div>
   <p style="color:#666;font-size:13px;text-align:center;">
     This button signs you in to MR Valuations and fills in your plate and price for you.
-    It works once; if it has expired, you can ask for a new sign-in link on the login page.
+    It works for 7 days; after that, you can ask for a new sign-in link on the login page.
   </p>
   <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
   <p style="color:#888;font-size:12px;text-align:center;">
@@ -457,7 +458,7 @@ async function runCaptureValuationEmail(data, ip) {
         `&max=${Math.round(input.maxPrice)}`;
     let listUrl = continueUrl;
     try {
-        listUrl = await admin.auth().generateSignInWithEmailLink(input.email, { url: continueUrl, handleCodeInApp: true });
+        listUrl = await (0, sign_in_links_js_1.createSignInLink)(input.email, continueUrl, sign_in_links_js_1.VALUATION_LINK_TTL);
     }
     catch (err) {
         // Still send the valuation; the plain link asks them to log in.
@@ -486,7 +487,7 @@ async function runCaptureValuationEmail(data, ip) {
     }
 }
 /**
- * @param {string} link - The Firebase sign-in link.
+ * @param {string} link - The sign-in link.
  * @return {string} HTML for the "Email me a sign-in link" email.
  */
 function buildSignInLinkEmailHtml(link) {
@@ -510,7 +511,7 @@ function buildSignInLinkEmailHtml(link) {
     </a>
   </div>
   <p style="color:#666;font-size:13px;text-align:center;">
-    The link works once and expires soon. If you didn't ask for it, you can ignore this email.
+    The link works for 24 hours. If you didn't ask for it, you can ignore this email.
   </p>
   <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
   <p style="color:#888;font-size:12px;text-align:center;">The MR Valuations Team</p>
@@ -546,7 +547,7 @@ async function runSendSignInLink(data, ip) {
         { id: rateLimitId("link-email", email), max: EMAIL_LIMIT_PER_HOUR },
         { id: rateLimitId("link-ip", ip || "unknown"), max: IP_LIMIT_PER_HOUR },
     ]);
-    const link = await admin.auth().generateSignInWithEmailLink(email, { url: returnUrl, handleCodeInApp: true });
+    const link = await (0, sign_in_links_js_1.createSignInLink)(email, returnUrl, sign_in_links_js_1.REQUESTED_LINK_TTL);
     await admin.firestore().collection("mail").add({
         to: [email],
         message: {

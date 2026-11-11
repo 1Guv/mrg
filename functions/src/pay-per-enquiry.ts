@@ -5,6 +5,7 @@ import {
   ALLOWED_APP_BASE_URLS, consumeRateLimits, EMAIL_RE, rateLimitId,
 } from "./valuation-email.js";
 import {APP_URL} from "./nudge-emails.js";
+import {uidForEmail} from "./users.js";
 import {
   contactRef, escapeHtml, messagesRef, MESSAGES_URL,
 } from "./enquiries.js";
@@ -449,24 +450,6 @@ export async function runCancelPendingListing(
   const {ref, pending} = await pendingFromLink(data);
   if (pending.status === "pending") await ref.update({status: "cancelled"});
   return {plateCharacters: pending.plateCharacters};
-}
-
-/**
- * @param {string} email - A verified email.
- * @return {Promise<string>} The uid of that email's account, created if
- *   there isn't one.
- */
-async function uidForEmail(email: string): Promise<string> {
-  try {
-    const user = await admin.auth().getUserByEmail(email);
-    if (!user.emailVerified) {
-      await admin.auth().updateUser(user.uid, {emailVerified: true});
-    }
-    return user.uid;
-  } catch (err) {
-    if ((err as {code?: string}).code !== "auth/user-not-found") throw err;
-    return (await admin.auth().createUser({email, emailVerified: true})).uid;
-  }
 }
 
 /**

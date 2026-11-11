@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.redeemSignInLink = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -58,6 +58,7 @@ const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
 const failure_alerts_1 = require("./failure-alerts");
 const plate_meanings_js_1 = require("./plate-meanings.js");
+const sign_in_links_js_1 = require("./sign-in-links.js");
 const pay_per_enquiry_js_1 = require("./pay-per-enquiry.js");
 const enquiries_js_1 = require("./enquiries.js");
 const valuation_email_js_1 = require("./valuation-email.js");
@@ -817,6 +818,8 @@ exports.sendSignInLink = (0, https_1.onCall)({ maxInstances: 10 }, async (reques
     await (0, valuation_email_js_1.runSendSignInLink)((_b = request.data) !== null && _b !== void 0 ? _b : {}, ip);
     return { sent: true };
 });
+/** Callable — signs a visitor in from an emailed sign-in link. */
+exports.redeemSignInLink = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => { var _a; return (0, sign_in_links_js_1.runRedeemSignInLink)((_a = request.data) !== null && _a !== void 0 ? _a : {}); });
 /**
  * @param {object} request - A callable request.
  * @return {object} The caller's IP and, when signed in, uid and email.

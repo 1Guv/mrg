@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Auth, isSignInWithEmailLink, signInWithEmailLink } from '@angular/fire/auth';
+import { Auth, isSignInWithEmailLink, signInWithCustomToken, signInWithEmailLink } from '@angular/fire/auth';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -8,16 +8,17 @@ import { firstValueFrom } from 'rxjs';
 import { ConfirmEmailDialogComponent } from '../shared/confirm-email-dialog/confirm-email-dialog.component';
 
 const EMAIL_STORAGE_KEY = 'emailForSignIn';
-const LINK_PARAMS = ['apiKey', 'oobCode', 'mode', 'lang', 'continueUrl', 'tenantId'];
+const LINK_PARAMS = ['signin', 'apiKey', 'oobCode', 'mode', 'lang', 'continueUrl', 'tenantId'];
 
 /**
- * Passwordless sign-in with Firebase email links.
+ * Passwordless sign-in from emailed links.
  *
  * Links come from two places: the valuation email (captureValuationEmail)
- * and "Email me a sign-in link" (sendSignInLink). Both are generated and sent
- * server-side, from our own mail sender rather than Firebase's. Both
- * land on a page whose URL carries the link's oobCode; completeIfPresent()
- * signs the visitor in and strips those params so the page keeps its own.
+ * and "Email me a sign-in link" (sendSignInLink). Both land on a page whose
+ * URL carries a ?signin= token; completeIfPresent() swaps it for a custom
+ * token, which works on any device without asking for the email again, and
+ * strips it so the page keeps its own params. Firebase email links (oobCode)
+ * sent before the switch are still handled the old way.
  */
 @Injectable({ providedIn: 'root' })
 export class EmailLinkSignInService {
@@ -46,13 +47,49 @@ export class EmailLinkSignInService {
   }
 
   hasLinkInUrl(): boolean {
-    return isSignInWithEmailLink(this.auth, window.location.href);
+    return this.tokenInUrl() !== null || isSignInWithEmailLink(this.auth, window.location.href);
+  }
+
+  private tokenInUrl(): string | null {
+    return new URL(window.location.href).searchParams.get('signin');
   }
 
   private async completeIfPresent(): Promise<void> {
     const href = window.location.href;
-    if (!isSignInWithEmailLink(this.auth, href)) return;
+    const token = this.tokenInUrl();
+    if (token !== null) {
+      await this.signInWithToken(token);
+    } else if (isSignInWithEmailLink(this.auth, href)) {
+      await this.signInWithFirebaseLink(href);
+    } else {
+      return;
+    }
 
+    // GitHub Pages redirects /list-plate to /list-plate/, and the router
+    // doesn't match a trailing slash, so drop it.
+    const clean = new URL(this.stripLinkParams(href));
+    const path = clean.pathname.replace(/\/+$/, '') || '/';
+    await this.router.navigateByUrl(path + clean.search, { replaceUrl: true });
+  }
+
+  private async signInWithToken(token: string): Promise<void> {
+    try {
+      const fn = httpsCallable<{ token: string }, { customToken: string }>(this.functions, 'redeemSignInLink');
+      await signInWithCustomToken(this.auth, (await fn({ token })).data.customToken);
+      this.snackBar.open('You are signed in', 'OK', { duration: 4000 });
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      console.error('Sign-in link failed', code, err);
+      this.snackBar.open(
+        code === 'functions/deadline-exceeded'
+          ? 'That sign-in link has expired. Request a new one from the login page.'
+          : "That sign-in link didn't work. Request a new one from the login page.",
+        'OK'
+      );
+    }
+  }
+
+  private async signInWithFirebaseLink(href: string): Promise<void> {
     let email: string | null = null;
     try {
       email = localStorage.getItem(EMAIL_STORAGE_KEY);
@@ -78,9 +115,6 @@ export class EmailLinkSignInService {
         this.snackBar.open('That sign-in link has expired or was already used. Request a new one from the login page.', 'OK');
       }
     }
-
-    const clean = new URL(this.stripLinkParams(href));
-    await this.router.navigateByUrl(clean.pathname + clean.search, { replaceUrl: true });
   }
 
   private stripLinkParams(href: string): string {
