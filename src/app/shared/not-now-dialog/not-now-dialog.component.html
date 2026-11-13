@@ -1,0 +1,86 @@
+@switch (reason()) {
+  @case (null) {
+    <h2 mat-dialog-title>No problem. What's holding you back?</h2>
+    <mat-dialog-content>
+      <p class="intro">One tap helps us improve. Your valuation is saved and emailed to you either way.</p>
+      @for (r of reasons; track r.value) {
+        <button type="button" class="reason" (click)="choose(r.value)">
+          <span class="reason-icon" aria-hidden="true">{{ r.icon }}</span>{{ r.label }}
+        </button>
+      }
+    </mat-dialog-content>
+    <mat-dialog-actions align="center">
+      <button mat-button type="button" (click)="skip()">Skip</button>
+    </mat-dialog-actions>
+  }
+
+  @case ('price') {
+    <h2 mat-dialog-title>You choose the price, not us</h2>
+    <mat-dialog-content>
+      <p class="intro">Our figure is only a guide. List {{ data.plate }} at whatever you think it's worth, and change it any time.</p>
+      <label class="price-field">
+        <span class="currency">£</span>
+        <input type="number" inputmode="numeric" min="1" step="10" [(ngModel)]="price" aria-label="Your asking price">
+      </label>
+      <button mat-raised-button type="button" class="publish-btn" (click)="publish()">
+        Publish at £{{ price | number: '1.0-0' }}, free
+      </button>
+    </mat-dialog-content>
+    <mat-dialog-actions align="center">
+      <button mat-button type="button" (click)="close()">Not now</button>
+    </mat-dialog-actions>
+  }
+
+  @case ('not_ready') {
+    <h2 mat-dialog-title>We'll keep an eye on it</h2>
+    <mat-dialog-content>
+      <p class="intro">We'll email you if demand for plates like {{ data.plate }} picks up, so you know when it's a good time to sell. Your listing will be ready whenever you are.</p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="center">
+      <button mat-raised-button type="button" class="done-btn" (click)="close()">Done</button>
+    </mat-dialog-actions>
+  }
+
+  @case ('curious') {
+    <h2 mat-dialog-title>Thanks!</h2>
+    <mat-dialog-content>
+      <p class="intro">We won't send you selling emails about {{ data.plate }}. Got another plate in mind?</p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="center">
+      <button mat-raised-button type="button" class="done-btn" (click)="valueAnother()">Value another plate</button>
+      <button mat-button type="button" (click)="close()">Close</button>
+    </mat-dialog-actions>
+  }
+
+  @case ('fee') {
+    <h2 mat-dialog-title>Listing costs £0</h2>
+    <mat-dialog-content>
+      <ul class="fee-facts">
+        <li><strong>Free to list</strong>, and it stays up until it sells.</li>
+        <li>You pay <strong>£{{ data.fee }} once</strong>, only when a real buyer messages you about {{ data.plate }}.</li>
+        <li>Every message after that is free. <strong>No commission</strong>: you keep the full sale price.</li>
+        <li>No buyers, no charge.</li>
+      </ul>
+      <button mat-raised-button type="button" class="publish-btn" (click)="publish()">Publish free</button>
+    </mat-dialog-content>
+    <mat-dialog-actions align="center">
+      <button mat-button type="button" (click)="close()">Not now</button>
+    </mat-dialog-actions>
+  }
+
+  @case ('other') {
+    <h2 mat-dialog-title>{{ otherSent() ? 'Thanks for telling us' : 'What would make you list it?' }}</h2>
+    <mat-dialog-content>
+      @if (otherSent()) {
+        <p class="intro">We read every answer. Your listing will be ready whenever you are.</p>
+      } @else {
+        <textarea class="other-text" rows="3" maxlength="300" [(ngModel)]="otherText"
+          placeholder="e.g. I'd like to see what similar plates sold for" aria-label="What would make you list it"></textarea>
+        <button mat-raised-button type="button" class="done-btn" [disabled]="!otherText.trim()" (click)="sendOther()">Send</button>
+      }
+    </mat-dialog-content>
+    <mat-dialog-actions align="center">
+      <button mat-button type="button" (click)="close()">Close</button>
+    </mat-dialog-actions>
+  }
+}

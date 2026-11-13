@@ -53,6 +53,8 @@ const REG_RE = /^[A-Z0-9 ]{2,8}$/;
 exports.BUYER_DEMAND_THRESHOLD = 5;
 const BUYER_DEMAND_WINDOW_MS = 30 * DAY;
 const SELL_INTENTS = ["yes", "later", "curious"];
+/** Why a visitor chose "Not now" instead of publishing. */
+const NOT_NOW_REASONS = ["price", "not_ready", "curious", "fee", "other"];
 /** "Maybe later" moves that plate's nudges to weekly. */
 const LATER_CADENCE_DAYS = 7;
 /**
@@ -181,33 +183,34 @@ function sellIntentId(email, registration) {
  * Records "Would you sell at this price?" and applies it to the plate's nudge
  * emails. If the queue entry isn't made yet, runOnAutoValuationCreated
  * applies the answer when it makes it.
- * @param {Record<string, unknown>} data - registration, answer, and email
- *   when the caller isn't signed in.
+ * @param {Record<string, unknown>} data - registration, answer, email
+ *   when the caller isn't signed in, and for "Not now" a reason and an
+ *   optional reasonText.
  * @param {Caller} caller - The signed-in user, if any.
  * @param {string} ip - For rate limiting.
  * @return {Promise<{recorded: boolean}>} Whether there was an email to
  *   record the answer against.
  */
 async function runRecordSellIntent(data, caller, ip) {
-    var _a;
+    var _a, _b, _c;
     const registration = parseRegistration(data["registration"]);
     const answer = data["answer"];
     if (!SELL_INTENTS.includes(answer)) {
         throw new https_1.HttpsError("invalid-argument", "Invalid answer");
     }
+    const reason = String((_a = data["reason"]) !== null && _a !== void 0 ? _a : "");
+    if (reason && !NOT_NOW_REASONS.includes(reason)) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid reason");
+    }
+    const reasonText = String((_b = data["reasonText"]) !== null && _b !== void 0 ? _b : "").trim().slice(0, 300);
     await limitByIp(ip, "sell-intent-ip", 20);
     const email = callerEmail(data, caller);
     if (!email)
         return { recorded: false };
     const db = admin.firestore();
     await db.collection("sell_intents").doc(sellIntentId(email, registration))
-        .set({
-        email,
-        uid: (_a = caller.uid) !== null && _a !== void 0 ? _a : null,
-        registration,
-        answer,
-        answeredAt: admin.firestore.Timestamp.now(),
-    });
+        .set(Object.assign(Object.assign(Object.assign({ email, uid: (_c = caller.uid) !== null && _c !== void 0 ? _c : null, registration,
+        answer }, (reason ? { reason } : {})), (reasonText ? { reasonText } : {})), { answeredAt: admin.firestore.Timestamp.now() }));
     const update = queueUpdateForIntent(answer);
     if (update) {
         const entries = await db.collection("listing_nudge_queue")
@@ -216,7 +219,8 @@ async function runRecordSellIntent(data, caller, ip) {
             .get();
         await Promise.all(entries.docs.map((d) => d.ref.update(update)));
     }
-    console.log(`sell-intent: ${registration} ${answer} for ${(0, users_js_1.maskEmail)(email)}`);
+    console.log(`sell-intent: ${registration} ${answer}${reason ? ` (${reason})` : ""} ` +
+        `for ${(0, users_js_1.maskEmail)(email)}`);
     return { recorded: true };
 }
 const MEANING_CATEGORIES = ["name", "word", "car", "business", "date", "other"];

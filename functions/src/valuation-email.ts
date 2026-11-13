@@ -106,8 +106,9 @@ function money(value: unknown, name: string): number {
  * @return {CaptureInput} The cleaned-up input.
  */
 function parseInput(data: Record<string, unknown>): CaptureInput {
+  // Optional: the gate asks only for an email.
   const firstName = String(data.firstName ?? "").trim();
-  if (firstName.length < 1 || firstName.length > 50) {
+  if (firstName.length > 50) {
     throw new HttpsError("invalid-argument", "Invalid first name");
   }
   const email = String(data.email ?? "").trim().toLowerCase();
@@ -216,7 +217,7 @@ async function findOrCreateUser(
   try {
     const user = await auth.createUser({
       email,
-      displayName: firstName,
+      ...(firstName ? {displayName: firstName} : {}),
       emailVerified: false,
     });
     return {uid: user.uid, created: true};
@@ -249,7 +250,9 @@ async function upsertUserDoc(
     const existing = snap.data();
     const now = admin.firestore.FieldValue.serverTimestamp();
     const update: Record<string, unknown> = {uid, email: input.email};
-    if (!existing?.firstName) update.firstName = input.firstName;
+    if (!existing?.firstName && input.firstName) {
+      update.firstName = input.firstName;
+    }
     // The Auth onCreate trigger may have beaten us to it; if this call made
     // the account, the source is still "valuation".
     if (!snap.exists || created) {
@@ -390,7 +393,7 @@ function buildValuationEmailHtml(
   <div style="text-align:center;margin-bottom:24px;">
     <h1 style="color:#003399;font-size:24px;margin:0;">MR Valuations</h1>
   </div>
-  <p>Hi ${escapeHtml(firstName)},</p>
+  <p>Hi${firstName ? ` ${escapeHtml(firstName)}` : ""},</p>
   <p>
     Here's your valuation for
     <strong style="font-size:18px;letter-spacing:2px;background:#FFC200;padding:2px 8px;border-radius:4px;">${escapeHtml(registration)}</strong>

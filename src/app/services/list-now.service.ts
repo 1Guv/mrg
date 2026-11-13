@@ -4,6 +4,9 @@ import { ValuationGateService } from './valuation-gate.service';
 
 export type SellIntent = 'yes' | 'later' | 'curious';
 
+/** Why a visitor chose "Not now" instead of publishing. */
+export type NotNowReason = 'price' | 'not_ready' | 'curious' | 'fee' | 'other';
+
 export type MeaningCategory = 'name' | 'word' | 'car' | 'business' | 'date' | 'other';
 
 export interface PlateMeaning {
@@ -61,13 +64,18 @@ export class ListNowService {
     return this.intents.get(this.key(registration)) ?? null;
   }
 
-  async recordAnswer(registration: string, answer: SellIntent): Promise<void> {
+  async recordAnswer(registration: string, answer: SellIntent, reason?: NotNowReason, reasonText?: string): Promise<void> {
     const reg = this.key(registration);
     this.intents.set(reg, answer);
-    const fn = httpsCallable<{ registration: string; answer: SellIntent; email?: string }, { recorded: boolean }>(
-      this.functions, 'recordSellIntent');
+    type Request = { registration: string; answer: SellIntent; reason?: NotNowReason; reasonText?: string; email?: string };
+    const fn = httpsCallable<Request, { recorded: boolean }>(this.functions, 'recordSellIntent');
     try {
-      await fn({ registration: reg, answer, ...this.email() });
+      await fn({
+        registration: reg, answer,
+        ...(reason ? { reason } : {}),
+        ...(reasonText ? { reasonText } : {}),
+        ...this.email(),
+      });
     } catch {
       // The answer still shapes this page; the nudge schedule just stays as is.
     }

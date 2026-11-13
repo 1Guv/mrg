@@ -1,0 +1,25 @@
+<div class="check-inbox">
+  <div class="envelope" aria-hidden="true">📧</div>
+  <h2 mat-dialog-title>One last step: check your inbox</h2>
+  <mat-dialog-content>
+    <p>We've emailed <strong>{{ data.email }}</strong> a link.</p>
+    <p>Tap <strong>Publish my listing</strong> in that email and <strong>{{ data.plate }}</strong> goes live at £{{ data.askingPrice | number: '1.0-0' }}.</p>
+
+    @if (inbox; as box) {
+      <a mat-raised-button class="open-inbox" [href]="box.url" target="_blank" rel="noopener">Open {{ box.name }}</a>
+    }
+
+    <p class="hint">Can't see it? Check your spam or Promotions folder. It's from MR Valuations.</p>
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="center">
+    @if (resent()) {
+      <span class="hint">Sent again ✓</span>
+    } @else {
+      <button mat-button type="button" [disabled]="resending()" (click)="resend()">Send it again</button>
+    }
+    <button mat-button type="button" mat-dialog-close>Got it</button>
+  </mat-dialog-actions>
+</div>

@@ -1,0 +1,36 @@
+.check-inbox {
+  text-align: center;
+}
+
+.envelope {
+  font-size: 3rem;
+  margin-top: 16px;
+}
+
+h2 {
+  text-align: center;
+}
+
+p {
+  color: #374151;
+}
+
+.open-inbox {
+  width: 100%;
+  min-height: 44px;
+  margin: 4px 0 12px;
+  background-color: #2e7d32;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.error {
+  color: #c62828;
+  font-size: 0.9rem;
+}

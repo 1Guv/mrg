@@ -1,0 +1,82 @@
+.intro {
+  color: #4b5563;
+  margin-bottom: 12px;
+}
+
+.reason {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 6px 0;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: #2e7d32;
+    background: #eef7ef;
+  }
+}
+
+.reason-icon {
+  font-size: 1.2rem;
+}
+
+.price-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #2e7d32;
+  border-radius: 10px;
+  padding: 6px 12px;
+  margin-bottom: 12px;
+
+  .currency {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+}
+
+.publish-btn,
+.done-btn {
+  width: 100%;
+  min-height: 44px;
+  background-color: #2e7d32;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.fee-facts {
+  padding-left: 18px;
+  margin-bottom: 12px;
+
+  li {
+    margin: 6px 0;
+  }
+}
+
+.other-text {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 8px;
+  margin-bottom: 12px;
+  font: inherit;
+}

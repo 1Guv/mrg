@@ -25,9 +25,9 @@
 }
 
 .meaning {
-  margin: 0 0 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid #e5e7eb;
+  margin: 20px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .meaning-heading {
@@ -125,18 +125,19 @@
   margin: 0 0 16px;
 }
 
-.prompt-reply {
-  margin: 0 0 8px;
-  color: #374151;
-}
-
 .not-now {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   font-size: 0.85rem;
   color: #6b7280;
 }
 
-.not-now-link {
+.secondary-links {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.link-btn {
   border: none;
   background: none;
   padding: 0;
@@ -145,6 +146,72 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.buyers-see {
+  margin: -12px 0 16px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 420px;
+  margin: 0 auto 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f2f8f3;
+  text-align: left;
+}
+
+.price-label {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #4b5563;
+
+  strong {
+    font-size: 1rem;
+    color: #111827;
+  }
+}
+
+.price-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 2px solid #2e7d32;
+  border-radius: 8px;
+  background: #fff;
+
+  .currency {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  input {
+    width: 110px;
+    border: none;
+    outline: none;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .edit-icon { color: #2e7d32; }
+}
+
+.error-message {
+  margin: 8px 0 0;
+  color: #c62828;
+  font-size: 0.9rem;
+}
+
+.check-inbox p { color: #374151; }
 
 // The card's host is display: contents, so it takes this box's full width,
 // as it does in a Plates for Sale grid cell. Top padding leaves room for the
@@ -177,8 +244,6 @@
   font-size: 0.8rem;
   color: #6b7280;
 }
-
-.anyway { font-weight: 600; }
 
 .value-panel {
   margin-top: 20px;

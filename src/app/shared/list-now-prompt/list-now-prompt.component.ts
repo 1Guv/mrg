@@ -3,24 +3,29 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { PlateListingCardComponent } from '../plate-listing-card/plate-listing-card.component';
 import { PlateListing } from '../../models/plate-listing.model';
 import { AdminsService } from '../../services/admins.service';
 import { AuthService } from '../../services/auth.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { FormsModule } from '@angular/forms';
-import {
-  ListNowService, MeaningCategory, PlateMeaning, SellIntent
-} from '../../services/list-now.service';
+import { ListNowService, MeaningCategory, PlateMeaning } from '../../services/list-now.service';
+import { PayPerEnquiryService } from '../../services/pay-per-enquiry.service';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { ValuationGateService } from '../../services/valuation-gate.service';
 import { feeShare } from '../../utils/fee-share';
 import { StatsStripComponent } from '../stats-strip/stats-strip.component';
+import { NotNowDialogComponent, NotNowDialogData, NotNowDialogResult } from '../not-now-dialog/not-now-dialog.component';
+import {
+  ListingCheckInboxData, ListingCheckInboxDialogComponent
+} from '../listing-check-inbox-dialog/listing-check-inbox-dialog.component';
 
 /**
- * Sits under a revealed valuation's price: real buyer demand and the
- * visitor's listing ready to publish for free, one click away. "Maybe
- * later" and "Just curious" record that they aren't selling yet.
+ * Sits under a revealed valuation's price: the visitor's listing, already
+ * filled in and shown as buyers will see it, with the asking price theirs to
+ * change and one tap to publish it free. "Not now" asks why, so we learn
+ * what stops people listing.
  */
 @Component({
   selector: 'app-list-now-prompt',
@@ -34,6 +39,8 @@ export class ListNowPromptComponent {
   private listNow = inject(ListNowService);
   private tracking = inject(ConversionTrackingService);
   private gate = inject(ValuationGateService);
+  private payPerEnquiry = inject(PayPerEnquiryService);
+  private dialog = inject(MatDialog);
   private user = toSignal(inject(AuthService).currentUser$, { initialValue: null });
   readonly fee = inject(PlateListingService).listingFee;
   readonly isAdmin = inject(AdminsService).currentUserIsAdmin;
@@ -61,12 +68,17 @@ export class ListNowPromptComponent {
   readonly meaningExample = computed(() =>
     this.meaningCategories.find(c => c.value === this.meaningCategory())?.example ?? '');
 
-  readonly answer = signal<SellIntent | null>(null);
   readonly demand = signal(0);
+  readonly publishing = signal(false);
+  readonly errorMessage = signal('');
+  /** Set once a signed-out visitor's listing is waiting for its emailed link. */
+  readonly pendingEmail = signal<string | null>(null);
 
   readonly plate = computed(() => this.registration().replace(/\s/g, '').toUpperCase());
-  /** The asking price the preview suggests, to the nearest £10. */
-  readonly askingPrice = computed(() => Math.max(10, Math.round(this.price() / 10) * 10));
+  /** The valuation to the nearest £10, until the visitor sets their own price. */
+  private readonly suggestedPrice = computed(() => Math.max(10, Math.round(this.price() / 10) * 10));
+  private readonly ownPrice = signal<number | null>(null);
+  readonly askingPrice = computed(() => this.ownPrice() ?? this.suggestedPrice());
   /** "3%": the fee against the asking price the preview suggests. */
   readonly feeShare = computed(() => feeShare(this.fee, this.askingPrice()));
 
@@ -94,7 +106,8 @@ export class ListNowPromptComponent {
   constructor() {
     effect(() => {
       const reg = this.plate();
-      this.answer.set(this.listNow.answer(reg));
+      this.ownPrice.set(null);
+      this.pendingEmail.set(null);
       const saved = this.listNow.meaning(reg);
       this.meaning.set(saved);
       this.meaningCategory.set(saved?.category ?? null);
@@ -104,10 +117,9 @@ export class ListNowPromptComponent {
     });
   }
 
-  choose(answer: SellIntent): void {
-    this.answer.set(answer);
-    this.tracking.sellIntentAnswered(answer, this.plateType());
-    this.listNow.recordAnswer(this.plate(), answer);
+  setAskingPrice(value: number | string | null): void {
+    const price = Math.round(Number(value));
+    this.ownPrice.set(Number.isFinite(price) && price >= 1 ? price : null);
   }
 
   saveMeaning(): void {
@@ -123,29 +135,80 @@ export class ListNowPromptComponent {
     this.meaning.set(null);
   }
 
-  /** Publishing is the "Yes, I'd sell" answer. */
-  publish(): void {
-    if (!this.answer()) this.choose('yes');
+  /** One tap: signed in, it's live; otherwise the emailed link publishes it. */
+  async publish(price = this.askingPrice()): Promise<void> {
+    if (this.publishing()) return;
+    this.ownPrice.set(price);
+    this.publishing.set(true);
+    this.errorMessage.set('');
+    this.tracking.sellIntentAnswered('yes', this.plateType());
+    this.listNow.recordAnswer(this.plate(), 'yes');
     this.tracking.listPreviewPublishClicked(false);
-    this.goToListing(this.askingPrice());
-  }
-
-  /** "List now anyway" after Maybe later / Just curious: the valuation as is. */
-  listAnyway(): void {
-    this.goToListing(this.price());
-  }
-
-  private goToListing(price: number): void {
     this.tracking.listNowClicked(this.gate.loggedIn());
+    const listing = {
+      plateCharacters: this.plate(),
+      askingPrice: String(price),
+      phone: '',
+      initials: this.user()?.displayName ? this.initials() : '',
+      meanings: this.meaning()?.text ?? '',
+      negotiable: false,
+    };
+    try {
+      if (this.user()) {
+        const created = await this.payPerEnquiry.createFreeListing(listing);
+        this.tracking.freeListingCreated();
+        this.router.navigate(['/list-plate/success'], { queryParams: { plate: created.plateCharacters } });
+        return;
+      }
+      const email = this.gate.givenEmail();
+      if (!email) {
+        this.editDetails();
+        return;
+      }
+      const { pendingId } = await this.payPerEnquiry.createPendingListing({ ...listing, email });
+      this.tracking.pendingListingCreated();
+      this.pendingEmail.set(email);
+      this.dialog.open<ListingCheckInboxDialogComponent, ListingCheckInboxData>(ListingCheckInboxDialogComponent, {
+        width: '420px', maxWidth: '94vw',
+        data: { email, plate: this.plate(), askingPrice: price, pendingId },
+      });
+    } catch (err) {
+      this.errorMessage.set(this.messageFor(err));
+    } finally {
+      this.publishing.set(false);
+    }
+  }
+
+  notNow(): void {
+    const data: NotNowDialogData = {
+      plate: this.plate(), plateType: this.plateType(), askingPrice: this.askingPrice(), fee: this.fee,
+    };
+    this.dialog.open<NotNowDialogComponent, NotNowDialogData, NotNowDialogResult>(
+      NotNowDialogComponent, { width: '420px', maxWidth: '94vw', data }
+    ).afterClosed().subscribe(result => {
+      if (result) this.publish(result.publishAt);
+    });
+  }
+
+  /** The full form, for a phone number, "negotiable" and the rest. */
+  editDetails(): void {
     this.router.navigate(['/list-plate'], {
       queryParams: {
         plate: this.plate(),
-        price: price.toFixed(2),
+        price: this.askingPrice().toFixed(2),
         min: this.minPrice().toFixed(2),
         max: this.maxPrice().toFixed(2),
         ...(this.meaning()?.text ? { meaning: this.meaning()!.text } : {}),
       },
     });
+  }
+
+  /** The server's own messages explain themselves; anything else is unexpected. */
+  private messageFor(err: unknown): string {
+    const code = (err as { code?: string }).code ?? '';
+    return /invalid-argument|resource-exhausted|already-exists|not-found|permission-denied/.test(code) ?
+      (err as Error).message :
+      'Something went wrong. Please try again.';
   }
 
   private initials(): string {

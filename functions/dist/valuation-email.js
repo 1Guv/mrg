@@ -121,8 +121,9 @@ function money(value, name) {
  */
 function parseInput(data) {
     var _a, _b, _c, _d, _e, _f;
+    // Optional: the gate asks only for an email.
     const firstName = String((_a = data.firstName) !== null && _a !== void 0 ? _a : "").trim();
-    if (firstName.length < 1 || firstName.length > 50) {
+    if (firstName.length > 50) {
         throw new https_1.HttpsError("invalid-argument", "Invalid first name");
     }
     const email = String((_b = data.email) !== null && _b !== void 0 ? _b : "").trim().toLowerCase();
@@ -219,11 +220,7 @@ async function findOrCreateUser(email, firstName) {
             throw err;
     }
     try {
-        const user = await auth.createUser({
-            email,
-            displayName: firstName,
-            emailVerified: false,
-        });
+        const user = await auth.createUser(Object.assign(Object.assign({ email }, (firstName ? { displayName: firstName } : {})), { emailVerified: false }));
         return { uid: user.uid, created: true };
     }
     catch (err) {
@@ -251,8 +248,9 @@ async function upsertUserDoc(uid, input, created) {
         const existing = snap.data();
         const now = admin.firestore.FieldValue.serverTimestamp();
         const update = { uid, email: input.email };
-        if (!(existing === null || existing === void 0 ? void 0 : existing.firstName))
+        if (!(existing === null || existing === void 0 ? void 0 : existing.firstName) && input.firstName) {
             update.firstName = input.firstName;
+        }
         // The Auth onCreate trigger may have beaten us to it; if this call made
         // the account, the source is still "valuation".
         if (!snap.exists || created) {
@@ -383,7 +381,7 @@ function buildValuationEmailHtml(firstName, registration, price, minPrice, maxPr
   <div style="text-align:center;margin-bottom:24px;">
     <h1 style="color:#003399;font-size:24px;margin:0;">MR Valuations</h1>
   </div>
-  <p>Hi ${(0, enquiries_js_1.escapeHtml)(firstName)},</p>
+  <p>Hi${firstName ? ` ${(0, enquiries_js_1.escapeHtml)(firstName)}` : ""},</p>
   <p>
     Here's your valuation for
     <strong style="font-size:18px;letter-spacing:2px;background:#FFC200;padding:2px 8px;border-radius:4px;">${(0, enquiries_js_1.escapeHtml)(registration)}</strong>

@@ -20,6 +20,8 @@ const BUYER_DEMAND_WINDOW_MS = 30 * DAY;
 
 export type SellIntent = "yes" | "later" | "curious";
 const SELL_INTENTS: SellIntent[] = ["yes", "later", "curious"];
+/** Why a visitor chose "Not now" instead of publishing. */
+const NOT_NOW_REASONS = ["price", "not_ready", "curious", "fee", "other"];
 
 /** "Maybe later" moves that plate's nudges to weekly. */
 const LATER_CADENCE_DAYS = 7;
@@ -180,8 +182,9 @@ function sellIntentId(email: string, registration: string): string {
  * Records "Would you sell at this price?" and applies it to the plate's nudge
  * emails. If the queue entry isn't made yet, runOnAutoValuationCreated
  * applies the answer when it makes it.
- * @param {Record<string, unknown>} data - registration, answer, and email
- *   when the caller isn't signed in.
+ * @param {Record<string, unknown>} data - registration, answer, email
+ *   when the caller isn't signed in, and for "Not now" a reason and an
+ *   optional reasonText.
  * @param {Caller} caller - The signed-in user, if any.
  * @param {string} ip - For rate limiting.
  * @return {Promise<{recorded: boolean}>} Whether there was an email to
@@ -197,6 +200,11 @@ export async function runRecordSellIntent(
   if (!SELL_INTENTS.includes(answer)) {
     throw new HttpsError("invalid-argument", "Invalid answer");
   }
+  const reason = String(data["reason"] ?? "");
+  if (reason && !NOT_NOW_REASONS.includes(reason)) {
+    throw new HttpsError("invalid-argument", "Invalid reason");
+  }
+  const reasonText = String(data["reasonText"] ?? "").trim().slice(0, 300);
   await limitByIp(ip, "sell-intent-ip", 20);
 
   const email = callerEmail(data, caller);
@@ -209,6 +217,8 @@ export async function runRecordSellIntent(
       uid: caller.uid ?? null,
       registration,
       answer,
+      ...(reason ? {reason} : {}),
+      ...(reasonText ? {reasonText} : {}),
       answeredAt: admin.firestore.Timestamp.now(),
     });
 
@@ -222,7 +232,8 @@ export async function runRecordSellIntent(
   }
 
   console.log(
-    `sell-intent: ${registration} ${answer} for ${maskEmail(email)}`);
+    `sell-intent: ${registration} ${answer}${reason ? ` (${reason})` : ""} ` +
+    `for ${maskEmail(email)}`);
   return {recorded: true};
 }
 

@@ -1,85 +1,99 @@
 <!-- Admins value plates for Facebook posts; they aren't selling them -->
 @if (!isAdmin()) {
 <div class="list-now-prompt">
-  @if (demand() > 0) {
-    <p class="demand">🔥 <strong>{{ demand() }} buyers</strong> searched for plates like {{ plate() }} in the last 30 days</p>
-  }
+  @if (pendingEmail(); as email) {
+    <div class="check-inbox text-center">
+      <p class="prompt-heading">📧 One last step: check your inbox</p>
+      <p>We've emailed <strong>{{ email }}</strong> a link. Tap it and {{ plate() }} goes live at £{{ askingPrice() | number: '1.0-0' }}.</p>
+      <p class="hint">Can't see it? Check your spam folder.</p>
+    </div>
+  } @else {
+    <p class="prompt-heading">✓ Your listing is ready to go</p>
+    @if (demand() > 0) {
+      <p class="demand">🔥 <strong>{{ demand() }} buyers</strong> searched for plates like {{ plate() }} in the last 30 days</p>
+    }
 
-  <div class="meaning">
-    @if (meaning(); as m) {
-      <p class="meaning-saved">
-        ✓ Thanks{{ m.text ? ' — "' + m.text + '" will be on your listing' : '' }}
-        <button type="button" class="meaning-edit" (click)="editMeaning()">Edit</button>
-      </p>
-    } @else {
-      <p class="meaning-heading">What does {{ plate() }} mean? <span class="optional">(optional)</span></p>
-      <div class="chips" role="radiogroup" [attr.aria-label]="'What ' + plate() + ' means'">
-        @for (c of meaningCategories; track c.value) {
-          <button type="button" class="chip" role="radio"
-            [class.selected]="meaningCategory() === c.value"
-            [attr.aria-checked]="meaningCategory() === c.value"
-            (click)="meaningCategory.set(c.value)">{{ c.label }}</button>
-        }
-      </div>
-      @if (meaningCategory()) {
-        <form class="meaning-form" (ngSubmit)="saveMeaning()">
-          <input class="meaning-input" name="meaningText" [(ngModel)]="meaningText" maxlength="80"
-            [placeholder]="meaningExample()" aria-label="What it means">
-          <button mat-flat-button type="submit" class="meaning-save">Save</button>
-        </form>
-        <p class="meaning-hint">Helps buyers see why this plate is special</p>
+    <div class="preview">
+      <app-plate-listing-card [listing]="preview()" variant="preview" />
+    </div>
+    <p class="buyers-see">This is how buyers will see it</p>
+
+    <div class="price-row">
+      <label for="asking-price" class="price-label">
+        <strong>Your asking price</strong>
+        <span>It's your call. Our valuation is only a guide.</span>
+      </label>
+      <span class="price-input">
+        <span class="currency">£</span>
+        <input id="asking-price" type="number" inputmode="numeric" min="1" step="10"
+          [ngModel]="askingPrice()" (ngModelChange)="setAskingPrice($event)">
+        <span class="edit-icon" aria-hidden="true">✎</span>
+      </span>
+    </div>
+
+    <div class="text-center">
+      <button mat-raised-button type="button" class="publish-btn" [disabled]="publishing()" (click)="publish()">
+        @if (publishing()) { Publishing… } @else { Publish my listing, free }
+      </button>
+      @if (errorMessage()) {
+        <p class="error-message">{{ errorMessage() }}</p>
       }
-    }
-  </div>
+      <p class="fee-share">
+        £0 now · £{{ fee }} only if a buyer messages you@if (feeShare(); as share) { ({{ share }} of your price)}
+      </p>
+      <p class="secondary-links">
+        <button type="button" class="link-btn" (click)="editDetails()">Add a phone number or more details</button>
+      </p>
+      <p class="not-now">
+        <button type="button" class="link-btn" (click)="notNow()">Not now, just keep my valuation</button>
+      </p>
+    </div>
 
-  @switch (answer()) {
-    @case ('later') {
-      <p class="prompt-reply">No problem — we'll check in weekly and tell you if demand for plates like {{ plate() }} picks up.</p>
-      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
-    }
-    @case ('curious') {
-      <p class="prompt-reply">Thanks — we won't send you selling reminders for {{ plate() }}.</p>
-      <p class="text-center"><button mat-button type="button" class="anyway" (click)="listAnyway()">List now anyway</button></p>
-    }
-    @default {
-      <p class="prompt-heading">Would you sell {{ plate() }} for £{{ askingPrice() | number: '1.0-0' }}? Here's your listing</p>
-      <div class="preview">
-        <app-plate-listing-card [listing]="preview()" variant="preview" />
-      </div>
-      <div class="text-center">
-        <button mat-raised-button type="button" class="publish-btn" (click)="publish()">
-          Publish free
-        </button>
-        @if (feeShare(); as share) {
-          <p class="fee-share">Pay £{{ fee }} only when a buyer messages you — {{ share }} of your £{{ askingPrice() | number: '1.0-0' }} asking price</p>
-        }
-        <p class="hint">No payment now · change the price and details on the next step</p>
-        <p class="not-now">
-          Not selling?
-          <button type="button" class="not-now-link" (click)="choose('later')">Maybe later</button> ·
-          <button type="button" class="not-now-link" (click)="choose('curious')">Just curious</button>
+    <div class="meaning">
+      @if (meaning(); as m) {
+        <p class="meaning-saved">
+          ✓ Thanks{{ m.text ? ' — "' + m.text + '" will be on your listing' : '' }}
+          <button type="button" class="meaning-edit" (click)="editMeaning()">Edit</button>
         </p>
-      </div>
+      } @else {
+        <p class="meaning-heading">What does {{ plate() }} mean? <span class="optional">(optional, helps it sell)</span></p>
+        <div class="chips" role="radiogroup" [attr.aria-label]="'What ' + plate() + ' means'">
+          @for (c of meaningCategories; track c.value) {
+            <button type="button" class="chip" role="radio"
+              [class.selected]="meaningCategory() === c.value"
+              [attr.aria-checked]="meaningCategory() === c.value"
+              (click)="meaningCategory.set(c.value)">{{ c.label }}</button>
+          }
+        </div>
+        @if (meaningCategory()) {
+          <form class="meaning-form" (ngSubmit)="saveMeaning()">
+            <input class="meaning-input" name="meaningText" [(ngModel)]="meaningText" maxlength="80"
+              [placeholder]="meaningExample()" aria-label="What it means">
+            <button mat-flat-button type="submit" class="meaning-save">Save</button>
+          </form>
+          <p class="meaning-hint">Buyers see it on your listing</p>
+        }
+      }
+    </div>
 
-      <div class="value-panel">
-        <p class="value-title">What you get</p>
-        <ul class="value-list">
-          <li><span class="tick">✓</span><span><strong>Free to list</strong> — pay £{{ fee }} once, only when your first buyer messages you</span></li>
-          <li><span class="tick">✓</span><span><strong>No commission, no markup</strong> — buyers pay your asking price and you keep all of it</span></li>
-          <li><span class="tick">✓</span><span><strong>Listed until it sells</strong> — no renewal fees</span></li>
-          <li><span class="tick">✓</span><span><strong>Buyers message you here or on WhatsApp</strong> — your email stays private</span></li>
-          <li><span class="tick">✓</span><span><strong>Change your price any time</strong> from your account</span></li>
-        </ul>
+    <div class="value-panel">
+      <p class="value-title">What you get</p>
+      <ul class="value-list">
+        <li><span class="tick">✓</span><span><strong>Free to list</strong>: pay £{{ fee }} once, only when your first buyer messages you</span></li>
+        <li><span class="tick">✓</span><span><strong>No commission, no markup</strong>: buyers pay your asking price and you keep all of it</span></li>
+        <li><span class="tick">✓</span><span><strong>Listed until it sells</strong>, with no renewal fees</span></li>
+        <li><span class="tick">✓</span><span><strong>Buyers message you here or on WhatsApp</strong>, and your email stays private</span></li>
+        <li><span class="tick">✓</span><span><strong>Change your price any time</strong> from your account</span></li>
+      </ul>
 
-        <p class="value-title">How it works</p>
-        <ol class="steps">
-          <li><span class="step-num">1</span><span>Publish your plate</span></li>
-          <li><span class="step-num">2</span><span>Buyers find it on Plates for Sale and Google</span></li>
-          <li><span class="step-num">3</span><span>They message you, you agree a price and transfer it through the DVLA</span></li>
-        </ol>
-        <app-stats-strip class="mt-3" [compact]="true" />
-      </div>
-    }
+      <p class="value-title">How it works</p>
+      <ol class="steps">
+        <li><span class="step-num">1</span><span>Publish your plate</span></li>
+        <li><span class="step-num">2</span><span>Buyers find it on Plates for Sale and Google</span></li>
+        <li><span class="step-num">3</span><span>They message you, you agree a price and transfer it through the DVLA</span></li>
+      </ol>
+      <app-stats-strip class="mt-3" [compact]="true" />
+    </div>
   }
 </div>
 }

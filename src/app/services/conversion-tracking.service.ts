@@ -35,8 +35,8 @@ export class ConversionTrackingService {
     this.send('email_gate_view', { plate_type: plateType });
   }
 
-  emailGateSubmitted(intent: 'email' | 'list', hasConsent: boolean): void {
-    this.send('email_gate_submit', { intent, has_consent: hasConsent });
+  emailGateSubmitted(intent: 'email' | 'list', hasConsent: boolean, method: 'email' | 'google' = 'email'): void {
+    this.send('email_gate_submit', { intent, has_consent: hasConsent, method });
   }
 
   valuationEmailCaptured(plateType: string): void {
@@ -48,8 +48,8 @@ export class ConversionTrackingService {
   }
 
   /** "Would you sell at this price?" on a revealed valuation. */
-  sellIntentAnswered(answer: 'yes' | 'later' | 'curious', plateType: string): void {
-    this.send('sell_intent', { answer, plate_type: plateType });
+  sellIntentAnswered(answer: 'yes' | 'later' | 'curious', plateType: string, reason?: string): void {
+    this.send('sell_intent', { answer, plate_type: plateType, ...(reason ? { reason } : {}) });
   }
 
   plateMeaningGiven(category: string, hasText: boolean, plateType: string): void {
