@@ -23,7 +23,7 @@ import { MatTableModule } from '@angular/material/table';
 import { AdminService, AutoValuation, BuyerSearch, NudgeQueueEntry, PlateSearch, PlateValuationMessage, UserProfile, ValuationFeedback } from '../../services/admin.service';
 import { AdminsService } from '../../services/admins.service';
 import { MeComponent } from '../me/me.component';
-import { SellerEnquiryService, SellerEnquiry } from '../../services/seller-enquiry.service';
+import { ADMIN_INBOX_EMAIL, SellerEnquiryService, SellerEnquiry } from '../../services/seller-enquiry.service';
 import { PayPerEnquiryService } from '../../services/pay-per-enquiry.service';
 import { ConversionTrackingService } from '../../services/conversion-tracking.service';
 import { LISTING_FEE } from '../../constants/listing-fee';
@@ -116,7 +116,8 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
     this.numberPlateFormService.triggerReset();
 
     const params = this.route.snapshot.queryParamMap;
-    this.openMessages = params.get('tab') === 'messages';
+    // The header's messages icon can link here while the dashboard is open.
+    this.subs.add(this.route.queryParamMap.subscribe(p => this.openMessages = p.get('tab') === 'messages'));
     this.unlockedPlate = params.get('unlocked') ?? '';
     const sessionId = params.get('session_id');
     // GA4 drops repeat purchases with the same transaction_id, so a reload is safe
@@ -204,9 +205,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
           const uid = (user as any)?.uid;
           const email = (user as any)?.email;
           if (!email) return of([] as SellerEnquiry[]);
-          const queryEmail = uid && adminUids.includes(uid)
-            ? 'guv.mr.valuations+apnaplates@gmail.com'
-            : email;
+          const queryEmail = uid && adminUids.includes(uid) ? ADMIN_INBOX_EMAIL : email;
           return this.sellerEnquiryService.getEnquiriesForSeller(queryEmail);
         })
       ).subscribe(enquiries => this.sellerEnquiries$.set(enquiries))

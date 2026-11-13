@@ -1,10 +1,10 @@
 <div class="inbox">
   <div class="inbox-toggle" role="tablist">
     <button type="button" role="tab" [class.active]="view() === 'selling'" (click)="setView('selling')">
-      Selling ({{ selling().length }})
+      Selling ({{ selling().length }})@if (unreadCount('selling'); as n) {<span class="tab-unread">{{ n }} new</span>}
     </button>
     <button type="button" role="tab" [class.active]="view() === 'buying'" (click)="setView('buying')">
-      Buying ({{ buying().length }})
+      Buying ({{ buying().length }})@if (unreadCount('buying'); as n) {<span class="tab-unread">{{ n }} new</span>}
     </button>
   </div>
 
@@ -19,8 +19,9 @@
   }
 
   @for (c of conversations(); track c.id) {
-    <div class="conv" [class.open]="openId() === c.id">
+    <div class="conv" [class.open]="openId() === c.id" [class.unread]="unread(c)">
       <button type="button" class="conv-row" (click)="toggle(c)" [attr.aria-expanded]="openId() === c.id">
+        @if (unread(c)) { <span class="unread-dot" aria-label="Unread"></span> }
         <span class="bevel-plate conv-plate">{{ c.plateCharacters | uppercase }}</span>
         <span class="conv-main">
           <span class="conv-snippet">{{ snippet(c) }}</span>

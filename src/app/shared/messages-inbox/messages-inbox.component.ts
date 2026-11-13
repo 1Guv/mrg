@@ -3,7 +3,7 @@ import { DatePipe, UpperCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { Subscription } from 'rxjs';
-import { EnquiryMessage, SellerEnquiry, SellerEnquiryService } from '../../services/seller-enquiry.service';
+import { EnquiryMessage, isUnread, SellerEnquiry, SellerEnquiryService } from '../../services/seller-enquiry.service';
 
 type InboxView = 'selling' | 'buying';
 
@@ -61,8 +61,25 @@ export class MessagesInboxComponent {
     this.openId.set(null);
   }
 
+  unread(conversation: SellerEnquiry): boolean {
+    return isUnread(conversation, this.side());
+  }
+
+  unreadCount(view: InboxView): number {
+    const side = view === 'selling' ? 'seller' : 'buyer';
+    return (view === 'selling' ? this.selling() : this.buying()).filter(c => isUnread(c, side)).length;
+  }
+
+  private side(): 'seller' | 'buyer' {
+    return this.view() === 'selling' ? 'seller' : 'buyer';
+  }
+
   toggle(conversation: SellerEnquiry): void {
     this.openId.set(this.openId() === conversation.id ? null : conversation.id ?? null);
+    if (this.openId() && this.unread(conversation)) {
+      // Clears it from the header's count; a failure just leaves it unread.
+      this.enquiryService.markRead(conversation.id!, this.side()).catch(err => console.error('Mark read failed', err));
+    }
     this.draft = '';
     this.sendError.set('');
   }

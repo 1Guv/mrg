@@ -3,8 +3,11 @@ import {
   Firestore,
   collection,
   collectionData,
+  doc,
   orderBy,
   query,
+  serverTimestamp,
+  updateDoc,
   where
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
@@ -32,6 +35,27 @@ export interface SellerEnquiry {
   lastMessageFrom?: 'buyer' | 'seller';
   /** Null while locked, so the seller can't read it before paying. */
   lastMessageText?: string | null;
+  /** When each side last opened the conversation. */
+  sellerReadAt?: any;
+  buyerReadAt?: any;
+}
+
+/** Admins read enquiries about the legacy listings, which all use this address. */
+export const ADMIN_INBOX_EMAIL = 'guv.mr.valuations+apnaplates@gmail.com';
+
+/** The side of a conversation the user is on. */
+export type EnquirySide = 'seller' | 'buyer';
+
+/**
+ * Whether the other side has said something since this side last opened the
+ * conversation. Enquiries from before conversations were saved count as the
+ * buyer's message.
+ */
+export function isUnread(enquiry: SellerEnquiry, side: EnquirySide): boolean {
+  if ((enquiry.lastMessageFrom ?? 'buyer') === side) return false;
+  const lastAt = (enquiry.lastMessageAt ?? enquiry.submittedAt)?.toMillis?.() ?? 0;
+  const readAt = (side === 'seller' ? enquiry.sellerReadAt : enquiry.buyerReadAt)?.toMillis?.() ?? 0;
+  return readAt < lastAt;
 }
 
 /** One message in an enquiry's conversation. */
@@ -89,6 +113,12 @@ export class SellerEnquiryService {
   getMessages(enquiryId: string): Observable<EnquiryMessage[]> {
     const ref = collection(this.firestore, 'seller_enquiries', enquiryId, 'messages');
     return collectionData(query(ref, orderBy('sentAt')), { idField: 'id' }) as Observable<EnquiryMessage[]>;
+  }
+
+  /** Records that this side has opened the conversation, which clears its unread count. */
+  async markRead(enquiryId: string, side: EnquirySide): Promise<void> {
+    const field = side === 'seller' ? 'sellerReadAt' : 'buyerReadAt';
+    await updateDoc(doc(this.firestore, 'seller_enquiries', enquiryId), { [field]: serverTimestamp() });
   }
 
   /** Adds a message to the conversation; the other side is emailed it. */

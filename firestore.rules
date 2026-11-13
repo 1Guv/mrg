@@ -91,7 +91,18 @@ service cloud.firestore {
         && (request.auth.token.email == resource.data.sellerEmail
             || request.auth.uid == resource.data.buyerUid
             || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
-      allow update, delete: if false;
+      // Each side may only stamp when it last opened the conversation, which
+      // drives the unread count. Admins read the legacy listings' enquiries.
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().size() == 1
+        && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sellerReadAt'])
+             && request.resource.data.sellerReadAt == request.time
+             && (request.auth.token.email == resource.data.sellerEmail
+                 || exists(/databases/$(database)/documents/admins/$(request.auth.uid))))
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['buyerReadAt'])
+             && request.resource.data.buyerReadAt == request.time
+             && request.auth.uid == resource.data.buyerUid));
+      allow delete: if false;
 
       // Every message in the conversation. The seller can't read them until
       // they've paid to unlock the enquiry; the buyer always can.

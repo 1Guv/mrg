@@ -53,3 +53,39 @@
   line-height: normal;
   pointer-events: none;
 }
+
+// The unread count sits on the messages icon's top-right corner, as on
+// Facebook and Instagram. It's placed against the icon, not the button, so it
+// lands in the same spot whatever size the button is.
+.messages-btn.mat-mdc-icon-button {
+  overflow: visible;
+}
+
+.messages-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+.unread-count {
+  position: absolute;
+  // Centre the pill on the icon's top-right corner.
+  top: 0;
+  right: 0;
+  transform: translate(55%, -50%);
+  // Above the button's ripple and focus layers.
+  z-index: 2;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #d32f2f;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  letter-spacing: 0;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+  pointer-events: none;
+}

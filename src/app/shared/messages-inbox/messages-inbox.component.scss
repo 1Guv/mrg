@@ -194,3 +194,26 @@
     color: white;
   }
 }
+
+.unread-dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d32f2f;
+  align-self: center;
+}
+
+.conv.unread .conv-snippet {
+  font-weight: 700;
+}
+
+.tab-unread {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #d32f2f;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}

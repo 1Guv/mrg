@@ -11,6 +11,24 @@
                     </div>
                 </h1>
 
+                @if (loggedIn()) {
+                    <a
+                        mat-icon-button
+                        routerLink="/account-dashboard"
+                        [queryParams]="{ tab: 'messages' }"
+                        [attr.aria-label]="unread() ? 'Messages, ' + unread() + ' unread' : 'Messages'"
+                        [matTooltip]="unread() ? unread() + ' unread' : 'Messages'"
+                        class="messages-btn"
+                        >
+                        <span class="messages-icon">
+                            <mat-icon>chat_bubble_outline</mat-icon>
+                            @if (unread()) {
+                                <span class="unread-count" aria-hidden="true">{{ unread() > 99 ? '99+' : unread() }}</span>
+                            }
+                        </span>
+                    </a>
+                }
+
                 <ng-container>
                     @for (option of (headerMenu$ | async)?.headerMenuOptions; track $index; let isFirst = $first) {
 

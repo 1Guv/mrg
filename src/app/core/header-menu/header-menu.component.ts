@@ -1,4 +1,4 @@
-import {Component, EventEmitter, OnInit, Output, signal, Signal} from '@angular/core';
+import {Component, EventEmitter, inject, OnInit, Output, signal, Signal} from '@angular/core';
 import { Observable, map, tap } from 'rxjs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import {Router, RouterModule} from '@angular/router';
@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import {ContentService} from "../../services/content.service";
 import {Header, HeaderMenuOptions} from "../../models/content.model";
 import {AuthService} from "../../services/auth.service";
+import {UnreadMessagesService} from "../../services/unread-messages.service";
 
 @Component({
     selector: 'app-header-menu',
@@ -27,6 +28,8 @@ export class HeaderMenuComponent {
 
   currentUser= signal<any>({});
   loggedIn = signal(false);
+  /** Conversations waiting for the signed-in user. */
+  unread = inject(UnreadMessagesService).count;
   headerMenu$: Observable<Header>;
   @Output() toggleSidenav = new EventEmitter<unknown>();
 
