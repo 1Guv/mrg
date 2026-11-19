@@ -10,6 +10,8 @@ const FUNCTIONS_BASE_URL =
   "https://us-central1-code-g-b8b6f.cloudfunctions.net";
 const MINUTES_30 = 30 * 60 * 1000;
 const HOURS_24 = 24 * 60 * 60 * 1000;
+/** Most nudges sent in any 24 hours. */
+const NUDGE_DAILY_CAP = 200;
 const ADMIN_NOTIFY_EMAIL = "guv.mr.valuations@gmail.com";
 
 /**
@@ -286,9 +288,28 @@ export async function runScheduledNudgeEmails(
     return;
   }
 
-  console.log(`nudge: processing ${due.size} entries`);
+  // Brevo's free plan sends 300 a day, and the site's other mail needs room.
+  const sentToday = await db.collection("listing_nudge_queue")
+    .where("lastSentAt", ">", admin.firestore.Timestamp.fromMillis(
+      Date.now() - HOURS_24))
+    .count().get();
+  let allowance = NUDGE_DAILY_CAP - sentToday.data().count;
+  if (allowance <= 0) {
+    console.log(`nudge: daily cap of ${NUDGE_DAILY_CAP} reached`);
+    return;
+  }
 
-  for (const doc of due.docs) {
+  console.log(`nudge: processing ${due.size} entries, ${allowance} allowed`);
+
+  // Longest-waiting first, so the cap delays the newest rather than starving
+  // the oldest.
+  const queue = [...due.docs].sort((a, b) =>
+    a.get("nextSendAt").toMillis() - b.get("nextSendAt").toMillis());
+  for (const doc of queue) {
+    if (allowance <= 0) {
+      console.log("nudge: daily cap reached, the rest wait");
+      break;
+    }
     const entry = doc.data();
     const registration = entry["registration"] as string;
     const email = entry["email"] as string;
@@ -361,6 +382,7 @@ export async function runScheduledNudgeEmails(
     });
 
     console.log(`nudge: sent #${sendCount} to ${email} for ${registration}`);
+    allowance--;
   }
 }
 
