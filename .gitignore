@@ -46,3 +46,8 @@ Thumbs.db
 .env
 scripts/service-account.json
 scripts/gsc-data.json
+
+# apnaplates data (personal details, never commit)
+apnapguv_apnadb.sql.zip
+total-listings-for-2016*.csv
+scripts/ap-contact-backup-*.json

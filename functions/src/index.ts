@@ -34,9 +34,12 @@ const db = admin.firestore();
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = defineSecret("VALUATION_API_KEY");
+const brevoWebhookToken = defineSecret("BREVO_WEBHOOK_TOKEN");
 import {withFailureAlert} from "./failure-alerts";
 import {fillPlateMeanings} from "./plate-meanings.js";
 import {runRedeemSignInLink} from "./sign-in-links.js";
+import {deadAddresses, runSellerEmailBounced} from "./bounces.js";
+import {timingSafeEqual} from "crypto";
 import {
   contactFields,
   listingFields,
@@ -1130,3 +1133,26 @@ export const getResultVoucher = onCall(
 export const onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
   await runOnUserCreated(user);
 });
+
+/**
+ * Brevo's transactional webhook. Its URL carries ?token=, the secret
+ * BREVO_WEBHOOK_TOKEN, because Brevo doesn't sign its webhooks. Hard
+ * bounces of a seller's address hand their listings back to the admin.
+ */
+export const brevoWebhook = onRequest(
+  {maxInstances: 5, secrets: [brevoWebhookToken]},
+  async (request, response) => {
+    const given = Buffer.from(String(request.query.token ?? ""));
+    const expected = Buffer.from(brevoWebhookToken.value());
+    if (given.length !== expected.length ||
+        !timingSafeEqual(given, expected)) {
+      response.status(401).send("Unauthorized");
+      return;
+    }
+    for (const email of deadAddresses(request.body)) {
+      const result = await runSellerEmailBounced(email);
+      console.log(`bounce: ${email}`, result);
+    }
+    response.status(200).send("ok");
+  }
+);

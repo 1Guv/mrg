@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.redeemSignInLink = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.brevoWebhook = exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.redeemSignInLink = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -56,9 +56,12 @@ const db = admin.firestore();
 const stripeSecretKey = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const valuationApiKey = (0, params_1.defineSecret)("VALUATION_API_KEY");
+const brevoWebhookToken = (0, params_1.defineSecret)("BREVO_WEBHOOK_TOKEN");
 const failure_alerts_1 = require("./failure-alerts");
 const plate_meanings_js_1 = require("./plate-meanings.js");
 const sign_in_links_js_1 = require("./sign-in-links.js");
+const bounces_js_1 = require("./bounces.js");
+const crypto_1 = require("crypto");
 const pay_per_enquiry_js_1 = require("./pay-per-enquiry.js");
 const enquiries_js_1 = require("./enquiries.js");
 const valuation_email_js_1 = require("./valuation-email.js");
@@ -865,5 +868,25 @@ exports.getResultVoucher = (0, https_1.onCall)({ maxInstances: 10, secrets: [str
 /** Adds every new Auth account to the users customer list. */
 exports.onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
     await (0, users_js_1.runOnUserCreated)(user);
+});
+/**
+ * Brevo's transactional webhook. Its URL carries ?token=, the secret
+ * BREVO_WEBHOOK_TOKEN, because Brevo doesn't sign its webhooks. Hard
+ * bounces of a seller's address hand their listings back to the admin.
+ */
+exports.brevoWebhook = (0, https_1.onRequest)({ maxInstances: 5, secrets: [brevoWebhookToken] }, async (request, response) => {
+    var _a;
+    const given = Buffer.from(String((_a = request.query.token) !== null && _a !== void 0 ? _a : ""));
+    const expected = Buffer.from(brevoWebhookToken.value());
+    if (given.length !== expected.length ||
+        !(0, crypto_1.timingSafeEqual)(given, expected)) {
+        response.status(401).send("Unauthorized");
+        return;
+    }
+    for (const email of (0, bounces_js_1.deadAddresses)(request.body)) {
+        const result = await (0, bounces_js_1.runSellerEmailBounced)(email);
+        console.log(`bounce: ${email}`, result);
+    }
+    response.status(200).send("ok");
 });
 //# sourceMappingURL=index.js.map
