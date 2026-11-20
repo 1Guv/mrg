@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.brevoWebhook = exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.redeemSignInLink = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.brevoWebhook = exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.redeemSignInLink = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendGuestEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -61,6 +61,7 @@ const failure_alerts_1 = require("./failure-alerts");
 const plate_meanings_js_1 = require("./plate-meanings.js");
 const sign_in_links_js_1 = require("./sign-in-links.js");
 const bounces_js_1 = require("./bounces.js");
+const guest_enquiries_js_1 = require("./guest-enquiries.js");
 const crypto_1 = require("crypto");
 const pay_per_enquiry_js_1 = require("./pay-per-enquiry.js");
 const enquiries_js_1 = require("./enquiries.js");
@@ -791,6 +792,17 @@ exports.sendEnquiry = (0, https_1.onCall)({ maxInstances: 10 }, async (request) 
     }
     return (0, enquiries_js_1.runSendEnquiry)(request.auth.uid, request.auth.token.email, (_b = request.data) !== null && _b !== void 0 ? _b : {});
 });
+/**
+ * Callable — a signed-out buyer's enquiry. No login needed; rate limited
+ * per email and per IP.
+ */
+exports.sendGuestEnquiry = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
+    var _a, _b;
+    const forwarded = String((_a = request.rawRequest.headers["x-forwarded-for"]) !== null && _a !== void 0 ? _a : "")
+        .split(",")[0].trim();
+    const ip = request.rawRequest.ip || forwarded;
+    return (0, guest_enquiries_js_1.runSendGuestEnquiry)((_b = request.data) !== null && _b !== void 0 ? _b : {}, ip);
+});
 /** Callable — emails a seller's reply to the buyer who enquired. */
 exports.replyToEnquiry = (0, https_1.onCall)({ maxInstances: 10 }, async (request) => {
     var _a;
@@ -872,7 +884,8 @@ exports.onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
 /**
  * Brevo's transactional webhook. Its URL carries ?token=, the secret
  * BREVO_WEBHOOK_TOKEN, because Brevo doesn't sign its webhooks. Hard
- * bounces of a seller's address hand their listings back to the admin.
+ * bounces of a seller's address hand their listings back to the admin, and
+ * of a guest buyer's withdraw their locked enquiries.
  */
 exports.brevoWebhook = (0, https_1.onRequest)({ maxInstances: 5, secrets: [brevoWebhookToken] }, async (request, response) => {
     var _a;
@@ -884,8 +897,11 @@ exports.brevoWebhook = (0, https_1.onRequest)({ maxInstances: 5, secrets: [brevo
         return;
     }
     for (const email of (0, bounces_js_1.deadAddresses)(request.body)) {
-        const result = await (0, bounces_js_1.runSellerEmailBounced)(email);
-        console.log(`bounce: ${email}`, result);
+        const [seller, guest] = await Promise.all([
+            (0, bounces_js_1.runSellerEmailBounced)(email),
+            (0, guest_enquiries_js_1.runGuestEmailBounced)(email),
+        ]);
+        console.log(`bounce: ${email}`, { seller, guest });
     }
     response.status(200).send("ok");
 });

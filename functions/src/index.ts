@@ -39,6 +39,7 @@ import {withFailureAlert} from "./failure-alerts";
 import {fillPlateMeanings} from "./plate-meanings.js";
 import {runRedeemSignInLink} from "./sign-in-links.js";
 import {deadAddresses, runSellerEmailBounced} from "./bounces.js";
+import {runGuestEmailBounced, runSendGuestEnquiry} from "./guest-enquiries.js";
 import {timingSafeEqual} from "crypto";
 import {
   contactFields,
@@ -1021,6 +1022,21 @@ export const sendEnquiry = onCall(
   }
 );
 
+/**
+ * Callable — a signed-out buyer's enquiry. No login needed; rate limited
+ * per email and per IP.
+ */
+export const sendGuestEnquiry = onCall(
+  {maxInstances: 10},
+  async (request) => {
+    const forwarded =
+      String(request.rawRequest.headers["x-forwarded-for"] ?? "")
+        .split(",")[0].trim();
+    const ip = request.rawRequest.ip || forwarded;
+    return runSendGuestEnquiry(request.data ?? {}, ip);
+  }
+);
+
 /** Callable — emails a seller's reply to the buyer who enquired. */
 export const replyToEnquiry = onCall(
   {maxInstances: 10},
@@ -1137,7 +1153,8 @@ export const onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
 /**
  * Brevo's transactional webhook. Its URL carries ?token=, the secret
  * BREVO_WEBHOOK_TOKEN, because Brevo doesn't sign its webhooks. Hard
- * bounces of a seller's address hand their listings back to the admin.
+ * bounces of a seller's address hand their listings back to the admin, and
+ * of a guest buyer's withdraw their locked enquiries.
  */
 export const brevoWebhook = onRequest(
   {maxInstances: 5, secrets: [brevoWebhookToken]},
@@ -1150,8 +1167,11 @@ export const brevoWebhook = onRequest(
       return;
     }
     for (const email of deadAddresses(request.body)) {
-      const result = await runSellerEmailBounced(email);
-      console.log(`bounce: ${email}`, result);
+      const [seller, guest] = await Promise.all([
+        runSellerEmailBounced(email),
+        runGuestEmailBounced(email),
+      ]);
+      console.log(`bounce: ${email}`, {seller, guest});
     }
     response.status(200).send("ok");
   }

@@ -105,12 +105,15 @@ function text(value, min, max, name) {
  * @param {string} buyerEmail - The buyer's email from their auth token.
  * @param {Record<string, unknown>} data - listingId, collection (a hint),
  *   enquiryType and message.
+ * @param {Record<string, unknown>} extra - More fields for the enquiry,
+ *   e.g. marking a guest's.
  * @return {Promise<object>} whatsappNumber: the seller's number, digits
  *   only, so the buyer can follow up on WhatsApp; null when there is none
  *   or the seller hasn't unlocked their enquiries yet. sellerNotified is
- *   true when the enquiry waits for the seller to unlock it.
+ *   true when the enquiry waits for the seller to unlock it. plate is the
+ *   listing's registration.
  */
-async function runSendEnquiry(buyerUid, buyerEmail, data) {
+async function runSendEnquiry(buyerUid, buyerEmail, data, extra = {}) {
     var _a, _b, _c, _d, _e, _f, _g, _h;
     const listingId = text(data.listingId, 1, 100, "listing");
     const enquiryType = text(data.enquiryType, 1, 100, "enquiry type");
@@ -139,28 +142,18 @@ async function runSendEnquiry(buyerUid, buyerEmail, data) {
     if (!contact.lCEmail) {
         throw new https_1.HttpsError("failed-precondition", "Seller has no email");
     }
-    if ((0, pay_per_enquiry_js_1.enquiriesLocked)(listing)) {
-        await (0, pay_per_enquiry_js_1.saveLockedEnquiry)(listingRef, listing, contact.lCEmail, { enquiryType, message, buyerUid, buyerEmail });
-        return { whatsappNumber: null, sellerNotified: true };
-    }
     const plate = String((_d = listing.plateCharacters) !== null && _d !== void 0 ? _d : "").toUpperCase();
+    if ((0, pay_per_enquiry_js_1.enquiriesLocked)(listing)) {
+        await (0, pay_per_enquiry_js_1.saveLockedEnquiry)(listingRef, listing, contact.lCEmail, { enquiryType, message, buyerUid, buyerEmail }, extra);
+        return { whatsappNumber: null, sellerNotified: true, plate };
+    }
     const now = admin.firestore.FieldValue.serverTimestamp();
     const enquiryRef = db.collection("seller_enquiries").doc();
     const batch = db.batch();
-    batch.set(enquiryRef, {
-        plateId: listingId,
-        plateCharacters: (_e = listing.plateCharacters) !== null && _e !== void 0 ? _e : "",
-        enquiryType,
+    batch.set(enquiryRef, Object.assign({ plateId: listingId, plateCharacters: (_e = listing.plateCharacters) !== null && _e !== void 0 ? _e : "", enquiryType,
         message,
         buyerUid,
-        buyerEmail,
-        sellerLCNumber: (_f = contact.lCNumber) !== null && _f !== void 0 ? _f : "",
-        sellerEmail: contact.lCEmail,
-        submittedAt: now,
-        lastMessageAt: now,
-        lastMessageFrom: "buyer",
-        lastMessageText: message,
-    });
+        buyerEmail, sellerLCNumber: (_f = contact.lCNumber) !== null && _f !== void 0 ? _f : "", sellerEmail: contact.lCEmail, submittedAt: now, lastMessageAt: now, lastMessageFrom: "buyer", lastMessageText: message }, extra));
     batch.set(messagesRef(enquiryRef).doc(), { from: "buyer", text: message, sentAt: now });
     await Promise.all([
         batch.commit(),
@@ -188,7 +181,7 @@ async function runSendEnquiry(buyerUid, buyerEmail, data) {
         }),
     ]);
     const digits = String((_h = contact.lCNumber) !== null && _h !== void 0 ? _h : "").replace(/\D/g, "");
-    return { whatsappNumber: digits || null };
+    return { whatsappNumber: digits || null, plate };
 }
 exports.MESSAGES_URL = "https://mrvaluations.co.uk/account-dashboard?tab=messages";
 /**

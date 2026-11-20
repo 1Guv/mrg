@@ -93,3 +93,17 @@
   height: 3rem;
   color: #2e7d32;
 }
+
+.guest-note {
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+// The honeypot: off-screen so people never see it, but bots fill it in.
+.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

@@ -2,16 +2,14 @@ import { Component, OnDestroy, inject } from '@angular/core';
 import { AsyncPipe, DatePipe, UpperCasePipe, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
-import { Observable, Subscription, startWith, switchMap, map, tap, take, shareReplay, catchError, of, filter } from 'rxjs';
+import { Observable, Subscription, startWith, switchMap, map, tap, shareReplay, catchError, of, filter } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PlateListingService } from '../../services/plate-listing.service';
-import { AuthService } from '../../services/auth.service';
 import { MessageSellerDialogComponent } from '../../shared/message-seller-dialog/message-seller-dialog.component';
 import { PlateValueBoxComponent } from '../../shared/plate-value-box/plate-value-box.component';
-import { AuthPromptDialogComponent } from '../../shared/auth-prompt-dialog/auth-prompt-dialog.component';
 import { PlateListing } from '../../models/plate-listing.model';
 import { normalisePlate } from '../../utils/normalise-plate';
 import { PrerenderDataService } from '../../services/prerender-data.service';
@@ -44,7 +42,6 @@ export class PlateDetailComponent implements OnDestroy {
   private metaService = inject(Meta);
   private document = inject(DOCUMENT);
   private dialog = inject(MatDialog);
-  private authService = inject(AuthService);
   private snackBar = inject(MatSnackBar);
   private prerenderData = inject(PrerenderDataService);
 
@@ -162,13 +159,8 @@ export class PlateDetailComponent implements OnDestroy {
   }
 
   onMessageSeller(listing: PlateListing): void {
-    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
-      if (!user) {
-        this.dialog.open(AuthPromptDialogComponent, { width: '380px' });
-      } else {
-        this.dialog.open(MessageSellerDialogComponent, { width: '520px', data: listing });
-      }
-    });
+    // Signed-out buyers can message too, as guests.
+    this.dialog.open(MessageSellerDialogComponent, { width: '520px', data: listing });
   }
 
   goBack(event: MouseEvent): void {

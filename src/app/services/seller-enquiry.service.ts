@@ -97,6 +97,25 @@ export class SellerEnquiryService {
     return result.data;
   }
 
+  /**
+   * Sends a signed-out buyer's enquiry. They're emailed a link to see
+   * replies; website is a hidden field only bots fill in.
+   */
+  async sendGuestEnquiry(
+    listing: PlateListing, enquiryType: string, message: string, email: string, website: string
+  ): Promise<SendEnquiryResult> {
+    const fn = httpsCallable<object, SendEnquiryResult>(this.functions, 'sendGuestEnquiry');
+    const result = await fn({
+      listingId: String(listing.id),
+      collection: listing._collection,
+      enquiryType,
+      message,
+      email,
+      website
+    });
+    return result.data;
+  }
+
   getEnquiriesForSeller(email: string): Observable<SellerEnquiry[]> {
     const ref = collection(this.firestore, 'seller_enquiries');
     const q = query(ref, where('sellerEmail', '==', email));

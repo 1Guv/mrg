@@ -5,6 +5,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { PlateListingCardComponent } from './plate-listing-card.component';
 import { AuthService } from '../../services/auth.service';
+import { AdminsService } from '../../services/admins.service';
+import { signal } from '@angular/core';
 import { PlateListing } from '../../models/plate-listing.model';
 
 const LISTING = {
@@ -31,6 +33,7 @@ describe('PlateListingCardComponent', () => {
         provideRouter([]),
         provideNoopAnimations(),
         { provide: AuthService, useValue: { currentUser$: of(currentUser) } },
+        { provide: AdminsService, useValue: { currentUserIsAdmin: signal(false) } },
         { provide: MatDialog, useValue: { open: (c: unknown) => opened.push(c) } },
       ],
     }).compileComponents();
@@ -67,13 +70,13 @@ describe('PlateListingCardComponent', () => {
     expect(el('.message-seller-btn')).toBeFalsy();
   });
 
-  it('prompts signed-out visitors to authenticate', async () => {
+  it('lets signed-out visitors message the seller as guests', async () => {
     currentUser = null;
     await setup('sale');
     el('.message-seller-btn').click();
     expect(opened.length).toBe(1);
     expect((opened[0] as { name: string }).name)
-      .toContain('AuthPromptDialogComponent');
+      .toContain('MessageSellerDialogComponent');
   });
 
   it('opens the message dialog for signed-in users', async () => {

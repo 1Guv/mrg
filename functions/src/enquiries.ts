@@ -21,6 +21,12 @@ export const CONTACT_FIELDS = [
   "plateListingAccTelNumber",
 ];
 
+export interface SendEnquiryResult {
+  whatsappNumber: string | null;
+  sellerNotified?: boolean;
+  plate: string;
+}
+
 export interface SellerContact {
   lCEmail?: string;
   lCNumber?: string;
@@ -83,16 +89,20 @@ function text(value: unknown, min: number, max: number, name: string): string {
  * @param {string} buyerEmail - The buyer's email from their auth token.
  * @param {Record<string, unknown>} data - listingId, collection (a hint),
  *   enquiryType and message.
+ * @param {Record<string, unknown>} extra - More fields for the enquiry,
+ *   e.g. marking a guest's.
  * @return {Promise<object>} whatsappNumber: the seller's number, digits
  *   only, so the buyer can follow up on WhatsApp; null when there is none
  *   or the seller hasn't unlocked their enquiries yet. sellerNotified is
- *   true when the enquiry waits for the seller to unlock it.
+ *   true when the enquiry waits for the seller to unlock it. plate is the
+ *   listing's registration.
  */
 export async function runSendEnquiry(
   buyerUid: string,
   buyerEmail: string,
-  data: Record<string, unknown>
-): Promise<{whatsappNumber: string | null, sellerNotified?: boolean}> {
+  data: Record<string, unknown>,
+  extra: Record<string, unknown> = {}
+): Promise<SendEnquiryResult> {
   const listingId = text(data.listingId, 1, 100, "listing");
   const enquiryType = text(data.enquiryType, 1, 100, "enquiry type");
   const message = text(data.message, 10, 2000, "message");
@@ -122,13 +132,13 @@ export async function runSendEnquiry(
     throw new HttpsError("failed-precondition", "Seller has no email");
   }
 
+  const plate = String(listing.plateCharacters ?? "").toUpperCase();
   if (enquiriesLocked(listing)) {
     await saveLockedEnquiry(listingRef, listing, contact.lCEmail,
-      {enquiryType, message, buyerUid, buyerEmail});
-    return {whatsappNumber: null, sellerNotified: true};
+      {enquiryType, message, buyerUid, buyerEmail}, extra);
+    return {whatsappNumber: null, sellerNotified: true, plate};
   }
 
-  const plate = String(listing.plateCharacters ?? "").toUpperCase();
   const now = admin.firestore.FieldValue.serverTimestamp();
   const enquiryRef = db.collection("seller_enquiries").doc();
   const batch = db.batch();
@@ -145,6 +155,7 @@ export async function runSendEnquiry(
     lastMessageAt: now,
     lastMessageFrom: "buyer",
     lastMessageText: message,
+    ...extra,
   });
   batch.set(messagesRef(enquiryRef).doc(),
     {from: "buyer", text: message, sentAt: now});
@@ -175,7 +186,7 @@ export async function runSendEnquiry(
   ]);
 
   const digits = String(contact.lCNumber ?? "").replace(/\D/g, "");
-  return {whatsappNumber: digits || null};
+  return {whatsappNumber: digits || null, plate};
 }
 
 export const MESSAGES_URL =

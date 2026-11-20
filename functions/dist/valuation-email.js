@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ALLOWED_APP_BASE_URLS = exports.EMAIL_RE = void 0;
 exports.rateLimitId = rateLimitId;
 exports.consumeRateLimits = consumeRateLimits;
+exports.findOrCreateUser = findOrCreateUser;
 exports.runCaptureValuationEmail = runCaptureValuationEmail;
 exports.runSendSignInLink = runSendSignInLink;
 const admin = __importStar(require("firebase-admin"));

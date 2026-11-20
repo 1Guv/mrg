@@ -571,6 +571,7 @@ function listedEmailHtml(plate: string, price: string): string {
  * @param {Record<string, unknown>} listing - The listing's data.
  * @param {string} sellerEmail - Where the seller's emails go.
  * @param {object} enquiry - The buyer's enquiry.
+ * @param {Record<string, unknown>} extra - More fields for the enquiry.
  * @return {Promise<void>}
  */
 export async function saveLockedEnquiry(
@@ -582,7 +583,8 @@ export async function saveLockedEnquiry(
     message: string,
     buyerUid: string,
     buyerEmail: string,
-  }
+  },
+  extra: Record<string, unknown> = {}
 ): Promise<void> {
   const db = admin.firestore();
   const plate = String(listing.plateCharacters ?? "").toUpperCase();
@@ -607,6 +609,7 @@ export async function saveLockedEnquiry(
     lastMessageAt: now,
     lastMessageFrom: "buyer",
     lastMessageText: null,
+    ...extra,
   });
   batch.set(messagesRef(enquiryRef).doc(),
     {from: "buyer", text: enquiry.message, sentAt: now});

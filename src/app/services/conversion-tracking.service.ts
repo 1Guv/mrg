@@ -91,8 +91,8 @@ export class ConversionTrackingService {
     this.send('begin_checkout', { value: feePounds, currency: 'GBP', checkout_type: 'unlock' });
   }
 
-  enquirySent(enquiryType: string): void {
-    this.send('generate_lead', { lead_source: 'seller_enquiry', enquiry_type: enquiryType });
+  enquirySent(enquiryType: string, guest = false): void {
+    this.send('generate_lead', { lead_source: 'seller_enquiry', enquiry_type: enquiryType, guest });
   }
 
   shared(method: 'native' | 'whatsapp' | 'facebook' | 'copy'): void {

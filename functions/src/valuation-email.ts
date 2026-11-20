@@ -204,7 +204,7 @@ export async function consumeRateLimits(
  * @return {Promise<{uid: string, created: boolean}>} The user's uid, and
  *   whether this call created them.
  */
-async function findOrCreateUser(
+export async function findOrCreateUser(
   email: string,
   firstName: string
 ): Promise<{uid: string, created: boolean}> {

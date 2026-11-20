@@ -9,6 +9,9 @@
       } @else {
         <p>Your message has been sent! The seller will be in touch.</p>
       }
+      @if (sentAsGuest) {
+        <p class="guest-note">We've also emailed <strong>{{ form.value.email }}</strong> a link to see your messages. No password needed.</p>
+      }
       @if (whatsappNumber) {
         <div class="whatsapp-row">
           <span class="whatsapp-label">Prefer to chat? Message the seller on</span>
@@ -54,6 +57,18 @@
         }
       </mat-form-field>
 
+      @if (isGuest) {
+        <mat-form-field appearance="outline" class="full-field">
+          <mat-label>Your email</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="email" inputmode="email">
+          <mat-hint>So the seller can reply. No account needed.</mat-hint>
+          <mat-error>Please enter a valid email</mat-error>
+        </mat-form-field>
+        <div class="hp" aria-hidden="true">
+          <label>Website <input type="text" formControlName="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+      }
+
       @if (errorMessage) {
         <p class="error-message">{{ errorMessage }}</p>
       }
@@ -67,7 +82,7 @@
   } @else {
     <button mat-button mat-dialog-close>Cancel</button>
     <button mat-raised-button color="primary"
-      [disabled]="form.invalid || loading"
+      [disabled]="!canSend || loading"
       (click)="onSubmit()">
       @if (loading) { Sending... } @else { Send Message }
     </button>

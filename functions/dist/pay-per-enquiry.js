@@ -509,9 +509,10 @@ function listedEmailHtml(plate, price) {
  * @param {Record<string, unknown>} listing - The listing's data.
  * @param {string} sellerEmail - Where the seller's emails go.
  * @param {object} enquiry - The buyer's enquiry.
+ * @param {Record<string, unknown>} extra - More fields for the enquiry.
  * @return {Promise<void>}
  */
-async function saveLockedEnquiry(listingRef, listing, sellerEmail, enquiry) {
+async function saveLockedEnquiry(listingRef, listing, sellerEmail, enquiry, extra = {}) {
     var _a, _b;
     const db = admin.firestore();
     const plate = String((_a = listing.plateCharacters) !== null && _a !== void 0 ? _a : "").toUpperCase();
@@ -521,22 +522,7 @@ async function saveLockedEnquiry(listingRef, listing, sellerEmail, enquiry) {
     const batch = db.batch();
     // buyerUid stays visible so the buyer can see their conversation; it
     // isn't contact information.
-    batch.set(enquiryRef, {
-        plateId: listingRef.id,
-        plateCharacters: (_b = listing.plateCharacters) !== null && _b !== void 0 ? _b : "",
-        enquiryType: enquiry.enquiryType,
-        message: null,
-        preview,
-        locked: true,
-        buyerUid: enquiry.buyerUid,
-        buyerEmail: null,
-        sellerLCNumber: "",
-        sellerEmail,
-        submittedAt: now,
-        lastMessageAt: now,
-        lastMessageFrom: "buyer",
-        lastMessageText: null,
-    });
+    batch.set(enquiryRef, Object.assign({ plateId: listingRef.id, plateCharacters: (_b = listing.plateCharacters) !== null && _b !== void 0 ? _b : "", enquiryType: enquiry.enquiryType, message: null, preview, locked: true, buyerUid: enquiry.buyerUid, buyerEmail: null, sellerLCNumber: "", sellerEmail, submittedAt: now, lastMessageAt: now, lastMessageFrom: "buyer", lastMessageText: null }, extra));
     batch.set((0, enquiries_js_1.messagesRef)(enquiryRef).doc(), { from: "buyer", text: enquiry.message, sentAt: now });
     batch.set(enquiryRef.collection("private").doc("buyer"), {
         message: enquiry.message,
