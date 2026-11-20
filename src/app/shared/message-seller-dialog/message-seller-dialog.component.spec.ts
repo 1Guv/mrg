@@ -71,6 +71,19 @@ describe('MessageSellerDialogComponent', () => {
     expect(calls[0].fn).toBe('sendEnquiry');
   });
 
+  it('fills in a message for the chosen reason, but never replaces one they typed', async () => {
+    await setup(null);
+    const type = component.form.get('enquiryType')!;
+    const message = component.form.get('message')!;
+    type.setValue('Is it still available?');
+    expect(message.value).toBe('Hi, is MR 1 still available?');
+    type.setValue('Is the price negotiable?');
+    expect(message.value).toContain('negotiable');
+    message.setValue('My own words about this plate');
+    type.setValue('Is it still available?');
+    expect(message.value).toBe('My own words about this plate');
+  });
+
   it('explains the rate limit', async () => {
     await setup(null);
     fill('buyer@example.com');

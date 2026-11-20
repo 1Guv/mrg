@@ -41,10 +41,27 @@ export class MessageSellerDialogComponent {
   /** undefined while auth loads, null when signed out. */
   private readonly user = toSignal(inject(AuthService).currentUser$);
 
-  readonly enquiryTypes = [
-    'I love this plate, I want to buy it',
-    "I'm interested, I want to provide an offer",
-    'Other'
+  private readonly plate = this.listing.plateCharacters.toUpperCase();
+
+  /** Most asked first. Picking one fills in a message they can send as is. */
+  readonly enquiryTypes: { label: string; message: string }[] = [
+    { label: 'Is it still available?', message: `Hi, is ${this.plate} still available?` },
+    {
+      label: 'I want to buy it at the asking price',
+      message: `Hi, I'd like to buy ${this.plate} at the asking price of £${this.listing.askingPrice}. How do we proceed?`
+    },
+    { label: "I'd like to make an offer", message: `Hi, I'm interested in ${this.plate}. Would you accept an offer of £` },
+    { label: 'Is the price negotiable?', message: `Hi, is the price of ${this.plate} negotiable? What's the best you can do?` },
+    {
+      label: 'Is it on retention or on a vehicle?',
+      message: `Hi, is ${this.plate} on a retention certificate or on a vehicle?`
+    },
+    { label: 'Can it go on my car?', message: `Hi, can ${this.plate} go on my car? It's a ` },
+    {
+      label: "I'd like to swap or part-exchange a plate",
+      message: `Hi, would you consider swapping or part-exchanging ${this.plate} for my plate, `
+    },
+    { label: 'Other', message: '' }
   ];
 
   form: FormGroup = this.fb.group({
@@ -55,6 +72,19 @@ export class MessageSellerDialogComponent {
     // Hidden from people; bots fill it in.
     website: ['']
   });
+
+  /** The message we last filled in, so we never replace one they typed. */
+  private prefilled = '';
+
+  constructor() {
+    this.form.get('enquiryType')!.valueChanges.subscribe((label: string) => {
+      const message = this.form.get('message')!;
+      const current = (message.value ?? '').trim();
+      if (current && current !== this.prefilled.trim()) return;
+      this.prefilled = this.enquiryTypes.find(t => t.label === label)?.message ?? '';
+      message.setValue(this.prefilled);
+    });
+  }
 
   /** Signed out: they give an email instead of logging in. */
   get isGuest(): boolean {

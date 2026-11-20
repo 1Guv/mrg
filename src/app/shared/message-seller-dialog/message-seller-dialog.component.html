@@ -38,8 +38,8 @@
       <mat-form-field appearance="outline" class="full-field">
         <mat-label>Reason for enquiry</mat-label>
         <mat-select formControlName="enquiryType">
-          @for (type of enquiryTypes; track type) {
-            <mat-option [value]="type">{{ type }}</mat-option>
+          @for (type of enquiryTypes; track type.label) {
+            <mat-option [value]="type.label">{{ type.label }}</mat-option>
           }
         </mat-select>
         <mat-error>Please select an enquiry type</mat-error>
