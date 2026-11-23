@@ -138,6 +138,8 @@ export class ListNowPromptComponent {
   /** One tap: signed in, it's live; otherwise the emailed link publishes it. */
   async publish(price = this.askingPrice()): Promise<void> {
     if (this.publishing()) return;
+    // A meaning typed but not saved still goes on the listing.
+    if (!this.meaning() && this.meaningText.trim()) this.saveMeaning();
     this.ownPrice.set(price);
     this.publishing.set(true);
     this.errorMessage.set('');

@@ -7,9 +7,9 @@
                 <p class="unlocked-banner">{{ unlockedPlate }} is unlocked — you can now read and reply to every enquiry on it.</p>
             }
 
-            <!-- Messages is the 3rd tab for sellers, after the 4 admin-only tabs for admins -->
+            <!-- Messages and My Listings are the 3rd and 4th tabs for sellers, after the 4 admin-only tabs for admins -->
             <mat-tab-group animationDuration="200ms" class="dashboard-tabs"
-                [selectedIndex]="openMessages ? (isAdmin ? 6 : 2) : 0">
+                [selectedIndex]="openTab === 'messages' ? (isAdmin ? 6 : 2) : openTab === 'listings' ? (isAdmin ? 7 : 3) : 0">
 
                 @if(isAdmin) {
                 <mat-tab label="Me">

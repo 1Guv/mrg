@@ -17,12 +17,19 @@
       <span class="listing-price">&pound;{{ listing().askingPrice }}</span>
     }
 
-    @if (listing().meanings) {
-      <div class="listing-meanings">
-        <span class="listing-meanings-label">Meaning</span>
+    <!-- Always shown, so every card in a row is the same height -->
+    <div class="listing-meanings">
+      <span class="listing-meanings-label">Meaning</span>
+      @if (listing().meanings) {
         <span class="listing-meanings-text">{{ listing().meanings }}</span>
-      </div>
-    }
+      } @else if (variant() === 'sale') {
+        <button type="button" class="ask-meaning" (click)="onMessageSeller(askMeaning)">Ask the seller</button>
+      } @else if (variant() === 'preview') {
+        <span class="listing-meanings-text">Not added yet</span>
+      } @else {
+        <span class="listing-meanings-text">&mdash;</span>
+      }
+    </div>
 
     @if (variant() !== 'sold') {
       <hr class="listing-divider">

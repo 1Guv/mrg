@@ -40,6 +40,7 @@ import {fillPlateMeanings} from "./plate-meanings.js";
 import {runRedeemSignInLink} from "./sign-in-links.js";
 import {deadAddresses, runSellerEmailBounced} from "./bounces.js";
 import {runGuestEmailBounced, runSendGuestEnquiry} from "./guest-enquiries.js";
+import {runMeaningReminders} from "./meaning-reminders.js";
 import {timingSafeEqual} from "crypto";
 import {
   contactFields,
@@ -945,6 +946,14 @@ export const scheduledPendingListingReminders = onSchedule(
   async () => {
     await withFailureAlert(
       "scheduledPendingListingReminders", runPendingListingReminders);
+  }
+);
+
+/** Daily — asks sellers to add a meaning to listings that have none. */
+export const scheduledMeaningReminders = onSchedule(
+  {schedule: "every day 11:00", timeZone: "Europe/London"},
+  async () => {
+    await withFailureAlert("scheduledMeaningReminders", runMeaningReminders);
   }
 );
 

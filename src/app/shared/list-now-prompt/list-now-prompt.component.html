@@ -31,24 +31,6 @@
       </span>
     </div>
 
-    <div class="text-center">
-      <button mat-raised-button type="button" class="publish-btn" [disabled]="publishing()" (click)="publish()">
-        @if (publishing()) { Publishing… } @else { Publish my listing, free }
-      </button>
-      @if (errorMessage()) {
-        <p class="error-message">{{ errorMessage() }}</p>
-      }
-      <p class="fee-share">
-        £0 now · £{{ fee }} only if a buyer messages you@if (feeShare(); as share) { ({{ share }} of your price)}
-      </p>
-      <p class="secondary-links">
-        <button type="button" class="link-btn" (click)="editDetails()">Add a phone number or more details</button>
-      </p>
-      <p class="not-now">
-        <button type="button" class="link-btn" (click)="notNow()">Not now, just keep my valuation</button>
-      </p>
-    </div>
-
     <div class="meaning">
       @if (meaning(); as m) {
         <p class="meaning-saved">
@@ -71,9 +53,27 @@
               [placeholder]="meaningExample()" aria-label="What it means">
             <button mat-flat-button type="submit" class="meaning-save">Save</button>
           </form>
-          <p class="meaning-hint">Buyers see it on your listing</p>
         }
+        <p class="meaning-hint">Add a meaning for more enquiries</p>
       }
+    </div>
+
+    <div class="text-center">
+      <button mat-raised-button type="button" class="publish-btn" [disabled]="publishing()" (click)="publish()">
+        @if (publishing()) { Publishing… } @else { Publish my listing, free }
+      </button>
+      @if (errorMessage()) {
+        <p class="error-message">{{ errorMessage() }}</p>
+      }
+      <p class="fee-share">
+        £0 now · £{{ fee }} only if a buyer messages you@if (feeShare(); as share) { ({{ share }} of your price)}
+      </p>
+      <p class="secondary-links">
+        <button type="button" class="link-btn" (click)="editDetails()">Add a phone number or more details</button>
+      </p>
+      <p class="not-now">
+        <button type="button" class="link-btn" (click)="notNow()">Not now, just keep my valuation</button>
+      </p>
     </div>
 
     <div class="value-panel">

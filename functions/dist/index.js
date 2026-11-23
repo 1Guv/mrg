@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.brevoWebhook = exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.redeemSignInLink = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendGuestEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
+exports.brevoWebhook = exports.onUserCreated = exports.getResultVoucher = exports.recordPlateMeaning = exports.recordSellIntent = exports.getBuyerDemand = exports.redeemSignInLink = exports.sendSignInLink = exports.captureValuationEmail = exports.replyToEnquiry = exports.sendGuestEnquiry = exports.sendEnquiry = exports.getNudgeStatus = exports.toggleNudgeEmails = exports.unsubscribeNudge = exports.scheduledPlateMeanings = exports.scheduledMeaningReminders = exports.scheduledPendingListingReminders = exports.scheduledUnlockReminders = exports.scheduledNudgeEmails = exports.refreshPublicStats = exports.onAutoValuationCreated = exports.generateCelebrityArticle = exports.generateDailyArticle = exports.triggerArticleGeneration = exports.getAnalytics = exports.manualSocialPostFullVideos = exports.manualSocialPost = exports.scheduledSocialPost = exports.valuePlate = exports.stripeWebhook = exports.manageVoucher = exports.createUnlockSession = exports.cancelPendingListing = exports.confirmPendingListing = exports.resendPendingListing = exports.createPendingListing = exports.createFreeListing = exports.createCheckoutSession = exports.triggerWeeklyReport = exports.triggerCelebrityArticleGeneration = exports.weeklyReport = exports.getUsers = void 0;
 const constants_js_1 = require("./constants.js");
 const functionsV1 = __importStar(require("firebase-functions/v1"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -62,6 +62,7 @@ const plate_meanings_js_1 = require("./plate-meanings.js");
 const sign_in_links_js_1 = require("./sign-in-links.js");
 const bounces_js_1 = require("./bounces.js");
 const guest_enquiries_js_1 = require("./guest-enquiries.js");
+const meaning_reminders_js_1 = require("./meaning-reminders.js");
 const crypto_1 = require("crypto");
 const pay_per_enquiry_js_1 = require("./pay-per-enquiry.js");
 const enquiries_js_1 = require("./enquiries.js");
@@ -739,6 +740,10 @@ exports.scheduledUnlockReminders = (0, scheduler_1.onSchedule)({ schedule: "ever
  */
 exports.scheduledPendingListingReminders = (0, scheduler_1.onSchedule)({ schedule: "every day 10:00", timeZone: "Europe/London" }, async () => {
     await (0, failure_alerts_1.withFailureAlert)("scheduledPendingListingReminders", pay_per_enquiry_js_1.runPendingListingReminders);
+});
+/** Daily — asks sellers to add a meaning to listings that have none. */
+exports.scheduledMeaningReminders = (0, scheduler_1.onSchedule)({ schedule: "every day 11:00", timeZone: "Europe/London" }, async () => {
+    await (0, failure_alerts_1.withFailureAlert)("scheduledMeaningReminders", meaning_reminders_js_1.runMeaningReminders);
 });
 /**
  * Daily — writes AI descriptions for plates for sale that have none, up to

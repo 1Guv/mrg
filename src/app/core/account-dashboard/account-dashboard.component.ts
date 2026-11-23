@@ -68,7 +68,8 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
   readonly listingFee = LISTING_FEE;
   /** Opened from an enquiry email or after paying, so start on Messages. */
-  openMessages = false;
+  /** The tab named in ?tab=, from the header's icon or an emailed link. */
+  openTab = '';
   /** Plate just unlocked, from the Stripe success redirect. */
   unlockedPlate = '';
   unlockingId = signal<string | null>(null);
@@ -117,7 +118,7 @@ export class AccountDashboardComponent implements OnInit, OnDestroy {
 
     const params = this.route.snapshot.queryParamMap;
     // The header's messages icon can link here while the dashboard is open.
-    this.subs.add(this.route.queryParamMap.subscribe(p => this.openMessages = p.get('tab') === 'messages'));
+    this.subs.add(this.route.queryParamMap.subscribe(p => this.openTab = p.get('tab') ?? ''));
     this.unlockedPlate = params.get('unlocked') ?? '';
     const sessionId = params.get('session_id');
     // GA4 drops repeat purchases with the same transaction_id, so a reload is safe

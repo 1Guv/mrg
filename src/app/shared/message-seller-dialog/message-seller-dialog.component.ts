@@ -14,6 +14,9 @@ import { ConversionTrackingService } from '../../services/conversion-tracking.se
 import { AuthService } from '../../services/auth.service';
 import { PlateListing } from '../../models/plate-listing.model';
 
+/** The reason for asking what a plate means, from a card without one. */
+export const ASK_MEANING = 'What does it mean?';
+
 @Component({
   selector: 'app-message-seller-dialog',
   standalone: true,
@@ -33,7 +36,8 @@ import { PlateListing } from '../../models/plate-listing.model';
   styleUrl: './message-seller-dialog.component.scss'
 })
 export class MessageSellerDialogComponent {
-  listing: PlateListing = inject(MAT_DIALOG_DATA);
+  /** reason: an enquiry reason to start with, e.g. ASK_MEANING. */
+  listing: PlateListing & { reason?: string } = inject(MAT_DIALOG_DATA);
   private dialogRef = inject(MatDialogRef<MessageSellerDialogComponent>);
   private fb = inject(FormBuilder);
   private enquiryService = inject(SellerEnquiryService);
@@ -46,6 +50,7 @@ export class MessageSellerDialogComponent {
   /** Most asked first. Picking one fills in a message they can send as is. */
   readonly enquiryTypes: { label: string; message: string }[] = [
     { label: 'Is it still available?', message: `Hi, is ${this.plate} still available?` },
+    { label: ASK_MEANING, message: `Hi, what does ${this.plate} mean?` },
     {
       label: 'I want to buy it at the asking price',
       message: `Hi, I'd like to buy ${this.plate} at the asking price of £${this.listing.askingPrice}. How do we proceed?`
@@ -84,6 +89,7 @@ export class MessageSellerDialogComponent {
       this.prefilled = this.enquiryTypes.find(t => t.label === label)?.message ?? '';
       message.setValue(this.prefilled);
     });
+    if (this.listing.reason) this.form.get('enquiryType')!.setValue(this.listing.reason);
   }
 
   /** Signed out: they give an email instead of logging in. */

@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDialog } from '@angular/material/dialog';
 import { ShareButtonsComponent } from '../share-buttons/share-buttons.component';
-import { MessageSellerDialogComponent }
+import { ASK_MEANING, MessageSellerDialogComponent }
   from '../message-seller-dialog/message-seller-dialog.component';
 import { PlateListing } from '../../models/plate-listing.model';
 import { normalisePlate } from '../../utils/normalise-plate';
@@ -39,11 +39,15 @@ export class PlateListingCardComponent {
 
   normalisePlate = normalisePlate;
 
-  onMessageSeller(): void {
+  /** The enquiry reason the "Ask the seller" meaning link starts with. */
+  readonly askMeaning = ASK_MEANING;
+
+  /** @param reason - An enquiry reason to start with, if any. */
+  onMessageSeller(reason?: string): void {
     // Signed-out buyers can message too, as guests.
     this.dialog.open(MessageSellerDialogComponent, {
       width: '520px',
-      data: this.listing(),
+      data: reason ? { ...this.listing(), reason } : this.listing(),
     });
   }
 }

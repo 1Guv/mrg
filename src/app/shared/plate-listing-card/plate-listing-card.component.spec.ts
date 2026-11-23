@@ -25,7 +25,7 @@ describe('PlateListingCardComponent', () => {
   let opened: unknown[];
   let currentUser: unknown;
 
-  async function setup(variant: 'sale' | 'sold' = 'sale') {
+  async function setup(variant: 'sale' | 'sold' | 'preview' = 'sale', listing: PlateListing = LISTING) {
     opened = [];
     await TestBed.configureTestingModule({
       imports: [PlateListingCardComponent],
@@ -39,7 +39,7 @@ describe('PlateListingCardComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(PlateListingCardComponent);
-    fixture.componentRef.setInput('listing', LISTING);
+    fixture.componentRef.setInput('listing', listing);
     fixture.componentRef.setInput('variant', variant);
     fixture.detectChanges();
   }
@@ -68,6 +68,19 @@ describe('PlateListingCardComponent', () => {
     expect(text()).toContain('9,000');
     expect(el('.sold-tab-badge').textContent.trim()).toBe('SOLD');
     expect(el('.message-seller-btn')).toBeFalsy();
+  });
+
+  it('asks the seller what a plate means when it has no meaning, so cards stay the same height', async () => {
+    await setup('sale', { ...LISTING, meanings: '' });
+    expect(el('.listing-meanings')).toBeTruthy();
+    el('.ask-meaning').click();
+    expect(opened.length).toBe(1);
+  });
+
+  it("says a seller's preview has no meaning yet", async () => {
+    await setup('preview', { ...LISTING, meanings: '' });
+    expect(el('.ask-meaning')).toBeFalsy();
+    expect(el('.listing-meanings').textContent).toContain('Not added yet');
   });
 
   it('lets signed-out visitors message the seller as guests', async () => {

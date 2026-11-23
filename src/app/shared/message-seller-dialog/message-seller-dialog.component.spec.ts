@@ -16,7 +16,7 @@ describe('MessageSellerDialogComponent', () => {
   let calls: { fn: string; args: unknown[] }[];
   let sendError: unknown;
 
-  async function setup(user: unknown) {
+  async function setup(user: unknown, data: object = LISTING) {
     calls = [];
     sendError = null;
     const result = () => sendError ? Promise.reject(sendError) : Promise.resolve({ whatsappNumber: '447000', plate: 'MR 1' });
@@ -24,7 +24,7 @@ describe('MessageSellerDialogComponent', () => {
       imports: [MessageSellerDialogComponent],
       providers: [
         provideNoopAnimations(),
-        { provide: MAT_DIALOG_DATA, useValue: LISTING },
+        { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: { close: () => {} } },
         { provide: AuthService, useValue: { currentUser$: of(user) } },
         {
@@ -82,6 +82,12 @@ describe('MessageSellerDialogComponent', () => {
     message.setValue('My own words about this plate');
     type.setValue('Is it still available?');
     expect(message.value).toBe('My own words about this plate');
+  });
+
+  it('starts with the reason it was opened for', async () => {
+    await setup(null, { ...LISTING, reason: 'What does it mean?' });
+    expect(component.form.value.enquiryType).toBe('What does it mean?');
+    expect(component.form.value.message).toBe('Hi, what does MR 1 mean?');
   });
 
   it('explains the rate limit', async () => {
