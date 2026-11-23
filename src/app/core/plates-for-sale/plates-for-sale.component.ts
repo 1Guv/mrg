@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,7 +27,7 @@ const SELL_SLOT_INDEX = 3;
 @Component({
   selector: 'app-plates-for-sale',
   standalone: true,
-  imports: [MatIconModule, MatTabsModule, MatButtonModule, BenefitCardComponent, RecentlySoldComponent, ScrollingModule, MatFormFieldModule, MatInputModule, FormsModule, ListNowBannerComponent, TrackClickDirective, PlateListingCardComponent, RouterLink],
+  imports: [MatIconModule, MatProgressSpinnerModule, MatTabsModule, MatButtonModule, BenefitCardComponent, RecentlySoldComponent, ScrollingModule, MatFormFieldModule, MatInputModule, FormsModule, ListNowBannerComponent, TrackClickDirective, PlateListingCardComponent, RouterLink],
   templateUrl: './plates-for-sale.component.html',
   styleUrl: './plates-for-sale.component.scss'
 })

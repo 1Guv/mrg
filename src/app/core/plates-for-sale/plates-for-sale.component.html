@@ -58,7 +58,8 @@
                 </div>
 
                 @if (allListings.length === 0) {
-                    <div class="d-flex justify-content-center py-5">
+                    <div class="d-flex flex-column align-items-center py-5">
+                        <mat-spinner diameter="40" class="mb-3" aria-label="Loading listings" />
                         <p class="text-muted">Loading listings...</p>
                     </div>
                 } @else if (filteredListings.length === 0) {

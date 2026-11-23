@@ -9,6 +9,8 @@
     <p class="plates-preview__empty">
       No plates listed for sale just yet — yours could be the first.
     </p>
+  } @else {
+    <mat-spinner diameter="40" class="plates-preview__spinner" aria-label="Loading plates" />
   }
 
   <a routerLink="/plates-for-sale" class="plates-preview__all">

@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PlateListingService } from '../../services/plate-listing.service';
 import { PlateListing } from '../../models/plate-listing.model';
@@ -14,7 +15,7 @@ import { PlateListingCardComponent }
 @Component({
   selector: 'app-plates-preview',
   standalone: true,
-  imports: [RouterLink, PlateListingCardComponent],
+  imports: [RouterLink, MatProgressSpinnerModule, PlateListingCardComponent],
   templateUrl: './plates-preview.component.html',
   styleUrl: './plates-preview.component.scss',
 })
